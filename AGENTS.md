@@ -19,8 +19,12 @@ The project runs in docker with services for `database`, `backend` and `frontend
 
 ### Project structure
 .
-├── backend                   # All files related to the backend
-├── frontend                  # All files related to NextJS frontend
+├── ...
+├── test                    # Test files (alternatively `spec` or `tests`)
+│   ├── benchmarks          # Load and stress tests
+│   ├── integration         # End-to-end, integration tests (alternatively `e2e`)
+│   └── unit                # Unit tests
+└── ...
 
 ## Working agreements
 - Prefer `pnpm` when installing dependencies.
