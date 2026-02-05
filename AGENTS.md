@@ -18,13 +18,11 @@ This project is a family food planner used to create weekly food plans for a fam
 The project runs in docker with services for `database`, `backend` and `frontend` so each can be deployed separately
 
 ### Project structure
+```
 .
-├── ...
-├── test                    # Test files (alternatively `spec` or `tests`)
-│   ├── benchmarks          # Load and stress tests
-│   ├── integration         # End-to-end, integration tests (alternatively `e2e`)
-│   └── unit                # Unit tests
-└── ...
+├── backend                   # All files related to the backend
+├── frontend                  # All files related to NextJS frontend
+```
 
 ## Working agreements
 - Prefer `pnpm` when installing dependencies.
