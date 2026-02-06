@@ -17,6 +17,7 @@ Family Food Planner is a weekly meal planning app that helps families build a pl
 - Includes a landing page, an admin `/login` form, route-guard middleware for authenticated pages, and a navigation logout action.
 - Adds a protected `/members` management screen for creating, editing, listing, and archiving family members with optimistic UI updates.
 - Adds plan-day meal APIs and UI building blocks for one dinner per day plus repeatable lunch rows with optional member assignment.
+- Adds grocery list APIs and a dedicated `/plan/[id]/grocery-list` screen to create general items, attach ingredient items to meals, and view merged quantities for shopping.
 
 ### Deployment
 The project is dockerized with separate services for:
