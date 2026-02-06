@@ -30,6 +30,16 @@ pnpm lint
 pnpm test
 ```
 
+## Package Scripts
+
+### Backend (`backend/package.json`)
+- `pnpm --dir backend lint` runs a TypeScript type-check using `tsc --noEmit`.
+- `pnpm --dir backend test` is a placeholder script and currently prints a message.
+
+### Frontend (`frontend/package.json`)
+- `pnpm --dir frontend lint` runs Next.js linting via `next lint`.
+- `pnpm --dir frontend test` is a placeholder script and currently prints a message.
+
 ## Local Docker Development
 
 A root-level `docker-compose.yml` is available for local development with three services:
