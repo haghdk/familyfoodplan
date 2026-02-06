@@ -35,7 +35,10 @@ export default function AuthNav({ isAuthenticated }: AuthNavProps) {
   }
 
   return (
-    <nav className="text-sm text-slate-600">
+    <nav className="flex items-center gap-4 text-sm text-slate-600">
+      <Link className="hover:text-slate-900" href="/members">
+        Members
+      </Link>
       <button className="hover:text-slate-900" onClick={handleLogout} type="button">
         Logout
       </button>
