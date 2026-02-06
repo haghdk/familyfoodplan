@@ -1,16 +1,22 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import "./globals.css";
+import AuthNav from "./components/auth-nav";
+import { adminSessionCookieName } from "../lib/auth";
 
 export const metadata: Metadata = {
   title: "Family Food Planner",
   description: "Plan weekly meals for your family with confidence."
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const cookieStore = await cookies();
+  const isAuthenticated = Boolean(cookieStore.get(adminSessionCookieName)?.value);
+
   return (
     <html lang="en">
       <body className="antialiased">
@@ -20,11 +26,7 @@ export default function RootLayout({
               <span className="text-lg font-semibold text-slate-900">
                 Family Food Planner
               </span>
-              <nav className="text-sm text-slate-600">
-                <a className="hover:text-slate-900" href="/login">
-                  Login
-                </a>
-              </nav>
+              <AuthNav isAuthenticated={isAuthenticated} />
             </div>
           </header>
           <main className="mx-auto max-w-5xl px-6 py-10">{children}</main>
