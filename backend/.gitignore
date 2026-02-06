@@ -1,0 +1,7 @@
+/node_modules
+/out
+/.pnp
+.pnp.js
+.DS_Store
+*.log
+.env*
