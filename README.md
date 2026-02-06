@@ -15,6 +15,7 @@ Family Food Planner is a weekly meal planning app that helps families build a pl
 - Tailwind CSS v4.1
 - TypeScript
 - Includes a landing page, an admin `/login` form, route-guard middleware for authenticated pages, and a navigation logout action.
+- Adds a protected `/members` management screen for creating, editing, listing, and archiving family members with optimistic UI updates.
 
 ### Deployment
 The project is dockerized with separate services for:
