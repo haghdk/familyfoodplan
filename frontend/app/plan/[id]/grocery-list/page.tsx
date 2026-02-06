@@ -50,6 +50,14 @@ type EditableRow = {
   unit: string;
 };
 
+type GroceryRealtimeEvent = {
+  eventType: "grocery_item_created" | "grocery_item_updated" | "grocery_item_deleted";
+  planId: number;
+  token: string | null;
+  item: GroceryItem | null;
+  deletedItemId: number | null;
+};
+
 export default function GroceryListPage() {
   const params = useParams<{ id: string }>();
   const planId = Number(params.id);
@@ -57,6 +65,7 @@ export default function GroceryListPage() {
   const [groceryItems, setGroceryItems] = useState<GroceryItem[]>([]);
   const [mergedItems, setMergedItems] = useState<MergedGroceryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRealtimeConnected, setIsRealtimeConnected] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [feedback, setFeedback] = useState("");
 
@@ -107,6 +116,75 @@ export default function GroceryListPage() {
     }
 
     void loadItems();
+  }, [loadItems, planId]);
+
+  useEffect(() => {
+    if (Number.isNaN(planId)) {
+      return;
+    }
+
+    let isMounted = true;
+    let reconnectAttempts = 0;
+
+    const eventSource = new EventSource(
+      `${backendApiUrl}/api/realtime/grocery/admin?planId=${planId}`,
+      { withCredentials: true }
+    );
+
+    eventSource.onopen = () => {
+      if (!isMounted) {
+        return;
+      }
+
+      setIsRealtimeConnected(true);
+
+      if (reconnectAttempts > 0) {
+        void loadItems();
+      }
+
+      reconnectAttempts += 1;
+    };
+
+    const handleRealtimeEvent = (event: MessageEvent<string>) => {
+      const payload = JSON.parse(event.data) as GroceryRealtimeEvent;
+
+      setGroceryItems((currentItems) => {
+        if (payload.eventType === "grocery_item_deleted" && payload.deletedItemId) {
+          return currentItems.filter((item) => item.id !== payload.deletedItemId);
+        }
+
+        if (!payload.item) {
+          return currentItems;
+        }
+
+        const existingItem = currentItems.find((item) => item.id === payload.item?.id);
+
+        if (!existingItem) {
+          return [...currentItems, payload.item];
+        }
+
+        return currentItems.map((item) => (item.id === payload.item?.id ? payload.item : item));
+      });
+
+      void loadItems();
+    };
+
+    eventSource.addEventListener("grocery_item_created", handleRealtimeEvent);
+    eventSource.addEventListener("grocery_item_updated", handleRealtimeEvent);
+    eventSource.addEventListener("grocery_item_deleted", handleRealtimeEvent);
+
+    eventSource.onerror = () => {
+      if (!isMounted) {
+        return;
+      }
+
+      setIsRealtimeConnected(false);
+    };
+
+    return () => {
+      isMounted = false;
+      eventSource.close();
+    };
   }, [loadItems, planId]);
 
   const mealOptions = useMemo(() => {
@@ -295,6 +373,7 @@ export default function GroceryListPage() {
       <header>
         <h1 className="text-2xl font-semibold text-slate-900">Grocery list</h1>
         <p className="text-sm text-slate-500">Plan #{params.id}</p>
+        <p className="text-xs text-slate-400">Realtime: {isRealtimeConnected ? "connected" : "reconnecting..."}</p>
       </header>
 
       {errorMessage ? <p className="text-sm text-rose-700">{errorMessage}</p> : null}
@@ -362,7 +441,7 @@ export default function GroceryListPage() {
             <div key={item.id} className="space-y-2 rounded border border-slate-200 p-3">
               {!editingRow ? (
                 <>
-                  <p className="text-sm font-medium text-slate-900">{item.name} ({item.quantity} {item.unit ?? ""})</p>
+                  <p className={item.isChecked ? "text-sm font-medium text-slate-400 line-through" : "text-sm font-medium text-slate-900"}>{item.name} ({item.quantity} {item.unit ?? ""})</p>
                   <p className="text-xs text-slate-500">{item.category} {item.dinnerDish ? `· Dinner: ${item.dinnerDish.name}` : ""} {item.lunchDish ? `· Lunch: ${item.lunchDish.name}` : ""}</p>
                   <div className="flex gap-2">
                     <button className="rounded-full border px-3 py-1 text-sm" type="button" onClick={() => startEditing(item)}>Edit</button>
