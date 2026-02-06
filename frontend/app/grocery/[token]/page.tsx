@@ -21,11 +21,20 @@ type SharedResponse = {
   groceryItems: GroceryItem[];
 };
 
+type GroceryRealtimeEvent = {
+  eventType: "grocery_item_created" | "grocery_item_updated" | "grocery_item_deleted";
+  planId: number;
+  token: string | null;
+  item: GroceryItem | null;
+  deletedItemId: number | null;
+};
+
 export default function SharedGroceryPage() {
   const params = useParams<{ token: string }>();
   const token = params.token;
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
+  const [isRealtimeConnected, setIsRealtimeConnected] = useState(false);
   const [planDate, setPlanDate] = useState("");
   const [items, setItems] = useState<GroceryItem[]>([]);
 
@@ -50,6 +59,66 @@ export default function SharedGroceryPage() {
   useEffect(() => {
     void loadSharedList();
   }, [loadSharedList]);
+
+  useEffect(() => {
+    let isMounted = true;
+    let reconnectAttempts = 0;
+
+    const eventSource = new EventSource(`${backendApiUrl}/api/realtime/grocery/shared/${token}`);
+
+    eventSource.onopen = () => {
+      if (!isMounted) {
+        return;
+      }
+
+      setIsRealtimeConnected(true);
+
+      if (reconnectAttempts > 0) {
+        void loadSharedList();
+      }
+
+      reconnectAttempts += 1;
+    };
+
+    const handleRealtimeEvent = (event: MessageEvent<string>) => {
+      const payload = JSON.parse(event.data) as GroceryRealtimeEvent;
+
+      setItems((currentItems) => {
+        if (payload.eventType === "grocery_item_deleted" && payload.deletedItemId) {
+          return currentItems.filter((item) => item.id !== payload.deletedItemId);
+        }
+
+        if (!payload.item) {
+          return currentItems;
+        }
+
+        const existingItemIndex = currentItems.findIndex((item) => item.id === payload.item?.id);
+
+        if (existingItemIndex === -1) {
+          return [...currentItems, payload.item].sort((a, b) => a.name.localeCompare(b.name));
+        }
+
+        return currentItems.map((item) => (item.id === payload.item?.id ? payload.item : item));
+      });
+    };
+
+    eventSource.addEventListener("grocery_item_created", handleRealtimeEvent);
+    eventSource.addEventListener("grocery_item_updated", handleRealtimeEvent);
+    eventSource.addEventListener("grocery_item_deleted", handleRealtimeEvent);
+
+    eventSource.onerror = () => {
+      if (!isMounted) {
+        return;
+      }
+
+      setIsRealtimeConnected(false);
+    };
+
+    return () => {
+      isMounted = false;
+      eventSource.close();
+    };
+  }, [loadSharedList, token]);
 
   const toggleItem = async (item: GroceryItem) => {
     const response = await fetch(`${backendApiUrl}/api/grocery/shared/${token}/items/${item.id}`, {
@@ -81,6 +150,7 @@ export default function SharedGroceryPage() {
       <header>
         <h1 className="text-2xl font-semibold text-slate-900">Shared grocery list</h1>
         {planDate ? <p className="text-sm text-slate-500">Plan date: {new Date(planDate).toLocaleDateString()}</p> : null}
+        <p className="text-xs text-slate-400">Realtime: {isRealtimeConnected ? "connected" : "reconnecting..."}</p>
       </header>
 
       {errorMessage ? <p className="text-sm text-rose-700">{errorMessage}</p> : null}

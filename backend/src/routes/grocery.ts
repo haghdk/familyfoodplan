@@ -4,6 +4,7 @@ import { Router } from "express";
 import { prisma } from "../lib/prisma";
 import { requireAdminAuth } from "../middleware/auth";
 import { getMergedGroceryItemsByPlanDay } from "../services/grocery";
+import { GroceryEventType, realtimeBus } from "../realtime/events";
 
 const groceryRouter = Router();
 
@@ -29,6 +30,48 @@ const normalizeQuantity = (quantity: unknown) => {
 };
 
 const createShareToken = () => crypto.randomBytes(32).toString("hex");
+
+const getShareTokenByPlanId = async (planId: number) => {
+  const shareToken = await prisma.groceryShareToken.findUnique({
+    where: { planDayId: planId },
+    select: { token: true }
+  });
+
+  return shareToken?.token ?? null;
+};
+
+const emitGroceryEvent = async (
+  planId: number,
+  eventType: GroceryEventType,
+  payload: {
+    item: {
+      id: number;
+      name: string;
+      quantity: number;
+      unit: string | null;
+      category: GroceryCategory;
+      isChecked: boolean;
+      dinnerDish: { id: number; name: string } | null;
+      lunchDish: { id: number; name: string } | null;
+    } | null;
+    deletedItemId: number | null;
+  }
+) => {
+  const token = await getShareTokenByPlanId(planId);
+
+  realtimeBus.emit({
+    eventType,
+    planId,
+    token,
+    item: payload.item
+      ? {
+          ...payload.item,
+          category: payload.item.category
+        }
+      : null,
+    deletedItemId: payload.deletedItemId
+  });
+};
 
 groceryRouter.get("/api/plans/:planId/grocery-items", requireAdminAuth, async (request, response) => {
   const planId = parsePlanId(request.params.planId);
@@ -178,6 +221,11 @@ groceryRouter.post("/api/plans/:planId/grocery-items", requireAdminAuth, async (
     }
   });
 
+  await emitGroceryEvent(planId, "grocery_item_created", {
+    item: groceryItem,
+    deletedItemId: null
+  });
+
   response.status(201).json({ groceryItem });
 });
 
@@ -226,6 +274,11 @@ groceryRouter.put("/api/plans/:planId/grocery-items/:itemId", requireAdminAuth, 
     }
   });
 
+  await emitGroceryEvent(planId, "grocery_item_updated", {
+    item: groceryItem,
+    deletedItemId: null
+  });
+
   response.status(200).json({ groceryItem });
 });
 
@@ -252,6 +305,11 @@ groceryRouter.delete(
     }
 
     await prisma.groceryItem.delete({ where: { id: itemId } });
+
+    await emitGroceryEvent(planId, "grocery_item_deleted", {
+      item: null,
+      deletedItemId: itemId
+    });
 
     response.status(204).send();
   }
@@ -334,7 +392,16 @@ groceryRouter.patch("/api/grocery/shared/:token/items/:itemId", async (request, 
 
   const groceryItem = await prisma.groceryItem.update({
     where: { id: itemId },
-    data: { isChecked }
+    data: { isChecked },
+    include: {
+      dinnerDish: { select: { id: true, name: true } },
+      lunchDish: { select: { id: true, name: true } }
+    }
+  });
+
+  await emitGroceryEvent(sharedPlan.planDayId, "grocery_item_updated", {
+    item: groceryItem,
+    deletedItemId: null
   });
 
   response.status(200).json({ groceryItem });

@@ -19,6 +19,7 @@ Family Food Planner is a weekly meal planning app that helps families build a pl
 - Adds plan-day meal APIs and UI building blocks for one dinner per day plus repeatable lunch rows with optional member assignment.
 - Adds grocery list APIs and a dedicated `/plan/[id]/grocery-list` screen to create general items, attach ingredient items to meals, and view merged quantities for shopping.
 - Adds grocery list sharing with secure public tokens: admins can rotate share links from `/plan/[id]/grocery-list`, shoppers can open `/grocery/[token]`, and check/uncheck items without admin login.
+- Adds realtime grocery synchronization over Server-Sent Events (SSE) for admin and shared-token grocery pages, including reconnect rehydration so all clients stay in sync after create/update/delete actions.
 
 ### Deployment
 The project is dockerized with separate services for:
