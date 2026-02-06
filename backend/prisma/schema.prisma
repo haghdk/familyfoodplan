@@ -16,9 +16,44 @@ model AdminUser {
 }
 
 model FamilyMember {
+  id        Int         @id @default(autoincrement())
+  name      String
+  isActive  Boolean     @default(true)
+  lunches   LunchDish[]
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+}
+
+model PlanDay {
+  id         Int          @id @default(autoincrement())
+  date       DateTime     @unique
+  dinnerDish DinnerDish?
+  lunchDishes LunchDish[]
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+}
+
+model DinnerDish {
   id        Int      @id @default(autoincrement())
   name      String
-  isActive  Boolean  @default(true)
+  notes     String?
+  planDayId Int      @unique
+  planDay   PlanDay  @relation(fields: [planDayId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model LunchDish {
+  id             Int          @id @default(autoincrement())
+  name           String
+  notes          String?
+  planDayId      Int
+  familyMemberId Int?
+  planDay        PlanDay      @relation(fields: [planDayId], references: [id], onDelete: Cascade)
+  familyMember   FamilyMember? @relation(fields: [familyMemberId], references: [id], onDelete: SetNull)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([planDayId])
+  @@index([familyMemberId])
 }
