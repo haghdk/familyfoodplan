@@ -1,0 +1,8 @@
+/node_modules
+/.next
+/out
+/.pnp
+.pnp.js
+.DS_Store
+*.log
+.env*
