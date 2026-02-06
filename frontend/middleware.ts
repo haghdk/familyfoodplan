@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminSessionCookieName } from "./lib/auth";
 
-const PUBLIC_PATHS = ["/login"];
+const PUBLIC_PATHS = ["/login", "/grocery"];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;

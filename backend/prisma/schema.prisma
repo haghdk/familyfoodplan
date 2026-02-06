@@ -25,13 +25,23 @@ model FamilyMember {
 }
 
 model PlanDay {
-  id         Int          @id @default(autoincrement())
-  date       DateTime     @unique
-  dinnerDish DinnerDish?
-  lunchDishes LunchDish[]
-  groceryItems GroceryItem[]
-  createdAt  DateTime     @default(now())
-  updatedAt  DateTime     @updatedAt
+  id                Int                @id @default(autoincrement())
+  date              DateTime           @unique
+  dinnerDish        DinnerDish?
+  lunchDishes       LunchDish[]
+  groceryItems      GroceryItem[]
+  groceryShareToken GroceryShareToken?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+}
+
+model GroceryShareToken {
+  id        Int      @id @default(autoincrement())
+  token     String   @unique
+  planDayId Int      @unique
+  planDay   PlanDay  @relation(fields: [planDayId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model DinnerDish {
@@ -72,6 +82,7 @@ model GroceryItem {
   quantity     Float           @default(1)
   unit         String?
   category     GroceryCategory @default(GENERAL)
+  isChecked    Boolean         @default(false)
   planDayId    Int
   dinnerDishId Int?
   lunchDishId  Int?
