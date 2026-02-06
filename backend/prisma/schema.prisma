@@ -29,6 +29,7 @@ model PlanDay {
   date       DateTime     @unique
   dinnerDish DinnerDish?
   lunchDishes LunchDish[]
+  groceryItems GroceryItem[]
   createdAt  DateTime     @default(now())
   updatedAt  DateTime     @updatedAt
 }
@@ -39,6 +40,7 @@ model DinnerDish {
   notes     String?
   planDayId Int      @unique
   planDay   PlanDay  @relation(fields: [planDayId], references: [id], onDelete: Cascade)
+  groceryItems GroceryItem[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -51,9 +53,35 @@ model LunchDish {
   familyMemberId Int?
   planDay        PlanDay      @relation(fields: [planDayId], references: [id], onDelete: Cascade)
   familyMember   FamilyMember? @relation(fields: [familyMemberId], references: [id], onDelete: SetNull)
+  groceryItems   GroceryItem[]
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
   @@index([planDayId])
   @@index([familyMemberId])
+}
+
+enum GroceryCategory {
+  GENERAL
+  INGREDIENT
+}
+
+model GroceryItem {
+  id           Int             @id @default(autoincrement())
+  name         String
+  quantity     Float           @default(1)
+  unit         String?
+  category     GroceryCategory @default(GENERAL)
+  planDayId    Int
+  dinnerDishId Int?
+  lunchDishId  Int?
+  planDay      PlanDay         @relation(fields: [planDayId], references: [id], onDelete: Cascade)
+  dinnerDish   DinnerDish?     @relation(fields: [dinnerDishId], references: [id], onDelete: SetNull)
+  lunchDish    LunchDish?      @relation(fields: [lunchDishId], references: [id], onDelete: SetNull)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  @@index([planDayId])
+  @@index([dinnerDishId])
+  @@index([lunchDishId])
 }
