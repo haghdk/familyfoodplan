@@ -8,6 +8,7 @@ Family Food Planner is a weekly meal planning app that helps families build a pl
 - Node.js with TypeScript
 - Prisma ORM
 - Postgres database
+- Backend scaffold includes a Prisma schema setup and a basic Express server with a health endpoint.
 
 ### Frontend
 - Next.js
