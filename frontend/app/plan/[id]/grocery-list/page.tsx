@@ -22,6 +22,7 @@ type GroceryItem = {
   quantity: number;
   unit: string | null;
   category: "GENERAL" | "INGREDIENT";
+  isChecked: boolean;
   dinnerDish: MealRef | null;
   lunchDish: MealRef | null;
 };
@@ -58,6 +59,9 @@ export default function GroceryListPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [feedback, setFeedback] = useState("");
+
+  const [shareLink, setShareLink] = useState("");
+  const [shareFeedback, setShareFeedback] = useState("");
 
   const [generalName, setGeneralName] = useState("");
   const [generalQuantity, setGeneralQuantity] = useState("1");
@@ -122,6 +126,37 @@ export default function GroceryListPage() {
   useEffect(() => {
     setSelectedMealId(mealOptions[0]?.id ?? "");
   }, [mealOptions]);
+
+  const createShareLink = async () => {
+    const response = await fetch(`${backendApiUrl}/api/plans/${planId}/share-link`, {
+      method: "POST",
+      credentials: "include"
+    });
+
+    if (!response.ok) {
+      setShareFeedback("Could not create share link.");
+      return;
+    }
+
+    const data = (await response.json()) as { token: string };
+    const nextShareLink = `${window.location.origin}/grocery/${data.token}`;
+    setShareLink(nextShareLink);
+    setShareFeedback("Share link is ready.");
+  };
+
+  const copyShareLink = async () => {
+    if (!shareLink) {
+      setShareFeedback("Create a share link first.");
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(shareLink);
+      setShareFeedback("Share link copied to clipboard.");
+    } catch (_error) {
+      setShareFeedback("Could not copy link automatically.");
+    }
+  };
 
   const createGeneralItem = async () => {
     const name = generalName.trim();
@@ -264,6 +299,17 @@ export default function GroceryListPage() {
 
       {errorMessage ? <p className="text-sm text-rose-700">{errorMessage}</p> : null}
       {feedback ? <p className="text-sm text-emerald-700">{feedback}</p> : null}
+
+      <article className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4">
+        <h2 className="font-semibold text-slate-900">Share grocery list</h2>
+        <p className="text-sm text-slate-500">Create or rotate a public link for checking items while shopping.</p>
+        <div className="flex flex-wrap gap-2">
+          <button className="rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white" type="button" onClick={createShareLink}>Create / rotate link</button>
+          <button className="rounded-full border px-4 py-2 text-sm font-semibold" type="button" onClick={copyShareLink}>Copy link</button>
+        </div>
+        {shareLink ? <p className="break-all text-sm text-slate-700">{shareLink}</p> : null}
+        {shareFeedback ? <p className="text-sm text-slate-600">{shareFeedback}</p> : null}
+      </article>
 
       <article className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4">
         <h2 className="font-semibold text-slate-900">Add general item</h2>
