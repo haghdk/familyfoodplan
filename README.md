@@ -29,3 +29,16 @@ pnpm install
 pnpm lint
 pnpm test
 ```
+
+## Local Docker Development
+
+A root-level `docker-compose.yml` is available for local development with three services:
+- `database` (Postgres) on `localhost:5432`
+- `backend` on `localhost:4000`
+- `frontend` on `localhost:3000`
+
+Start all services with:
+
+```bash
+docker compose up --build
+```
