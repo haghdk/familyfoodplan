@@ -55,6 +55,13 @@ A root-level `docker-compose.yml` is available for local development with three 
 - `backend` on `localhost:4000`
 - `frontend` on `localhost:3000`
 
+Service wiring in Compose uses Docker-network hostnames so containers can communicate directly:
+- `DATABASE_URL=postgresql://familyfoodplan:familyfoodplan@database:5432/familyfoodplan`
+- `BACKEND_URL=http://backend:4000`
+- `FRONTEND_URL=http://frontend:3000`
+
+The backend startup command installs dependencies, runs Prisma migrations (`prisma migrate deploy`), and then starts the development server.
+
 Start all services with:
 
 ```bash
