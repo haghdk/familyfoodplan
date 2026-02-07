@@ -164,3 +164,7 @@ pnpm test
 
 - `pnpm --dir frontend lint` — Next.js linting.
 - `pnpm --dir frontend test` — placeholder test script.
+
+## Tasks
+
+- See [`TASKS.md`](./TASKS.md) for tracked implementation tasks, including dependency maintenance work.
