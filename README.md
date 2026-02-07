@@ -8,7 +8,7 @@ Family Food Planner is a weekly meal planning app that helps families build a pl
 - Node.js with TypeScript
 - Prisma ORM
 - Postgres database
-- Backend scaffold includes a Prisma schema setup, admin authentication endpoints (`/api/auth/login`, `/api/auth/logout`, `/api/auth/me`), and middleware for admin-only route protection.
+- Backend scaffold includes a Prisma schema setup, an initial Prisma SQL migration, admin authentication endpoints (`/api/auth/login`, `/api/auth/logout`, `/api/auth/me`), middleware for admin-only route protection, and a Prisma seed script for creating the first admin user from environment variables.
 
 ### Frontend
 - Next.js
@@ -40,6 +40,9 @@ pnpm test
 ### Backend (`backend/package.json`)
 - `pnpm --dir backend lint` runs a TypeScript type-check using `tsc --noEmit`.
 - `pnpm --dir backend test` is a placeholder script and currently prints a message.
+- `pnpm --dir backend prisma:migrate` runs Prisma development migrations.
+- `pnpm --dir backend prisma:generate` regenerates the Prisma client from `prisma/schema.prisma`.
+- `pnpm --dir backend prisma:seed` seeds the database with the configured admin user.
 
 ### Frontend (`frontend/package.json`)
 - `pnpm --dir frontend lint` runs Next.js linting via `next lint`.
@@ -57,3 +60,12 @@ Start all services with:
 ```bash
 docker compose up --build
 ```
+
+## Backend Environment Variables
+
+Copy `backend/.env.example` to `backend/.env` and set:
+- `DATABASE_URL`
+- `PORT`
+- `AUTH_JWT_SECRET`
+- `ADMIN_EMAIL`
+- `ADMIN_PASSWORD`
