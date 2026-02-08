@@ -48,6 +48,11 @@ export type AdminUser = Prisma.AdminUserModel
  */
 export type FamilyMember = Prisma.FamilyMemberModel
 /**
+ * Model Plan
+ * 
+ */
+export type Plan = Prisma.PlanModel
+/**
  * Model PlanDay
  * 
  */

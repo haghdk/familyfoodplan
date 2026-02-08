@@ -10,6 +10,7 @@
  */
 export type * from './models/AdminUser'
 export type * from './models/FamilyMember'
+export type * from './models/Plan'
 export type * from './models/PlanDay'
 export type * from './models/GroceryShareToken'
 export type * from './models/DinnerDish'
