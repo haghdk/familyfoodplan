@@ -1,12 +1,17 @@
 import { Router } from "express";
-import { prisma } from "../lib/prisma";
 import { requireAdminAuth } from "../middleware/auth";
+import {
+  PlanConflictError,
+  PlanValidationError,
+  buildDateRange,
+  createPlanWithDays,
+  parseIsoDayKey
+} from "../services/plans";
 
 const plansRouter = Router();
 
 plansRouter.use(requireAdminAuth);
 
-const DATE_KEY_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 const MAX_PLAN_SPAN_DAYS = 14;
 const WEEKDAY_INDEX: Record<string, number> = {
   sunday: 0,
@@ -23,19 +28,7 @@ const parseDateKey = (rawValue: unknown): Date | null => {
     return null;
   }
 
-  const normalizedValue = rawValue.trim();
-
-  if (!DATE_KEY_REGEX.test(normalizedValue)) {
-    return null;
-  }
-
-  const parsedDate = new Date(`${normalizedValue}T00:00:00.000Z`);
-
-  if (Number.isNaN(parsedDate.getTime())) {
-    return null;
-  }
-
-  return parsedDate.toISOString().slice(0, 10) === normalizedValue ? parsedDate : null;
+  return parseIsoDayKey(rawValue);
 };
 
 const formatDateKey = (date: Date) => date.toISOString().slice(0, 10);
@@ -44,18 +37,6 @@ const addDays = (date: Date, daysToAdd: number): Date => {
   const nextDate = new Date(date);
   nextDate.setUTCDate(nextDate.getUTCDate() + daysToAdd);
   return nextDate;
-};
-
-const buildDateRange = (startDate: Date, endDate: Date): Date[] => {
-  const dates: Date[] = [];
-  let cursorDate = new Date(startDate);
-
-  while (cursorDate.getTime() <= endDate.getTime()) {
-    dates.push(new Date(cursorDate));
-    cursorDate = addDays(cursorDate, 1);
-  }
-
-  return dates;
 };
 
 const parseWeekday = (rawValue: unknown): number | null => {
@@ -165,34 +146,10 @@ plansRouter.post("/api/plans", async (request, response) => {
     `Plan ${formatDateKey(resolvedRange.startDate)} to ${formatDateKey(resolvedRange.endDate)}`;
 
   try {
-    const { plan, days } = await prisma.$transaction(async (tx) => {
-      const createdPlan = await tx.plan.create({
-        data: {
-          name: planName,
-          startDate: resolvedRange.startDate,
-          endDate: resolvedRange.endDate
-        }
-      });
-
-      const createdDays = [] as Array<{ id: number; date: Date; planId: number }>;
-
-      for (const date of dateRange) {
-        const createdDay = await tx.planDay.create({
-          data: {
-            planId: createdPlan.id,
-            date
-          },
-          select: {
-            id: true,
-            planId: true,
-            date: true
-          }
-        });
-
-        createdDays.push(createdDay);
-      }
-
-      return { plan: createdPlan, days: createdDays };
+    const { plan, days } = await createPlanWithDays({
+      name: planName,
+      startDate: resolvedRange.startDate,
+      endDate: resolvedRange.endDate
     });
 
     response.status(201).json({
@@ -209,14 +166,13 @@ plansRouter.post("/api/plans", async (request, response) => {
       }))
     });
   } catch (error: unknown) {
-    const isKnownPrismaError =
-      typeof error === "object" &&
-      error !== null &&
-      "code" in error &&
-      (error as { code?: string }).code === "P2002";
+    if (error instanceof PlanValidationError) {
+      response.status(400).json({ message: error.message });
+      return;
+    }
 
-    if (isKnownPrismaError) {
-      response.status(409).json({ message: "A plan with this name already exists." });
+    if (error instanceof PlanConflictError) {
+      response.status(409).json({ message: error.message });
       return;
     }
 

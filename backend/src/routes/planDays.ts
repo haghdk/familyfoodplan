@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { prisma } from "../lib/prisma";
 import { requireAdminAuth } from "../middleware/auth";
+import { parseIsoDayKey } from "../services/plans";
 
 const planDaysRouter = Router();
 
@@ -8,17 +9,6 @@ planDaysRouter.use(requireAdminAuth);
 
 const DEFAULT_PLAN_NAME = "Legacy Plan";
 
-const parseDayKey = (dayKey: string): Date | null => {
-  const normalizedDayKey = dayKey.trim();
-
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(normalizedDayKey)) {
-    return null;
-  }
-
-  const parsedDate = new Date(`${normalizedDayKey}T00:00:00.000Z`);
-
-  return Number.isNaN(parsedDate.getTime()) ? null : parsedDate;
-};
 
 const getDefaultPlan = async () =>
   prisma.plan.upsert({
@@ -46,7 +36,7 @@ const findOrCreatePlanDay = async (dayDate: Date) => {
 };
 
 planDaysRouter.put("/api/plan-days/:dayKey/dinner", async (request, response) => {
-  const dayDate = parseDayKey(request.params.dayKey);
+  const dayDate = parseIsoDayKey(request.params.dayKey);
 
   if (!dayDate) {
     response.status(400).json({ message: "Invalid day key. Expected YYYY-MM-DD." });
@@ -80,7 +70,7 @@ planDaysRouter.put("/api/plan-days/:dayKey/dinner", async (request, response) =>
 });
 
 planDaysRouter.post("/api/plan-days/:dayKey/lunches", async (request, response) => {
-  const dayDate = parseDayKey(request.params.dayKey);
+  const dayDate = parseIsoDayKey(request.params.dayKey);
 
   if (!dayDate) {
     response.status(400).json({ message: "Invalid day key. Expected YYYY-MM-DD." });
@@ -128,7 +118,7 @@ planDaysRouter.post("/api/plan-days/:dayKey/lunches", async (request, response) 
 planDaysRouter.put(
   "/api/plan-days/:dayKey/lunches/:lunchId",
   async (request, response) => {
-    const dayDate = parseDayKey(request.params.dayKey);
+    const dayDate = parseIsoDayKey(request.params.dayKey);
     const lunchId = Number(request.params.lunchId);
 
     if (!dayDate) {
@@ -195,7 +185,7 @@ planDaysRouter.put(
 planDaysRouter.delete(
   "/api/plan-days/:dayKey/lunches/:lunchId",
   async (request, response) => {
-    const dayDate = parseDayKey(request.params.dayKey);
+    const dayDate = parseIsoDayKey(request.params.dayKey);
     const lunchId = Number(request.params.lunchId);
 
     if (!dayDate) {
