@@ -1,4 +1,4 @@
-import { GroceryCategory } from "@prisma/client";
+import { GroceryCategory } from "../generated/prisma/enums";
 import crypto from "node:crypto";
 import { Router } from "express";
 import { prisma } from "../lib/prisma";

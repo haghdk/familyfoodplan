@@ -1,10 +1,10 @@
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 model AdminUser {
@@ -45,27 +45,27 @@ model GroceryShareToken {
 }
 
 model DinnerDish {
-  id        Int      @id @default(autoincrement())
-  name      String
-  notes     String?
-  planDayId Int      @unique
-  planDay   PlanDay  @relation(fields: [planDayId], references: [id], onDelete: Cascade)
+  id          Int           @id @default(autoincrement())
+  name        String
+  notes       String?
+  planDayId   Int           @unique
+  planDay     PlanDay       @relation(fields: [planDayId], references: [id], onDelete: Cascade)
   groceryItems GroceryItem[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
 }
 
 model LunchDish {
-  id             Int          @id @default(autoincrement())
+  id             Int           @id @default(autoincrement())
   name           String
   notes          String?
   planDayId      Int
   familyMemberId Int?
-  planDay        PlanDay      @relation(fields: [planDayId], references: [id], onDelete: Cascade)
+  planDay        PlanDay       @relation(fields: [planDayId], references: [id], onDelete: Cascade)
   familyMember   FamilyMember? @relation(fields: [familyMemberId], references: [id], onDelete: SetNull)
   groceryItems   GroceryItem[]
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
 
   @@index([planDayId])
   @@index([familyMemberId])
