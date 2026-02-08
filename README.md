@@ -8,6 +8,7 @@ Family Food Planner is a weekly meal-planning app for families. Admins create pl
 - **Initial admin bootstrap**: Docker setup now seeds a default admin user automatically on first startup.
 - **Members management**: create, edit, list, and archive family members.
 - **Weekly plans**: define week ranges and build day-by-day meal plans (dinner + repeatable lunch rows).
+- **Plan creation API**: admins can create a plan in one call using either explicit dates or weekday boundaries anchored to a specific date, with automatic `PlanDay` generation.
 - **Plan-scoped plan days**: day entries are now scoped to a `Plan`, and legacy rows are migrated into a default `Legacy Plan` during database migration/seed.
 - **Grocery sharing**: generate tokenized public grocery links so non-admin shoppers can check off items.
 - **Realtime grocery updates**: grocery item check/uncheck and edits are synchronized live across admin and shared views.
@@ -65,6 +66,7 @@ Family Food Planner is a weekly meal-planning app for families. Admins create pl
 
 ### Weekly Plans / Meals
 - Plan and meal endpoints under `/api/plans/...` handle week creation, day meal entries, lunch rows, and dinner updates.
+- `POST /api/plans` — create a plan and all plan-day rows for a validated date range (admin-auth required).
 
 ### Grocery Lists
 - Admin grocery routes under `/api/plans/:id/grocery-list...` support create/update/delete and share-link management.
