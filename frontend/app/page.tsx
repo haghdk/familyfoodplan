@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function HomePage() {
   return (
     <section className="space-y-8">
@@ -14,12 +16,12 @@ export default function HomePage() {
           breakfast, lunch, and dinner.
         </p>
         <div className="mt-6 flex flex-wrap gap-4">
-          <a
+          <Link
             className="rounded-full bg-emerald-600 px-5 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
-            href="/login"
+            href="/plan"
           >
             Get started
-          </a>
+          </Link>
           <button
             className="rounded-full border border-slate-300 px-5 py-2 text-sm font-semibold text-slate-700 hover:border-slate-400"
             type="button"
