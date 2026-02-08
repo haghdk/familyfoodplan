@@ -8,6 +8,7 @@ Family Food Planner is a weekly meal-planning app for families. Admins create pl
 - **Initial admin bootstrap**: Docker setup now seeds a default admin user automatically on first startup.
 - **Members management**: create, edit, list, and archive family members.
 - **Weekly plans**: define week ranges and build day-by-day meal plans (dinner + repeatable lunch rows).
+- **Plan-scoped plan days**: day entries are now scoped to a `Plan`, and legacy rows are migrated into a default `Legacy Plan` during database migration/seed.
 - **Grocery sharing**: generate tokenized public grocery links so non-admin shoppers can check off items.
 - **Realtime grocery updates**: grocery item check/uncheck and edits are synchronized live across admin and shared views.
 
@@ -162,7 +163,7 @@ pnpm test
 - `pnpm --dir backend test` — placeholder test script.
 - `pnpm --dir backend prisma:migrate` — run Prisma development migrations.
 - `pnpm --dir backend prisma:generate` — regenerate Prisma client.
-- `pnpm --dir backend prisma:seed` — seed initial admin user.
+- `pnpm --dir backend prisma:seed` — seed initial admin user and ensure the default `Legacy Plan` exists.
 
 ### Frontend (`frontend/package.json`)
 

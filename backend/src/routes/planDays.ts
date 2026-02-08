@@ -6,6 +6,8 @@ const planDaysRouter = Router();
 
 planDaysRouter.use(requireAdminAuth);
 
+const DEFAULT_PLAN_NAME = "Legacy Plan";
+
 const parseDayKey = (dayKey: string): Date | null => {
   const normalizedDayKey = dayKey.trim();
 
@@ -18,12 +20,30 @@ const parseDayKey = (dayKey: string): Date | null => {
   return Number.isNaN(parsedDate.getTime()) ? null : parsedDate;
 };
 
-const findOrCreatePlanDay = async (dayDate: Date) =>
-  prisma.planDay.upsert({
-    where: { date: dayDate },
+const getDefaultPlan = async () =>
+  prisma.plan.upsert({
+    where: { name: DEFAULT_PLAN_NAME },
     update: {},
-    create: { date: dayDate }
+    create: { name: DEFAULT_PLAN_NAME }
   });
+
+const findOrCreatePlanDay = async (dayDate: Date) => {
+  const plan = await getDefaultPlan();
+
+  return prisma.planDay.upsert({
+    where: {
+      planId_date: {
+        planId: plan.id,
+        date: dayDate
+      }
+    },
+    update: {},
+    create: {
+      planId: plan.id,
+      date: dayDate
+    }
+  });
+};
 
 planDaysRouter.put("/api/plan-days/:dayKey/dinner", async (request, response) => {
   const dayDate = parseDayKey(request.params.dayKey);

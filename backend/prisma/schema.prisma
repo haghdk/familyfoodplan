@@ -24,15 +24,30 @@ model FamilyMember {
   updatedAt DateTime    @updatedAt
 }
 
+model Plan {
+  id        Int       @id @default(autoincrement())
+  name      String    @unique
+  startDate DateTime?
+  endDate   DateTime?
+  days      PlanDay[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
 model PlanDay {
   id                Int                @id @default(autoincrement())
-  date              DateTime           @unique
+  planId            Int
+  date              DateTime
+  plan              Plan               @relation(fields: [planId], references: [id], onDelete: Cascade)
   dinnerDish        DinnerDish?
   lunchDishes       LunchDish[]
   groceryItems      GroceryItem[]
   groceryShareToken GroceryShareToken?
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
+
+  @@unique([planId, date])
+  @@index([planId])
 }
 
 model GroceryShareToken {

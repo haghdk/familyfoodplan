@@ -28,14 +28,17 @@ export type AggregatePlanDay = {
 
 export type PlanDayAvgAggregateOutputType = {
   id: number | null
+  planId: number | null
 }
 
 export type PlanDaySumAggregateOutputType = {
   id: number | null
+  planId: number | null
 }
 
 export type PlanDayMinAggregateOutputType = {
   id: number | null
+  planId: number | null
   date: Date | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -43,6 +46,7 @@ export type PlanDayMinAggregateOutputType = {
 
 export type PlanDayMaxAggregateOutputType = {
   id: number | null
+  planId: number | null
   date: Date | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -50,6 +54,7 @@ export type PlanDayMaxAggregateOutputType = {
 
 export type PlanDayCountAggregateOutputType = {
   id: number
+  planId: number
   date: number
   createdAt: number
   updatedAt: number
@@ -59,14 +64,17 @@ export type PlanDayCountAggregateOutputType = {
 
 export type PlanDayAvgAggregateInputType = {
   id?: true
+  planId?: true
 }
 
 export type PlanDaySumAggregateInputType = {
   id?: true
+  planId?: true
 }
 
 export type PlanDayMinAggregateInputType = {
   id?: true
+  planId?: true
   date?: true
   createdAt?: true
   updatedAt?: true
@@ -74,6 +82,7 @@ export type PlanDayMinAggregateInputType = {
 
 export type PlanDayMaxAggregateInputType = {
   id?: true
+  planId?: true
   date?: true
   createdAt?: true
   updatedAt?: true
@@ -81,6 +90,7 @@ export type PlanDayMaxAggregateInputType = {
 
 export type PlanDayCountAggregateInputType = {
   id?: true
+  planId?: true
   date?: true
   createdAt?: true
   updatedAt?: true
@@ -175,6 +185,7 @@ export type PlanDayGroupByArgs<ExtArgs extends runtime.Types.Extensions.Internal
 
 export type PlanDayGroupByOutputType = {
   id: number
+  planId: number
   date: Date
   createdAt: Date
   updatedAt: Date
@@ -205,9 +216,11 @@ export type PlanDayWhereInput = {
   OR?: Prisma.PlanDayWhereInput[]
   NOT?: Prisma.PlanDayWhereInput | Prisma.PlanDayWhereInput[]
   id?: Prisma.IntFilter<"PlanDay"> | number
+  planId?: Prisma.IntFilter<"PlanDay"> | number
   date?: Prisma.DateTimeFilter<"PlanDay"> | Date | string
   createdAt?: Prisma.DateTimeFilter<"PlanDay"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"PlanDay"> | Date | string
+  plan?: Prisma.XOR<Prisma.PlanScalarRelationFilter, Prisma.PlanWhereInput>
   dinnerDish?: Prisma.XOR<Prisma.DinnerDishNullableScalarRelationFilter, Prisma.DinnerDishWhereInput> | null
   lunchDishes?: Prisma.LunchDishListRelationFilter
   groceryItems?: Prisma.GroceryItemListRelationFilter
@@ -216,9 +229,11 @@ export type PlanDayWhereInput = {
 
 export type PlanDayOrderByWithRelationInput = {
   id?: Prisma.SortOrder
+  planId?: Prisma.SortOrder
   date?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  plan?: Prisma.PlanOrderByWithRelationInput
   dinnerDish?: Prisma.DinnerDishOrderByWithRelationInput
   lunchDishes?: Prisma.LunchDishOrderByRelationAggregateInput
   groceryItems?: Prisma.GroceryItemOrderByRelationAggregateInput
@@ -227,20 +242,24 @@ export type PlanDayOrderByWithRelationInput = {
 
 export type PlanDayWhereUniqueInput = Prisma.AtLeast<{
   id?: number
-  date?: Date | string
+  planId_date?: Prisma.PlanDayPlanIdDateCompoundUniqueInput
   AND?: Prisma.PlanDayWhereInput | Prisma.PlanDayWhereInput[]
   OR?: Prisma.PlanDayWhereInput[]
   NOT?: Prisma.PlanDayWhereInput | Prisma.PlanDayWhereInput[]
+  planId?: Prisma.IntFilter<"PlanDay"> | number
+  date?: Prisma.DateTimeFilter<"PlanDay"> | Date | string
   createdAt?: Prisma.DateTimeFilter<"PlanDay"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"PlanDay"> | Date | string
+  plan?: Prisma.XOR<Prisma.PlanScalarRelationFilter, Prisma.PlanWhereInput>
   dinnerDish?: Prisma.XOR<Prisma.DinnerDishNullableScalarRelationFilter, Prisma.DinnerDishWhereInput> | null
   lunchDishes?: Prisma.LunchDishListRelationFilter
   groceryItems?: Prisma.GroceryItemListRelationFilter
   groceryShareToken?: Prisma.XOR<Prisma.GroceryShareTokenNullableScalarRelationFilter, Prisma.GroceryShareTokenWhereInput> | null
-}, "id" | "date">
+}, "id" | "planId_date">
 
 export type PlanDayOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
+  planId?: Prisma.SortOrder
   date?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -256,6 +275,7 @@ export type PlanDayScalarWhereWithAggregatesInput = {
   OR?: Prisma.PlanDayScalarWhereWithAggregatesInput[]
   NOT?: Prisma.PlanDayScalarWhereWithAggregatesInput | Prisma.PlanDayScalarWhereWithAggregatesInput[]
   id?: Prisma.IntWithAggregatesFilter<"PlanDay"> | number
+  planId?: Prisma.IntWithAggregatesFilter<"PlanDay"> | number
   date?: Prisma.DateTimeWithAggregatesFilter<"PlanDay"> | Date | string
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"PlanDay"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"PlanDay"> | Date | string
@@ -265,6 +285,7 @@ export type PlanDayCreateInput = {
   date: Date | string
   createdAt?: Date | string
   updatedAt?: Date | string
+  plan: Prisma.PlanCreateNestedOneWithoutDaysInput
   dinnerDish?: Prisma.DinnerDishCreateNestedOneWithoutPlanDayInput
   lunchDishes?: Prisma.LunchDishCreateNestedManyWithoutPlanDayInput
   groceryItems?: Prisma.GroceryItemCreateNestedManyWithoutPlanDayInput
@@ -273,6 +294,7 @@ export type PlanDayCreateInput = {
 
 export type PlanDayUncheckedCreateInput = {
   id?: number
+  planId: number
   date: Date | string
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -286,6 +308,7 @@ export type PlanDayUpdateInput = {
   date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  plan?: Prisma.PlanUpdateOneRequiredWithoutDaysNestedInput
   dinnerDish?: Prisma.DinnerDishUpdateOneWithoutPlanDayNestedInput
   lunchDishes?: Prisma.LunchDishUpdateManyWithoutPlanDayNestedInput
   groceryItems?: Prisma.GroceryItemUpdateManyWithoutPlanDayNestedInput
@@ -294,6 +317,7 @@ export type PlanDayUpdateInput = {
 
 export type PlanDayUncheckedUpdateInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
+  planId?: Prisma.IntFieldUpdateOperationsInput | number
   date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -305,6 +329,7 @@ export type PlanDayUncheckedUpdateInput = {
 
 export type PlanDayCreateManyInput = {
   id?: number
+  planId: number
   date: Date | string
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -318,13 +343,30 @@ export type PlanDayUpdateManyMutationInput = {
 
 export type PlanDayUncheckedUpdateManyInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
+  planId?: Prisma.IntFieldUpdateOperationsInput | number
   date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
+export type PlanDayListRelationFilter = {
+  every?: Prisma.PlanDayWhereInput
+  some?: Prisma.PlanDayWhereInput
+  none?: Prisma.PlanDayWhereInput
+}
+
+export type PlanDayOrderByRelationAggregateInput = {
+  _count?: Prisma.SortOrder
+}
+
+export type PlanDayPlanIdDateCompoundUniqueInput = {
+  planId: number
+  date: Date | string
+}
+
 export type PlanDayCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  planId?: Prisma.SortOrder
   date?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -332,10 +374,12 @@ export type PlanDayCountOrderByAggregateInput = {
 
 export type PlanDayAvgOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  planId?: Prisma.SortOrder
 }
 
 export type PlanDayMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  planId?: Prisma.SortOrder
   date?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -343,6 +387,7 @@ export type PlanDayMaxOrderByAggregateInput = {
 
 export type PlanDayMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  planId?: Prisma.SortOrder
   date?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -350,11 +395,54 @@ export type PlanDayMinOrderByAggregateInput = {
 
 export type PlanDaySumOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  planId?: Prisma.SortOrder
 }
 
 export type PlanDayScalarRelationFilter = {
   is?: Prisma.PlanDayWhereInput
   isNot?: Prisma.PlanDayWhereInput
+}
+
+export type PlanDayCreateNestedManyWithoutPlanInput = {
+  create?: Prisma.XOR<Prisma.PlanDayCreateWithoutPlanInput, Prisma.PlanDayUncheckedCreateWithoutPlanInput> | Prisma.PlanDayCreateWithoutPlanInput[] | Prisma.PlanDayUncheckedCreateWithoutPlanInput[]
+  connectOrCreate?: Prisma.PlanDayCreateOrConnectWithoutPlanInput | Prisma.PlanDayCreateOrConnectWithoutPlanInput[]
+  createMany?: Prisma.PlanDayCreateManyPlanInputEnvelope
+  connect?: Prisma.PlanDayWhereUniqueInput | Prisma.PlanDayWhereUniqueInput[]
+}
+
+export type PlanDayUncheckedCreateNestedManyWithoutPlanInput = {
+  create?: Prisma.XOR<Prisma.PlanDayCreateWithoutPlanInput, Prisma.PlanDayUncheckedCreateWithoutPlanInput> | Prisma.PlanDayCreateWithoutPlanInput[] | Prisma.PlanDayUncheckedCreateWithoutPlanInput[]
+  connectOrCreate?: Prisma.PlanDayCreateOrConnectWithoutPlanInput | Prisma.PlanDayCreateOrConnectWithoutPlanInput[]
+  createMany?: Prisma.PlanDayCreateManyPlanInputEnvelope
+  connect?: Prisma.PlanDayWhereUniqueInput | Prisma.PlanDayWhereUniqueInput[]
+}
+
+export type PlanDayUpdateManyWithoutPlanNestedInput = {
+  create?: Prisma.XOR<Prisma.PlanDayCreateWithoutPlanInput, Prisma.PlanDayUncheckedCreateWithoutPlanInput> | Prisma.PlanDayCreateWithoutPlanInput[] | Prisma.PlanDayUncheckedCreateWithoutPlanInput[]
+  connectOrCreate?: Prisma.PlanDayCreateOrConnectWithoutPlanInput | Prisma.PlanDayCreateOrConnectWithoutPlanInput[]
+  upsert?: Prisma.PlanDayUpsertWithWhereUniqueWithoutPlanInput | Prisma.PlanDayUpsertWithWhereUniqueWithoutPlanInput[]
+  createMany?: Prisma.PlanDayCreateManyPlanInputEnvelope
+  set?: Prisma.PlanDayWhereUniqueInput | Prisma.PlanDayWhereUniqueInput[]
+  disconnect?: Prisma.PlanDayWhereUniqueInput | Prisma.PlanDayWhereUniqueInput[]
+  delete?: Prisma.PlanDayWhereUniqueInput | Prisma.PlanDayWhereUniqueInput[]
+  connect?: Prisma.PlanDayWhereUniqueInput | Prisma.PlanDayWhereUniqueInput[]
+  update?: Prisma.PlanDayUpdateWithWhereUniqueWithoutPlanInput | Prisma.PlanDayUpdateWithWhereUniqueWithoutPlanInput[]
+  updateMany?: Prisma.PlanDayUpdateManyWithWhereWithoutPlanInput | Prisma.PlanDayUpdateManyWithWhereWithoutPlanInput[]
+  deleteMany?: Prisma.PlanDayScalarWhereInput | Prisma.PlanDayScalarWhereInput[]
+}
+
+export type PlanDayUncheckedUpdateManyWithoutPlanNestedInput = {
+  create?: Prisma.XOR<Prisma.PlanDayCreateWithoutPlanInput, Prisma.PlanDayUncheckedCreateWithoutPlanInput> | Prisma.PlanDayCreateWithoutPlanInput[] | Prisma.PlanDayUncheckedCreateWithoutPlanInput[]
+  connectOrCreate?: Prisma.PlanDayCreateOrConnectWithoutPlanInput | Prisma.PlanDayCreateOrConnectWithoutPlanInput[]
+  upsert?: Prisma.PlanDayUpsertWithWhereUniqueWithoutPlanInput | Prisma.PlanDayUpsertWithWhereUniqueWithoutPlanInput[]
+  createMany?: Prisma.PlanDayCreateManyPlanInputEnvelope
+  set?: Prisma.PlanDayWhereUniqueInput | Prisma.PlanDayWhereUniqueInput[]
+  disconnect?: Prisma.PlanDayWhereUniqueInput | Prisma.PlanDayWhereUniqueInput[]
+  delete?: Prisma.PlanDayWhereUniqueInput | Prisma.PlanDayWhereUniqueInput[]
+  connect?: Prisma.PlanDayWhereUniqueInput | Prisma.PlanDayWhereUniqueInput[]
+  update?: Prisma.PlanDayUpdateWithWhereUniqueWithoutPlanInput | Prisma.PlanDayUpdateWithWhereUniqueWithoutPlanInput[]
+  updateMany?: Prisma.PlanDayUpdateManyWithWhereWithoutPlanInput | Prisma.PlanDayUpdateManyWithWhereWithoutPlanInput[]
+  deleteMany?: Prisma.PlanDayScalarWhereInput | Prisma.PlanDayScalarWhereInput[]
 }
 
 export type PlanDayCreateNestedOneWithoutGroceryShareTokenInput = {
@@ -413,10 +501,69 @@ export type PlanDayUpdateOneRequiredWithoutGroceryItemsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.PlanDayUpdateToOneWithWhereWithoutGroceryItemsInput, Prisma.PlanDayUpdateWithoutGroceryItemsInput>, Prisma.PlanDayUncheckedUpdateWithoutGroceryItemsInput>
 }
 
+export type PlanDayCreateWithoutPlanInput = {
+  date: Date | string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  dinnerDish?: Prisma.DinnerDishCreateNestedOneWithoutPlanDayInput
+  lunchDishes?: Prisma.LunchDishCreateNestedManyWithoutPlanDayInput
+  groceryItems?: Prisma.GroceryItemCreateNestedManyWithoutPlanDayInput
+  groceryShareToken?: Prisma.GroceryShareTokenCreateNestedOneWithoutPlanDayInput
+}
+
+export type PlanDayUncheckedCreateWithoutPlanInput = {
+  id?: number
+  date: Date | string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  dinnerDish?: Prisma.DinnerDishUncheckedCreateNestedOneWithoutPlanDayInput
+  lunchDishes?: Prisma.LunchDishUncheckedCreateNestedManyWithoutPlanDayInput
+  groceryItems?: Prisma.GroceryItemUncheckedCreateNestedManyWithoutPlanDayInput
+  groceryShareToken?: Prisma.GroceryShareTokenUncheckedCreateNestedOneWithoutPlanDayInput
+}
+
+export type PlanDayCreateOrConnectWithoutPlanInput = {
+  where: Prisma.PlanDayWhereUniqueInput
+  create: Prisma.XOR<Prisma.PlanDayCreateWithoutPlanInput, Prisma.PlanDayUncheckedCreateWithoutPlanInput>
+}
+
+export type PlanDayCreateManyPlanInputEnvelope = {
+  data: Prisma.PlanDayCreateManyPlanInput | Prisma.PlanDayCreateManyPlanInput[]
+  skipDuplicates?: boolean
+}
+
+export type PlanDayUpsertWithWhereUniqueWithoutPlanInput = {
+  where: Prisma.PlanDayWhereUniqueInput
+  update: Prisma.XOR<Prisma.PlanDayUpdateWithoutPlanInput, Prisma.PlanDayUncheckedUpdateWithoutPlanInput>
+  create: Prisma.XOR<Prisma.PlanDayCreateWithoutPlanInput, Prisma.PlanDayUncheckedCreateWithoutPlanInput>
+}
+
+export type PlanDayUpdateWithWhereUniqueWithoutPlanInput = {
+  where: Prisma.PlanDayWhereUniqueInput
+  data: Prisma.XOR<Prisma.PlanDayUpdateWithoutPlanInput, Prisma.PlanDayUncheckedUpdateWithoutPlanInput>
+}
+
+export type PlanDayUpdateManyWithWhereWithoutPlanInput = {
+  where: Prisma.PlanDayScalarWhereInput
+  data: Prisma.XOR<Prisma.PlanDayUpdateManyMutationInput, Prisma.PlanDayUncheckedUpdateManyWithoutPlanInput>
+}
+
+export type PlanDayScalarWhereInput = {
+  AND?: Prisma.PlanDayScalarWhereInput | Prisma.PlanDayScalarWhereInput[]
+  OR?: Prisma.PlanDayScalarWhereInput[]
+  NOT?: Prisma.PlanDayScalarWhereInput | Prisma.PlanDayScalarWhereInput[]
+  id?: Prisma.IntFilter<"PlanDay"> | number
+  planId?: Prisma.IntFilter<"PlanDay"> | number
+  date?: Prisma.DateTimeFilter<"PlanDay"> | Date | string
+  createdAt?: Prisma.DateTimeFilter<"PlanDay"> | Date | string
+  updatedAt?: Prisma.DateTimeFilter<"PlanDay"> | Date | string
+}
+
 export type PlanDayCreateWithoutGroceryShareTokenInput = {
   date: Date | string
   createdAt?: Date | string
   updatedAt?: Date | string
+  plan: Prisma.PlanCreateNestedOneWithoutDaysInput
   dinnerDish?: Prisma.DinnerDishCreateNestedOneWithoutPlanDayInput
   lunchDishes?: Prisma.LunchDishCreateNestedManyWithoutPlanDayInput
   groceryItems?: Prisma.GroceryItemCreateNestedManyWithoutPlanDayInput
@@ -424,6 +571,7 @@ export type PlanDayCreateWithoutGroceryShareTokenInput = {
 
 export type PlanDayUncheckedCreateWithoutGroceryShareTokenInput = {
   id?: number
+  planId: number
   date: Date | string
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -452,6 +600,7 @@ export type PlanDayUpdateWithoutGroceryShareTokenInput = {
   date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  plan?: Prisma.PlanUpdateOneRequiredWithoutDaysNestedInput
   dinnerDish?: Prisma.DinnerDishUpdateOneWithoutPlanDayNestedInput
   lunchDishes?: Prisma.LunchDishUpdateManyWithoutPlanDayNestedInput
   groceryItems?: Prisma.GroceryItemUpdateManyWithoutPlanDayNestedInput
@@ -459,6 +608,7 @@ export type PlanDayUpdateWithoutGroceryShareTokenInput = {
 
 export type PlanDayUncheckedUpdateWithoutGroceryShareTokenInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
+  planId?: Prisma.IntFieldUpdateOperationsInput | number
   date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -471,6 +621,7 @@ export type PlanDayCreateWithoutDinnerDishInput = {
   date: Date | string
   createdAt?: Date | string
   updatedAt?: Date | string
+  plan: Prisma.PlanCreateNestedOneWithoutDaysInput
   lunchDishes?: Prisma.LunchDishCreateNestedManyWithoutPlanDayInput
   groceryItems?: Prisma.GroceryItemCreateNestedManyWithoutPlanDayInput
   groceryShareToken?: Prisma.GroceryShareTokenCreateNestedOneWithoutPlanDayInput
@@ -478,6 +629,7 @@ export type PlanDayCreateWithoutDinnerDishInput = {
 
 export type PlanDayUncheckedCreateWithoutDinnerDishInput = {
   id?: number
+  planId: number
   date: Date | string
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -506,6 +658,7 @@ export type PlanDayUpdateWithoutDinnerDishInput = {
   date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  plan?: Prisma.PlanUpdateOneRequiredWithoutDaysNestedInput
   lunchDishes?: Prisma.LunchDishUpdateManyWithoutPlanDayNestedInput
   groceryItems?: Prisma.GroceryItemUpdateManyWithoutPlanDayNestedInput
   groceryShareToken?: Prisma.GroceryShareTokenUpdateOneWithoutPlanDayNestedInput
@@ -513,6 +666,7 @@ export type PlanDayUpdateWithoutDinnerDishInput = {
 
 export type PlanDayUncheckedUpdateWithoutDinnerDishInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
+  planId?: Prisma.IntFieldUpdateOperationsInput | number
   date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -525,6 +679,7 @@ export type PlanDayCreateWithoutLunchDishesInput = {
   date: Date | string
   createdAt?: Date | string
   updatedAt?: Date | string
+  plan: Prisma.PlanCreateNestedOneWithoutDaysInput
   dinnerDish?: Prisma.DinnerDishCreateNestedOneWithoutPlanDayInput
   groceryItems?: Prisma.GroceryItemCreateNestedManyWithoutPlanDayInput
   groceryShareToken?: Prisma.GroceryShareTokenCreateNestedOneWithoutPlanDayInput
@@ -532,6 +687,7 @@ export type PlanDayCreateWithoutLunchDishesInput = {
 
 export type PlanDayUncheckedCreateWithoutLunchDishesInput = {
   id?: number
+  planId: number
   date: Date | string
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -560,6 +716,7 @@ export type PlanDayUpdateWithoutLunchDishesInput = {
   date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  plan?: Prisma.PlanUpdateOneRequiredWithoutDaysNestedInput
   dinnerDish?: Prisma.DinnerDishUpdateOneWithoutPlanDayNestedInput
   groceryItems?: Prisma.GroceryItemUpdateManyWithoutPlanDayNestedInput
   groceryShareToken?: Prisma.GroceryShareTokenUpdateOneWithoutPlanDayNestedInput
@@ -567,6 +724,7 @@ export type PlanDayUpdateWithoutLunchDishesInput = {
 
 export type PlanDayUncheckedUpdateWithoutLunchDishesInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
+  planId?: Prisma.IntFieldUpdateOperationsInput | number
   date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -579,6 +737,7 @@ export type PlanDayCreateWithoutGroceryItemsInput = {
   date: Date | string
   createdAt?: Date | string
   updatedAt?: Date | string
+  plan: Prisma.PlanCreateNestedOneWithoutDaysInput
   dinnerDish?: Prisma.DinnerDishCreateNestedOneWithoutPlanDayInput
   lunchDishes?: Prisma.LunchDishCreateNestedManyWithoutPlanDayInput
   groceryShareToken?: Prisma.GroceryShareTokenCreateNestedOneWithoutPlanDayInput
@@ -586,6 +745,7 @@ export type PlanDayCreateWithoutGroceryItemsInput = {
 
 export type PlanDayUncheckedCreateWithoutGroceryItemsInput = {
   id?: number
+  planId: number
   date: Date | string
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -614,6 +774,7 @@ export type PlanDayUpdateWithoutGroceryItemsInput = {
   date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  plan?: Prisma.PlanUpdateOneRequiredWithoutDaysNestedInput
   dinnerDish?: Prisma.DinnerDishUpdateOneWithoutPlanDayNestedInput
   lunchDishes?: Prisma.LunchDishUpdateManyWithoutPlanDayNestedInput
   groceryShareToken?: Prisma.GroceryShareTokenUpdateOneWithoutPlanDayNestedInput
@@ -621,12 +782,48 @@ export type PlanDayUpdateWithoutGroceryItemsInput = {
 
 export type PlanDayUncheckedUpdateWithoutGroceryItemsInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
+  planId?: Prisma.IntFieldUpdateOperationsInput | number
   date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   dinnerDish?: Prisma.DinnerDishUncheckedUpdateOneWithoutPlanDayNestedInput
   lunchDishes?: Prisma.LunchDishUncheckedUpdateManyWithoutPlanDayNestedInput
   groceryShareToken?: Prisma.GroceryShareTokenUncheckedUpdateOneWithoutPlanDayNestedInput
+}
+
+export type PlanDayCreateManyPlanInput = {
+  id?: number
+  date: Date | string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+}
+
+export type PlanDayUpdateWithoutPlanInput = {
+  date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  dinnerDish?: Prisma.DinnerDishUpdateOneWithoutPlanDayNestedInput
+  lunchDishes?: Prisma.LunchDishUpdateManyWithoutPlanDayNestedInput
+  groceryItems?: Prisma.GroceryItemUpdateManyWithoutPlanDayNestedInput
+  groceryShareToken?: Prisma.GroceryShareTokenUpdateOneWithoutPlanDayNestedInput
+}
+
+export type PlanDayUncheckedUpdateWithoutPlanInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number
+  date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  dinnerDish?: Prisma.DinnerDishUncheckedUpdateOneWithoutPlanDayNestedInput
+  lunchDishes?: Prisma.LunchDishUncheckedUpdateManyWithoutPlanDayNestedInput
+  groceryItems?: Prisma.GroceryItemUncheckedUpdateManyWithoutPlanDayNestedInput
+  groceryShareToken?: Prisma.GroceryShareTokenUncheckedUpdateOneWithoutPlanDayNestedInput
+}
+
+export type PlanDayUncheckedUpdateManyWithoutPlanInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number
+  date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 
@@ -671,9 +868,11 @@ export type PlanDayCountOutputTypeCountGroceryItemsArgs<ExtArgs extends runtime.
 
 export type PlanDaySelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
+  planId?: boolean
   date?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  plan?: boolean | Prisma.PlanDefaultArgs<ExtArgs>
   dinnerDish?: boolean | Prisma.PlanDay$dinnerDishArgs<ExtArgs>
   lunchDishes?: boolean | Prisma.PlanDay$lunchDishesArgs<ExtArgs>
   groceryItems?: boolean | Prisma.PlanDay$groceryItemsArgs<ExtArgs>
@@ -683,39 +882,50 @@ export type PlanDaySelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
 
 export type PlanDaySelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
+  planId?: boolean
   date?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  plan?: boolean | Prisma.PlanDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["planDay"]>
 
 export type PlanDaySelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
+  planId?: boolean
   date?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  plan?: boolean | Prisma.PlanDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["planDay"]>
 
 export type PlanDaySelectScalar = {
   id?: boolean
+  planId?: boolean
   date?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type PlanDayOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "date" | "createdAt" | "updatedAt", ExtArgs["result"]["planDay"]>
+export type PlanDayOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "planId" | "date" | "createdAt" | "updatedAt", ExtArgs["result"]["planDay"]>
 export type PlanDayInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  plan?: boolean | Prisma.PlanDefaultArgs<ExtArgs>
   dinnerDish?: boolean | Prisma.PlanDay$dinnerDishArgs<ExtArgs>
   lunchDishes?: boolean | Prisma.PlanDay$lunchDishesArgs<ExtArgs>
   groceryItems?: boolean | Prisma.PlanDay$groceryItemsArgs<ExtArgs>
   groceryShareToken?: boolean | Prisma.PlanDay$groceryShareTokenArgs<ExtArgs>
   _count?: boolean | Prisma.PlanDayCountOutputTypeDefaultArgs<ExtArgs>
 }
-export type PlanDayIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
-export type PlanDayIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
+export type PlanDayIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  plan?: boolean | Prisma.PlanDefaultArgs<ExtArgs>
+}
+export type PlanDayIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  plan?: boolean | Prisma.PlanDefaultArgs<ExtArgs>
+}
 
 export type $PlanDayPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "PlanDay"
   objects: {
+    plan: Prisma.$PlanPayload<ExtArgs>
     dinnerDish: Prisma.$DinnerDishPayload<ExtArgs> | null
     lunchDishes: Prisma.$LunchDishPayload<ExtArgs>[]
     groceryItems: Prisma.$GroceryItemPayload<ExtArgs>[]
@@ -723,6 +933,7 @@ export type $PlanDayPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: number
+    planId: number
     date: Date
     createdAt: Date
     updatedAt: Date
@@ -1120,6 +1331,7 @@ readonly fields: PlanDayFieldRefs;
  */
 export interface Prisma__PlanDayClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
+  plan<T extends Prisma.PlanDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.PlanDefaultArgs<ExtArgs>>): Prisma.Prisma__PlanClient<runtime.Types.Result.GetResult<Prisma.$PlanPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   dinnerDish<T extends Prisma.PlanDay$dinnerDishArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.PlanDay$dinnerDishArgs<ExtArgs>>): Prisma.Prisma__DinnerDishClient<runtime.Types.Result.GetResult<Prisma.$DinnerDishPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   lunchDishes<T extends Prisma.PlanDay$lunchDishesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.PlanDay$lunchDishesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$LunchDishPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   groceryItems<T extends Prisma.PlanDay$groceryItemsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.PlanDay$groceryItemsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$GroceryItemPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
@@ -1154,6 +1366,7 @@ export interface Prisma__PlanDayClient<T, Null = never, ExtArgs extends runtime.
  */
 export interface PlanDayFieldRefs {
   readonly id: Prisma.FieldRef<"PlanDay", 'Int'>
+  readonly planId: Prisma.FieldRef<"PlanDay", 'Int'>
   readonly date: Prisma.FieldRef<"PlanDay", 'DateTime'>
   readonly createdAt: Prisma.FieldRef<"PlanDay", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"PlanDay", 'DateTime'>
@@ -1406,6 +1619,10 @@ export type PlanDayCreateManyAndReturnArgs<ExtArgs extends runtime.Types.Extensi
    */
   data: Prisma.PlanDayCreateManyInput | Prisma.PlanDayCreateManyInput[]
   skipDuplicates?: boolean
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.PlanDayIncludeCreateManyAndReturn<ExtArgs> | null
 }
 
 /**
@@ -1476,6 +1693,10 @@ export type PlanDayUpdateManyAndReturnArgs<ExtArgs extends runtime.Types.Extensi
    * Limit how many PlanDays to update.
    */
   limit?: number
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.PlanDayIncludeUpdateManyAndReturn<ExtArgs> | null
 }
 
 /**
