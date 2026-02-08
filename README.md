@@ -9,6 +9,7 @@ Family Food Planner is a weekly meal-planning app for families. Admins create pl
 - **Members management**: create, edit, list, and archive family members.
 - **Weekly plans**: define week ranges and build day-by-day meal plans (dinner + repeatable lunch rows).
 - **Plan creation API**: admins can create a plan in one call using either explicit dates or weekday boundaries anchored to a specific date, with automatic `PlanDay` generation.
+- **Plan browsing APIs + UI**: admins can list plans sorted by latest start date and open a plan detail view with nested day cards (dinner + lunches) for in-place calendar editing.
 - **Shared plan date utilities**: backend routes now reuse a common plan service for ISO day-key parsing, date range generation, transactional plan/day creation, and typed error mapping for stable HTTP responses.
 - **Plan-scoped plan days**: day entries are now scoped to a `Plan`, and legacy rows are migrated into a default `Legacy Plan` during database migration/seed.
 - **Grocery sharing**: generate tokenized public grocery links so non-admin shoppers can check off items.
@@ -68,6 +69,8 @@ Family Food Planner is a weekly meal-planning app for families. Admins create pl
 ### Weekly Plans / Meals
 - Plan and meal endpoints under `/api/plans/...` handle week creation, day meal entries, lunch rows, and dinner updates.
 - `POST /api/plans` — create a plan and all plan-day rows for a validated date range (admin-auth required).
+- `GET /api/plans` — list plans ordered by newest `startDate` first for plan selection cards.
+- `GET /api/plans/:planId` — fetch one plan with nested `planDays`, `dinnerDish`, and `lunchDishes` for calendar/day-card rendering.
 
 ### Grocery Lists
 - Admin grocery routes under `/api/plans/:id/grocery-list...` support create/update/delete and share-link management.

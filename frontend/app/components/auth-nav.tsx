@@ -36,6 +36,9 @@ export default function AuthNav({ isAuthenticated }: AuthNavProps) {
 
   return (
     <nav className="flex items-center gap-4 text-sm text-slate-600">
+      <Link className="hover:text-slate-900" href="/plan">
+        Plans
+      </Link>
       <Link className="hover:text-slate-900" href="/members">
         Members
       </Link>

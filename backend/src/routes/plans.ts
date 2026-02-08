@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { prisma } from "../lib/prisma";
 import { requireAdminAuth } from "../middleware/auth";
 import {
   PlanConflictError,
@@ -32,6 +33,9 @@ const parseDateKey = (rawValue: unknown): Date | null => {
 };
 
 const formatDateKey = (date: Date) => date.toISOString().slice(0, 10);
+
+const formatOptionalDateKey = (date: Date | null | undefined) =>
+  date ? formatDateKey(date) : null;
 
 const addDays = (date: Date, daysToAdd: number): Date => {
   const nextDate = new Date(date);
@@ -178,6 +182,112 @@ plansRouter.post("/api/plans", async (request, response) => {
 
     throw error;
   }
+});
+
+plansRouter.get("/api/plans", async (_request, response) => {
+  const plans = await prisma.plan.findMany({
+    orderBy: [{ startDate: "desc" }, { createdAt: "desc" }],
+    select: {
+      id: true,
+      name: true,
+      startDate: true,
+      endDate: true,
+      _count: {
+        select: {
+          days: true
+        }
+      }
+    }
+  });
+
+  response.status(200).json({
+    plans: plans.map((plan) => ({
+      id: plan.id,
+      name: plan.name,
+      startDate: formatOptionalDateKey(plan.startDate),
+      endDate: formatOptionalDateKey(plan.endDate),
+      daysCount: plan._count.days
+    }))
+  });
+});
+
+plansRouter.get("/api/plans/:planId", async (request, response) => {
+  const planId = Number(request.params.planId);
+
+  if (Number.isNaN(planId)) {
+    response.status(400).json({ message: "Invalid plan id." });
+    return;
+  }
+
+  const plan = await prisma.plan.findUnique({
+    where: { id: planId },
+    select: {
+      id: true,
+      name: true,
+      startDate: true,
+      endDate: true,
+      days: {
+        orderBy: { date: "asc" },
+        select: {
+          id: true,
+          date: true,
+          dinnerDish: {
+            select: {
+              id: true,
+              name: true,
+              notes: true
+            }
+          },
+          lunchDishes: {
+            orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+            select: {
+              id: true,
+              name: true,
+              notes: true,
+              familyMemberId: true,
+              familyMember: {
+                select: {
+                  id: true,
+                  name: true
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  });
+
+  if (!plan) {
+    response.status(404).json({ message: "Plan not found." });
+    return;
+  }
+
+  response.status(200).json({
+    plan: {
+      id: plan.id,
+      name: plan.name,
+      startDate: formatOptionalDateKey(plan.startDate),
+      endDate: formatOptionalDateKey(plan.endDate),
+      planDays: plan.days.map((day) => ({
+        id: day.id,
+        date: formatDateKey(day.date),
+        dinnerDish: day.dinnerDish,
+        lunchDishes: day.lunchDishes.map((lunchDish) => ({
+          id: lunchDish.id,
+          name: lunchDish.name,
+          notes: lunchDish.notes,
+          familyMemberId: lunchDish.familyMemberId,
+          familyMember: lunchDish.familyMember
+            ? {
+                id: lunchDish.familyMember.id,
+                name: lunchDish.familyMember.name
+              }
+            : null
+        }))
+      }))
+    }
+  });
 });
 
 export default plansRouter;
