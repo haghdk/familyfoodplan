@@ -1,4 +1,4 @@
-import { GroceryCategory } from "@prisma/client";
+import { GroceryCategory } from "../generated/prisma/enums";
 import { prisma } from "../lib/prisma";
 
 export type MergedGroceryItem = {

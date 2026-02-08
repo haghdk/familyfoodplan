@@ -1,8 +1,16 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
+import { PrismaClient } from "../src/generated/prisma/client";
+import { Pool } from "pg";
 
 import { hashPassword } from "../src/auth/password";
 
-const prisma = new PrismaClient();
+const adapter = new PrismaPg(
+  new Pool({
+    connectionString: process.env.DATABASE_URL
+  })
+);
+
+const prisma = new PrismaClient({ adapter });
 
 const adminEmail = process.env.ADMIN_EMAIL;
 const adminPassword = process.env.ADMIN_PASSWORD;
