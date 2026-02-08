@@ -5,6 +5,7 @@ Family Food Planner is a weekly meal-planning app for families. Admins create pl
 ## Implemented Features
 
 - **Admin login**: secure admin authentication with session-based access to protected pages.
+- **Initial admin bootstrap**: Docker setup now seeds a default admin user automatically on first startup.
 - **Members management**: create, edit, list, and archive family members.
 - **Weekly plans**: define week ranges and build day-by-day meal plans (dinner + repeatable lunch rows).
 - **Grocery sharing**: generate tokenized public grocery links so non-admin shoppers can check off items.
@@ -134,6 +135,8 @@ Start all services:
 ```bash
 docker compose up --build
 ```
+
+On backend startup, Prisma migrations are applied and the admin seed runs automatically. Configure credentials with `ADMIN_EMAIL` and `ADMIN_PASSWORD` in your shell or `.env` before running compose (defaults are provided for local development).
 
 Stop services:
 
