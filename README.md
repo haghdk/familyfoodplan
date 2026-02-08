@@ -100,6 +100,7 @@ cp backend/.env.example backend/.env
   - `DATABASE_URL`
   - `PORT`
   - `AUTH_JWT_SECRET`
+  - `FRONTEND_ORIGIN` (allowed browser origin for CORS, default `http://localhost:3000`)
   - `ADMIN_EMAIL`
   - `ADMIN_PASSWORD`
 

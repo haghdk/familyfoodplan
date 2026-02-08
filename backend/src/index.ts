@@ -8,6 +8,21 @@ import realtimeRouter from "./realtime/router";
 
 const app = express();
 const port = Number(process.env.PORT) || 3001;
+const frontendOrigin = process.env.FRONTEND_ORIGIN || "http://localhost:3000";
+
+app.use((request, response, next) => {
+  response.header("Access-Control-Allow-Origin", frontendOrigin);
+  response.header("Access-Control-Allow-Credentials", "true");
+  response.header("Access-Control-Allow-Methods", "GET,POST,PATCH,DELETE,OPTIONS");
+  response.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+
+  if (request.method === "OPTIONS") {
+    response.sendStatus(204);
+    return;
+  }
+
+  next();
+});
 
 app.use(express.json());
 app.use(healthRouter);
