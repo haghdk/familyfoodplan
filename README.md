@@ -12,6 +12,7 @@ Family Food Planner is a weekly meal-planning app for families. Admins create pl
 - **Plan browsing APIs + UI**: admins can list plans sorted by latest start date and open a plan detail view with nested day cards (dinner + lunches) for in-place calendar editing.
 - **Shared plan date utilities**: backend routes now reuse a common plan service for ISO day-key parsing, date range generation, transactional plan/day creation, and typed error mapping for stable HTTP responses.
 - **Plan-scoped plan days**: day entries are now scoped to a `Plan`, and legacy rows are migrated into a default `Legacy Plan` during database migration/seed.
+- **Plan-scoped day editing routes**: dinner and lunch write endpoints now require both `planId` and `dayKey` (`/api/plans/:planId/days/:dayKey/...`) so updates are validated against the selected plan before persisting.
 - **Grocery sharing**: generate tokenized public grocery links so non-admin shoppers can check off items.
 - **Realtime grocery updates**: grocery item check/uncheck and edits are synchronized live across admin and shared views.
 

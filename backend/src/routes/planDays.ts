@@ -7,36 +7,25 @@ const planDaysRouter = Router();
 
 planDaysRouter.use(requireAdminAuth);
 
-const DEFAULT_PLAN_NAME = "Legacy Plan";
-
-
-const getDefaultPlan = async () =>
-  prisma.plan.upsert({
-    where: { name: DEFAULT_PLAN_NAME },
-    update: {},
-    create: { name: DEFAULT_PLAN_NAME }
-  });
-
-const findOrCreatePlanDay = async (dayDate: Date) => {
-  const plan = await getDefaultPlan();
-
-  return prisma.planDay.upsert({
+const findPlanDayForPlan = async (planId: number, dayDate: Date) =>
+  prisma.planDay.findUnique({
     where: {
       planId_date: {
-        planId: plan.id,
+        planId,
         date: dayDate
       }
     },
-    update: {},
-    create: {
-      planId: plan.id,
-      date: dayDate
-    }
+    select: { id: true }
   });
-};
 
-planDaysRouter.put("/api/plan-days/:dayKey/dinner", async (request, response) => {
+planDaysRouter.put("/api/plans/:planId/days/:dayKey/dinner", async (request, response) => {
+  const planId = Number(request.params.planId);
   const dayDate = parseIsoDayKey(request.params.dayKey);
+
+  if (Number.isNaN(planId)) {
+    response.status(400).json({ message: "Invalid plan id." });
+    return;
+  }
 
   if (!dayDate) {
     response.status(400).json({ message: "Invalid day key. Expected YYYY-MM-DD." });
@@ -51,7 +40,12 @@ planDaysRouter.put("/api/plan-days/:dayKey/dinner", async (request, response) =>
     return;
   }
 
-  const planDay = await findOrCreatePlanDay(dayDate);
+  const planDay = await findPlanDayForPlan(planId, dayDate);
+
+  if (!planDay) {
+    response.status(404).json({ message: "Plan day not found for this plan." });
+    return;
+  }
 
   const dinnerDish = await prisma.dinnerDish.upsert({
     where: { planDayId: planDay.id },
@@ -69,8 +63,14 @@ planDaysRouter.put("/api/plan-days/:dayKey/dinner", async (request, response) =>
   response.status(200).json({ dinnerDish });
 });
 
-planDaysRouter.post("/api/plan-days/:dayKey/lunches", async (request, response) => {
+planDaysRouter.post("/api/plans/:planId/days/:dayKey/lunches", async (request, response) => {
+  const planId = Number(request.params.planId);
   const dayDate = parseIsoDayKey(request.params.dayKey);
+
+  if (Number.isNaN(planId)) {
+    response.status(400).json({ message: "Invalid plan id." });
+    return;
+  }
 
   if (!dayDate) {
     response.status(400).json({ message: "Invalid day key. Expected YYYY-MM-DD." });
@@ -101,7 +101,12 @@ planDaysRouter.post("/api/plan-days/:dayKey/lunches", async (request, response) 
     }
   }
 
-  const planDay = await findOrCreatePlanDay(dayDate);
+  const planDay = await findPlanDayForPlan(planId, dayDate);
+
+  if (!planDay) {
+    response.status(404).json({ message: "Plan day not found for this plan." });
+    return;
+  }
 
   const lunchDish = await prisma.lunchDish.create({
     data: {
@@ -116,10 +121,16 @@ planDaysRouter.post("/api/plan-days/:dayKey/lunches", async (request, response) 
 });
 
 planDaysRouter.put(
-  "/api/plan-days/:dayKey/lunches/:lunchId",
+  "/api/plans/:planId/days/:dayKey/lunches/:lunchId",
   async (request, response) => {
+    const planId = Number(request.params.planId);
     const dayDate = parseIsoDayKey(request.params.dayKey);
     const lunchId = Number(request.params.lunchId);
+
+    if (Number.isNaN(planId)) {
+      response.status(400).json({ message: "Invalid plan id." });
+      return;
+    }
 
     if (!dayDate) {
       response.status(400).json({ message: "Invalid day key. Expected YYYY-MM-DD." });
@@ -155,8 +166,14 @@ planDaysRouter.put(
       }
     }
 
-    const existingLunch = await prisma.lunchDish.findUnique({
-      where: { id: lunchId },
+    const existingLunch = await prisma.lunchDish.findFirst({
+      where: {
+        id: lunchId,
+        planDay: {
+          planId,
+          date: dayDate
+        }
+      },
       include: {
         planDay: {
           select: { date: true }
@@ -183,10 +200,16 @@ planDaysRouter.put(
 );
 
 planDaysRouter.delete(
-  "/api/plan-days/:dayKey/lunches/:lunchId",
+  "/api/plans/:planId/days/:dayKey/lunches/:lunchId",
   async (request, response) => {
+    const planId = Number(request.params.planId);
     const dayDate = parseIsoDayKey(request.params.dayKey);
     const lunchId = Number(request.params.lunchId);
+
+    if (Number.isNaN(planId)) {
+      response.status(400).json({ message: "Invalid plan id." });
+      return;
+    }
 
     if (!dayDate) {
       response.status(400).json({ message: "Invalid day key. Expected YYYY-MM-DD." });
@@ -198,8 +221,14 @@ planDaysRouter.delete(
       return;
     }
 
-    const existingLunch = await prisma.lunchDish.findUnique({
-      where: { id: lunchId },
+    const existingLunch = await prisma.lunchDish.findFirst({
+      where: {
+        id: lunchId,
+        planDay: {
+          planId,
+          date: dayDate
+        }
+      },
       include: {
         planDay: {
           select: { date: true }

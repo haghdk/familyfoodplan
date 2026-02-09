@@ -111,6 +111,7 @@ export default async function PlanPage({
       <div className="grid gap-4 md:grid-cols-2">
         {plan.planDays.map((planDay) => (
           <PlanDayCard
+            planId={plan.id}
             dayKey={planDay.date}
             dayLabel={formatDayLabel(planDay.date)}
             initialDinner={planDay.dinnerDish}
