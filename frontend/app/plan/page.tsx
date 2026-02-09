@@ -50,11 +50,19 @@ export default async function PlansPage() {
 
   return (
     <section className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-semibold text-slate-900">Plans</h1>
-        <p className="mt-2 text-sm text-slate-600">
-          Select a weekly plan to edit meals or open related grocery views.
-        </p>
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-semibold text-slate-900">Plans</h1>
+          <p className="mt-2 text-sm text-slate-600">
+            Select a weekly plan to edit meals or open related grocery views.
+          </p>
+        </div>
+        <Link
+          className="rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
+          href="/plan/new"
+        >
+          Create new plan
+        </Link>
       </div>
 
       {plans.length === 0 ? (
