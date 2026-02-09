@@ -33,6 +33,7 @@ type LunchRow = {
 };
 
 type PlanDayCardProps = {
+  planId: number;
   dayLabel: string;
   dayKey: string;
   initialDinner?: DinnerDish | null;
@@ -50,6 +51,7 @@ const createLocalLunchRow = (lunch?: LunchDish): LunchRow => ({
 });
 
 export default function PlanDayCard({
+  planId,
   dayLabel,
   dayKey,
   initialDinner,
@@ -103,7 +105,7 @@ export default function PlanDayCard({
     setFeedback(null);
 
     try {
-      const response = await fetch(`${backendApiUrl}/api/plan-days/${dayKey}/dinner`, {
+      const response = await fetch(`${backendApiUrl}/api/plans/${planId}/days/${dayKey}/dinner`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -152,8 +154,8 @@ export default function PlanDayCard({
     setFeedback(null);
 
     const endpoint = row.id
-      ? `${backendApiUrl}/api/plan-days/${dayKey}/lunches/${row.id}`
-      : `${backendApiUrl}/api/plan-days/${dayKey}/lunches`;
+      ? `${backendApiUrl}/api/plans/${planId}/days/${dayKey}/lunches/${row.id}`
+      : `${backendApiUrl}/api/plans/${planId}/days/${dayKey}/lunches`;
     const method = row.id ? "PUT" : "POST";
 
     try {
@@ -208,7 +210,7 @@ export default function PlanDayCard({
 
     try {
       const response = await fetch(
-        `${backendApiUrl}/api/plan-days/${dayKey}/lunches/${row.id}`,
+        `${backendApiUrl}/api/plans/${planId}/days/${dayKey}/lunches/${row.id}`,
         {
           method: "DELETE",
           credentials: "include"
