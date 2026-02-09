@@ -22,12 +22,12 @@ export default function HomePage() {
           >
             Get started
           </Link>
-          <button
+          <a
             className="rounded-full border border-slate-300 px-5 py-2 text-sm font-semibold text-slate-700 hover:border-slate-400"
-            type="button"
+            href="/plan/new"
           >
-            View sample plan
-          </button>
+            Create a plan
+          </a>
         </div>
       </div>
 
