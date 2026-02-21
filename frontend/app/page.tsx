@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { adminSessionCookieName, backendApiUrl } from "../lib/auth";
+import CurrentPlanTable from "../components/plan/CurrentPlanTable";
 
 type PlanListItem = {
   id: number;
@@ -42,9 +43,9 @@ type PlanDetailResponse = {
 
 type CurrentPlanTableRow = {
   id: number;
-  dayLabel: string;
-  lunchLabel: string;
-  dinnerLabel: string;
+  date: string;
+  lunches: string[];
+  dinner: string;
 };
 
 const formatDateRange = (startDate: string | null, endDate: string | null) => {
@@ -184,12 +185,9 @@ const buildCurrentPlanTableRows = (
     .sort((a, b) => a.date.localeCompare(b.date))
     .map((planDay) => ({
       id: planDay.id,
-      dayLabel: formatDayLabel(planDay.date),
-      lunchLabel:
-        planDay.lunchDishes.length > 0
-          ? planDay.lunchDishes.map((lunchDish) => lunchDish.name).join(", ")
-          : "No lunch set",
-      dinnerLabel: planDay.dinnerDish?.name ?? "No dinner set"
+      date: formatDayLabel(planDay.date),
+      lunches: planDay.lunchDishes.map((lunchDish) => lunchDish.name),
+      dinner: planDay.dinnerDish?.name ?? "No dinner set"
     }));
 };
 
@@ -254,32 +252,11 @@ export default async function HomePage() {
         </div>
 
         {currentPlan ? (
-          <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200">
-            <table className="min-w-full divide-y divide-slate-200 text-left text-sm">
-              <thead className="bg-slate-50 text-slate-700">
-                <tr>
-                  <th className="px-4 py-3 font-semibold">Day</th>
-                  <th className="px-4 py-3 font-semibold">Lunch</th>
-                  <th className="px-4 py-3 font-semibold">Dinner</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200 bg-white text-slate-600">
-                {currentPlanRows.length === 0 ? (
-                  <tr>
-                    <td className="px-4 py-3 text-slate-500" colSpan={3}>
-                      Could not load meals for the selected plan.
-                    </td>
-                  </tr>
-                ) : currentPlanRows.map((row) => (
-                  <tr key={row.id}>
-                    <td className="px-4 py-3 font-medium text-slate-900">{row.dayLabel}</td>
-                    <td className="px-4 py-3">{row.lunchLabel}</td>
-                    <td className="px-4 py-3">{row.dinnerLabel}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <CurrentPlanTable
+            dayRows={currentPlanRows}
+            planName={currentPlan.name}
+            dateRange={formatDateRange(currentPlan.startDate, currentPlan.endDate)}
+          />
         ) : null}
         {currentPlan ? (
           <div className="mt-4 flex flex-wrap gap-2">
