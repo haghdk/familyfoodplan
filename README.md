@@ -10,6 +10,7 @@ Family Food Planner is a weekly meal-planning app for families. Admins create pl
 - **Weekly plans**: define week ranges and build day-by-day meal plans (dinner + repeatable lunch rows).
 - **Plan creation API**: admins can create a plan in one call using either explicit dates or weekday boundaries anchored to a specific date, with automatic `PlanDay` generation.
 - **Plan browsing APIs + UI**: admins can list plans sorted by latest start date and open a plan detail view with nested day cards (dinner + lunches) for in-place calendar editing.
+- **Homepage plan snapshot**: the home page now loads authenticated plan data to highlight the current plan and show compact links for recent plans from the last 4 weeks.
 - **Plan creation UI**: admins can create a new plan directly from the Plans screen by choosing a name and date range, then jump straight into editing.
 - **Shared plan date utilities**: backend routes now reuse a common plan service for ISO day-key parsing, date range generation, transactional plan/day creation, and typed error mapping for stable HTTP responses.
 - **Plan-scoped plan days**: day entries are now scoped to a `Plan`, and legacy rows are migrated into a default `Legacy Plan` during database migration/seed.

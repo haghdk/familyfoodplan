@@ -1,66 +1,264 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
+import { adminSessionCookieName, backendApiUrl } from "../lib/auth";
 
-export default function HomePage() {
+type PlanListItem = {
+  id: number;
+  name: string;
+  startDate: string | null;
+  endDate: string | null;
+  daysCount: number;
+};
+
+const formatDateRange = (startDate: string | null, endDate: string | null) => {
+  if (!startDate && !endDate) {
+    return "Dates not set";
+  }
+
+  if (startDate && endDate) {
+    return `${startDate} → ${endDate}`;
+  }
+
+  return startDate ?? endDate ?? "Dates not set";
+};
+
+const asDate = (value: string | null) => {
+  if (!value) {
+    return null;
+  }
+
+  const parsedDate = new Date(value);
+  return Number.isNaN(parsedDate.getTime()) ? null : parsedDate;
+};
+
+const normalizeDate = (date: Date) => {
+  const normalizedDate = new Date(date);
+  normalizedDate.setHours(0, 0, 0, 0);
+  return normalizedDate;
+};
+
+const findCurrentPlan = (plans: PlanListItem[], today: Date) => {
+  const matchingCurrentPlan = plans.find((plan) => {
+    const startDate = asDate(plan.startDate);
+    const endDate = asDate(plan.endDate);
+
+    if (!startDate || !endDate) {
+      return false;
+    }
+
+    const normalizedStartDate = normalizeDate(startDate);
+    const normalizedEndDate = normalizeDate(endDate);
+
+    return normalizedStartDate <= today && today <= normalizedEndDate;
+  });
+
+  return matchingCurrentPlan ?? plans[0] ?? null;
+};
+
+const selectRecentPlans = (plans: PlanListItem[], today: Date) => {
+  const cutoffDate = new Date(today);
+  cutoffDate.setDate(cutoffDate.getDate() - 28);
+
+  return plans
+    .filter((plan) => {
+      const startDate = asDate(plan.startDate);
+      const endDate = asDate(plan.endDate);
+
+      return (startDate && normalizeDate(startDate) >= cutoffDate)
+        || (endDate && normalizeDate(endDate) >= cutoffDate);
+    })
+    .slice(0, 6);
+};
+
+const getPlans = async (): Promise<PlanListItem[] | null> => {
+  const cookieStore = await cookies();
+  const sessionToken = cookieStore.get(adminSessionCookieName)?.value;
+
+  try {
+    const response = await fetch(`${backendApiUrl}/api/plans`, {
+      headers: {
+        ...(sessionToken
+          ? { Cookie: `${adminSessionCookieName}=${sessionToken}` }
+          : {})
+      },
+      cache: "no-store"
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const data = (await response.json()) as { plans: PlanListItem[] };
+    return data.plans;
+  } catch (_error) {
+    return null;
+  }
+};
+
+export default async function HomePage() {
+  const plans = await getPlans();
+
+  if (!plans || plans.length === 0) {
+    return (
+      <section className="space-y-8">
+        <div className="rounded-3xl bg-white p-10 shadow-sm ring-1 ring-slate-200">
+          <p className="text-sm font-semibold uppercase tracking-wide text-emerald-600">
+            Weekly planning made simple
+          </p>
+          <h1 className="mt-3 text-4xl font-semibold text-slate-900">
+            Build your next family meal plan.
+          </h1>
+          <p className="mt-4 text-lg text-slate-600">
+            We could not load plans right now, or you have not created one yet.
+            Start by creating your first weekly plan.
+          </p>
+          <div className="mt-6 flex flex-wrap gap-4">
+            <Link
+              className="rounded-full bg-emerald-600 px-5 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
+              href="/plan/new"
+            >
+              Create a plan
+            </Link>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  const today = normalizeDate(new Date());
+  const currentPlan = findCurrentPlan(plans, today);
+  const recentPlans = selectRecentPlans(plans, today).filter(
+    (plan) => plan.id !== currentPlan?.id
+  );
+
   return (
     <section className="space-y-8">
-      <div className="rounded-3xl bg-white p-10 shadow-sm ring-1 ring-slate-200">
-        <p className="text-sm font-semibold uppercase tracking-wide text-emerald-600">
-          Weekly planning made simple
-        </p>
-        <h1 className="mt-3 text-4xl font-semibold text-slate-900">
-          Plan meals for the whole family in one shared calendar.
-        </h1>
-        <p className="mt-4 text-lg text-slate-600">
-          Family Food Planner helps you pick your start and end days, capture
-          recipes everyone loves, and build a reusable weekly rhythm for
-          breakfast, lunch, and dinner.
-        </p>
-        <div className="mt-6 flex flex-wrap gap-4">
+      <div className="rounded-3xl bg-white p-8 shadow-sm ring-1 ring-slate-200">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-wide text-emerald-600">
+              Current plan
+            </p>
+            <h1 className="mt-2 text-3xl font-semibold text-slate-900">
+              {currentPlan?.name ?? "No active plan"}
+            </h1>
+          </div>
           <Link
             className="rounded-full bg-emerald-600 px-5 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
-            href="/plan"
-          >
-            Get started
-          </Link>
-          <a
-            className="rounded-full border border-slate-300 px-5 py-2 text-sm font-semibold text-slate-700 hover:border-slate-400"
             href="/plan/new"
           >
-            Create a plan
-          </a>
+            Create new plan
+          </Link>
         </div>
+
+        {currentPlan ? (
+          <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200">
+            <table className="min-w-full divide-y divide-slate-200 text-left text-sm">
+              <thead className="bg-slate-50 text-slate-700">
+                <tr>
+                  <th className="px-4 py-3 font-semibold">Plan</th>
+                  <th className="px-4 py-3 font-semibold">Date range</th>
+                  <th className="px-4 py-3 font-semibold">Days</th>
+                  <th className="px-4 py-3 font-semibold">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200 bg-white text-slate-600">
+                <tr>
+                  <td className="px-4 py-3 font-medium text-slate-900">
+                    {currentPlan.name}
+                  </td>
+                  <td className="px-4 py-3">
+                    {formatDateRange(currentPlan.startDate, currentPlan.endDate)}
+                  </td>
+                  <td className="px-4 py-3">{currentPlan.daysCount}</td>
+                  <td className="px-4 py-3">
+                    <div className="flex flex-wrap gap-2">
+                      <Link
+                        className="rounded-full bg-emerald-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700"
+                        href={`/plan/${currentPlan.id}`}
+                      >
+                        Open plan
+                      </Link>
+                      <Link
+                        className="rounded-full border border-slate-300 px-4 py-1.5 text-xs font-semibold text-slate-700 hover:border-slate-400"
+                        href={`/plan/${currentPlan.id}/grocery-list`}
+                      >
+                        Grocery list
+                      </Link>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        ) : null}
       </div>
 
-      <div className="grid gap-6 md:grid-cols-3">
-        {[
-          {
-            title: "Flexible week ranges",
-            description:
-              "Start planning on any day of the week and keep your plan running through the end day that fits your household."
-          },
-          {
-            title: "Shared grocery prep",
-            description:
-              "Auto-generate a unified grocery list so everyone can shop once and cook together."
-          },
-          {
-            title: "Family-friendly routines",
-            description:
-              "Save favorite meals, assign themes, and build a repeatable plan that reduces decision fatigue."
-          }
-        ].map((feature) => (
-          <div
-            key={feature.title}
-            className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
-          >
-            <h2 className="text-lg font-semibold text-slate-900">
-              {feature.title}
+      <div className="rounded-3xl bg-white p-8 shadow-sm ring-1 ring-slate-200">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <h2 className="text-2xl font-semibold text-slate-900">
+              Recent plans (last 4 weeks)
             </h2>
-            <p className="mt-3 text-sm text-slate-600">
-              {feature.description}
+            <p className="mt-1 text-sm text-slate-600">
+              Quickly reopen recent weekly plans and grocery lists.
             </p>
           </div>
-        ))}
+          <Link
+            className="rounded-full border border-slate-300 px-5 py-2 text-sm font-semibold text-slate-700 hover:border-slate-400"
+            href="/plan"
+          >
+            View all plans
+          </Link>
+        </div>
+
+        {recentPlans.length === 0 ? (
+          <p className="mt-6 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-600">
+            No additional plans found in the last 4 weeks.
+          </p>
+        ) : (
+          <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200">
+            <table className="min-w-full divide-y divide-slate-200 text-left text-sm">
+              <thead className="bg-slate-50 text-slate-700">
+                <tr>
+                  <th className="px-4 py-3 font-semibold">Plan</th>
+                  <th className="px-4 py-3 font-semibold">Date range</th>
+                  <th className="px-4 py-3 font-semibold">Days</th>
+                  <th className="px-4 py-3 font-semibold">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200 bg-white text-slate-600">
+                {recentPlans.map((plan) => (
+                  <tr key={plan.id}>
+                    <td className="px-4 py-3 font-medium text-slate-900">
+                      {plan.name}
+                    </td>
+                    <td className="px-4 py-3">
+                      {formatDateRange(plan.startDate, plan.endDate)}
+                    </td>
+                    <td className="px-4 py-3">{plan.daysCount}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex flex-wrap gap-2">
+                        <Link
+                          className="rounded-full bg-emerald-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700"
+                          href={`/plan/${plan.id}`}
+                        >
+                          Open plan
+                        </Link>
+                        <Link
+                          className="rounded-full border border-slate-300 px-4 py-1.5 text-xs font-semibold text-slate-700 hover:border-slate-400"
+                          href={`/plan/${plan.id}/grocery-list`}
+                        >
+                          Grocery list
+                        </Link>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </section>
   );
