@@ -10,6 +10,43 @@ type PlanListItem = {
   daysCount: number;
 };
 
+type PlanDetailResponse = {
+  plan: {
+    id: number;
+    planDays?: Array<{
+      id: number;
+      date: string;
+      dinnerDish: {
+        id: number;
+        name: string;
+      } | null;
+      lunchDishes: Array<{
+        id: number;
+        name: string;
+      }>;
+    }>;
+    days?: Array<{
+      id: number;
+      date: string;
+      dinnerDish: {
+        id: number;
+        name: string;
+      } | null;
+      lunchDishes: Array<{
+        id: number;
+        name: string;
+      }>;
+    }>;
+  };
+};
+
+type CurrentPlanTableRow = {
+  id: number;
+  dayLabel: string;
+  lunchLabel: string;
+  dinnerLabel: string;
+};
+
 const formatDateRange = (startDate: string | null, endDate: string | null) => {
   if (!startDate && !endDate) {
     return "Dates not set";
@@ -35,6 +72,18 @@ const normalizeDate = (date: Date) => {
   const normalizedDate = new Date(date);
   normalizedDate.setHours(0, 0, 0, 0);
   return normalizedDate;
+};
+
+const dayLabelFormatter = new Intl.DateTimeFormat("en-US", {
+  weekday: "long",
+  month: "short",
+  day: "numeric",
+  timeZone: "UTC"
+});
+
+const formatDayLabel = (dayKey: string) => {
+  const date = new Date(`${dayKey}T00:00:00.000Z`);
+  return dayLabelFormatter.format(date);
 };
 
 const findCurrentPlan = (plans: PlanListItem[], today: Date) => {
@@ -70,9 +119,13 @@ const selectRecentPlans = (plans: PlanListItem[], today: Date) => {
     .slice(0, 6);
 };
 
-const getPlans = async (): Promise<PlanListItem[] | null> => {
+const getSessionToken = async () => {
   const cookieStore = await cookies();
-  const sessionToken = cookieStore.get(adminSessionCookieName)?.value;
+  return cookieStore.get(adminSessionCookieName)?.value;
+};
+
+const getPlans = async (): Promise<PlanListItem[] | null> => {
+  const sessionToken = await getSessionToken();
 
   try {
     const response = await fetch(`${backendApiUrl}/api/plans`, {
@@ -93,6 +146,51 @@ const getPlans = async (): Promise<PlanListItem[] | null> => {
   } catch (_error) {
     return null;
   }
+};
+
+const getPlanById = async (planId: number): Promise<PlanDetailResponse["plan"] | null> => {
+  const sessionToken = await getSessionToken();
+
+  try {
+    const response = await fetch(`${backendApiUrl}/api/plans/${planId}`, {
+      headers: {
+        ...(sessionToken
+          ? { Cookie: `${adminSessionCookieName}=${sessionToken}` }
+          : {})
+      },
+      cache: "no-store"
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const data = (await response.json()) as PlanDetailResponse;
+    return data.plan;
+  } catch (_error) {
+    return null;
+  }
+};
+
+const buildCurrentPlanTableRows = (
+  planDays: Array<{
+    id: number;
+    date: string;
+    dinnerDish: { id: number; name: string } | null;
+    lunchDishes: Array<{ id: number; name: string }>
+  }>
+): CurrentPlanTableRow[] => {
+  return [...planDays]
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .map((planDay) => ({
+      id: planDay.id,
+      dayLabel: formatDayLabel(planDay.date),
+      lunchLabel:
+        planDay.lunchDishes.length > 0
+          ? planDay.lunchDishes.map((lunchDish) => lunchDish.name).join(", ")
+          : "No lunch set",
+      dinnerLabel: planDay.dinnerDish?.name ?? "No dinner set"
+    }));
 };
 
 export default async function HomePage() {
@@ -127,6 +225,10 @@ export default async function HomePage() {
 
   const today = normalizeDate(new Date());
   const currentPlan = findCurrentPlan(plans, today);
+  const currentPlanDetails = currentPlan ? await getPlanById(currentPlan.id) : null;
+  const currentPlanRows = currentPlanDetails
+    ? buildCurrentPlanTableRows(currentPlanDetails.days ?? currentPlanDetails.planDays ?? [])
+    : [];
   const recentPlans = selectRecentPlans(plans, today).filter(
     (plan) => plan.id !== currentPlan?.id
   );
@@ -156,40 +258,43 @@ export default async function HomePage() {
             <table className="min-w-full divide-y divide-slate-200 text-left text-sm">
               <thead className="bg-slate-50 text-slate-700">
                 <tr>
-                  <th className="px-4 py-3 font-semibold">Plan</th>
-                  <th className="px-4 py-3 font-semibold">Date range</th>
-                  <th className="px-4 py-3 font-semibold">Days</th>
-                  <th className="px-4 py-3 font-semibold">Actions</th>
+                  <th className="px-4 py-3 font-semibold">Day</th>
+                  <th className="px-4 py-3 font-semibold">Lunch</th>
+                  <th className="px-4 py-3 font-semibold">Dinner</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200 bg-white text-slate-600">
-                <tr>
-                  <td className="px-4 py-3 font-medium text-slate-900">
-                    {currentPlan.name}
-                  </td>
-                  <td className="px-4 py-3">
-                    {formatDateRange(currentPlan.startDate, currentPlan.endDate)}
-                  </td>
-                  <td className="px-4 py-3">{currentPlan.daysCount}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex flex-wrap gap-2">
-                      <Link
-                        className="rounded-full bg-emerald-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700"
-                        href={`/plan/${currentPlan.id}`}
-                      >
-                        Open plan
-                      </Link>
-                      <Link
-                        className="rounded-full border border-slate-300 px-4 py-1.5 text-xs font-semibold text-slate-700 hover:border-slate-400"
-                        href={`/plan/${currentPlan.id}/grocery-list`}
-                      >
-                        Grocery list
-                      </Link>
-                    </div>
-                  </td>
-                </tr>
+                {currentPlanRows.length === 0 ? (
+                  <tr>
+                    <td className="px-4 py-3 text-slate-500" colSpan={3}>
+                      Could not load meals for the selected plan.
+                    </td>
+                  </tr>
+                ) : currentPlanRows.map((row) => (
+                  <tr key={row.id}>
+                    <td className="px-4 py-3 font-medium text-slate-900">{row.dayLabel}</td>
+                    <td className="px-4 py-3">{row.lunchLabel}</td>
+                    <td className="px-4 py-3">{row.dinnerLabel}</td>
+                  </tr>
+                ))}
               </tbody>
             </table>
+          </div>
+        ) : null}
+        {currentPlan ? (
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Link
+              className="rounded-full bg-emerald-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700"
+              href={`/plan/${currentPlan.id}`}
+            >
+              Open plan
+            </Link>
+            <Link
+              className="rounded-full border border-slate-300 px-4 py-1.5 text-xs font-semibold text-slate-700 hover:border-slate-400"
+              href={`/plan/${currentPlan.id}/grocery-list`}
+            >
+              Grocery list
+            </Link>
           </div>
         ) : null}
       </div>
