@@ -65,6 +65,10 @@ Family Food Planner is a weekly meal-planning app for families. Admins create pl
 - `POST /api/auth/logout` — clear admin session.
 - `GET /api/auth/me` — fetch current authenticated admin.
 
+### Health / Build Diagnostics
+- `GET /health` — basic liveness check.
+- `GET /health/details` — liveness plus build metadata (`version`, `commitSha`, `buildTime`) to help verify deployed backend revision.
+
 ### Members
 - `GET /api/members` — list members.
 - `POST /api/members` — create member.

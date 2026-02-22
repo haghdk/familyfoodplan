@@ -34,6 +34,10 @@ app.use(planDaysRouter);
 app.use(groceryRouter);
 app.use(realtimeRouter);
 
+const commitSha = process.env.COMMIT_SHA || process.env.GIT_SHA || "unknown";
+const buildTime = process.env.BUILD_TIME || "unknown";
+
 app.listen(port, () => {
   console.log(`Backend server listening on port ${port}`);
+  console.log(`Build metadata: commit=${commitSha} buildTime=${buildTime}`);
 });
