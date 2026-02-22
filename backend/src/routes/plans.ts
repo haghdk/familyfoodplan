@@ -290,4 +290,128 @@ plansRouter.get("/api/plans/:planId", async (request, response) => {
   });
 });
 
+plansRouter.put("/api/plans/:planId", async (request, response) => {
+  const planId = Number(request.params.planId);
+
+  if (Number.isNaN(planId)) {
+    response.status(400).json({ message: "Invalid plan id." });
+    return;
+  }
+
+  const { name, startDate, endDate } = request.body as {
+    name?: unknown;
+    startDate?: unknown;
+    endDate?: unknown;
+  };
+
+  const normalizedName = typeof name === "string" ? name.trim() : "";
+
+  if (!normalizedName) {
+    response.status(400).json({ message: "Plan name is required." });
+    return;
+  }
+
+  const parsedStartDate = parseDateKey(startDate);
+  const parsedEndDate = parseDateKey(endDate);
+
+  if (!parsedStartDate || !parsedEndDate) {
+    response.status(400).json({ message: "Invalid date format. Expected YYYY-MM-DD." });
+    return;
+  }
+
+  const dateRange = buildDateRange(parsedStartDate, parsedEndDate);
+
+  if (dateRange.length > MAX_PLAN_SPAN_DAYS) {
+    response.status(400).json({
+      message: `Plan range cannot exceed ${MAX_PLAN_SPAN_DAYS} days.`
+    });
+    return;
+  }
+
+  const plan = await prisma.plan.findUnique({
+    where: { id: planId },
+    select: {
+      id: true,
+      days: {
+        select: {
+          id: true,
+          date: true
+        }
+      }
+    }
+  });
+
+  if (!plan) {
+    response.status(404).json({ message: "Plan not found." });
+    return;
+  }
+
+  const normalizedDateRangeKeys = new Set(dateRange.map((date) => formatDateKey(date)));
+  const daysToDelete = plan.days
+    .filter((day) => !normalizedDateRangeKeys.has(formatDateKey(day.date)))
+    .map((day) => day.id);
+  const existingDayKeys = new Set(plan.days.map((day) => formatDateKey(day.date)));
+  const daysToCreate = dateRange.filter((date) => !existingDayKeys.has(formatDateKey(date)));
+
+  try {
+    const updatedPlan = await prisma.$transaction(async (tx) => {
+      if (daysToDelete.length > 0) {
+        await tx.planDay.deleteMany({
+          where: {
+            id: {
+              in: daysToDelete
+            }
+          }
+        });
+      }
+
+      if (daysToCreate.length > 0) {
+        await tx.planDay.createMany({
+          data: daysToCreate.map((date) => ({
+            planId,
+            date
+          }))
+        });
+      }
+
+      return tx.plan.update({
+        where: { id: planId },
+        data: {
+          name: normalizedName,
+          startDate: parsedStartDate,
+          endDate: parsedEndDate
+        },
+        select: {
+          id: true,
+          name: true,
+          startDate: true,
+          endDate: true
+        }
+      });
+    });
+
+    response.status(200).json({
+      plan: {
+        id: updatedPlan.id,
+        name: updatedPlan.name,
+        startDate: formatOptionalDateKey(updatedPlan.startDate),
+        endDate: formatOptionalDateKey(updatedPlan.endDate)
+      }
+    });
+  } catch (error: unknown) {
+    const isUniqueConflict =
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      (error as { code?: string }).code === "P2002";
+
+    if (isUniqueConflict) {
+      response.status(409).json({ message: "A plan with this name already exists." });
+      return;
+    }
+
+    throw error;
+  }
+});
+
 export default plansRouter;

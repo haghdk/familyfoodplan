@@ -2,6 +2,7 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import { adminSessionCookieName, backendApiUrl } from "../../../lib/auth";
 import PlanDayCard from "../../../components/plan/PlanDayCard";
+import PlanSettingsForm from "../../../components/plan/PlanSettingsForm";
 
 type PlanDetailResponse = {
   plan: {
@@ -107,6 +108,13 @@ export default async function PlanPage({
           Open grocery list
         </Link>
       </div>
+
+      <PlanSettingsForm
+        planId={plan.id}
+        initialName={plan.name}
+        initialStartDate={plan.startDate}
+        initialEndDate={plan.endDate}
+      />
 
       <div className="grid gap-4 md:grid-cols-2">
         {plan.planDays.map((planDay) => (
