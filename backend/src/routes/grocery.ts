@@ -31,6 +31,17 @@ const normalizeQuantity = (quantity: unknown) => {
 
 const createShareToken = () => crypto.randomBytes(32).toString("hex");
 
+const parseShareToken = (rawValue: string | undefined) => {
+  if (!rawValue) {
+    return null;
+  }
+
+  const decodedValue = decodeURIComponent(rawValue).trim();
+  const tokenMatch = decodedValue.match(/[a-f0-9]{64}/i);
+
+  return tokenMatch?.[0]?.toLowerCase() ?? null;
+};
+
 const resolvePlanDayId = async (planOrPlanDayId: number) => {
   const plan = await prisma.plan.findUnique({
     where: { id: planOrPlanDayId },
@@ -367,7 +378,12 @@ groceryRouter.delete(
 );
 
 groceryRouter.get("/api/grocery/shared/:token", async (request, response) => {
-  const shareToken = request.params.token;
+  const shareToken = parseShareToken(request.params.token);
+
+  if (!shareToken) {
+    response.status(404).json({ message: "Shared grocery list not found." });
+    return;
+  }
 
   const sharedPlan = await prisma.groceryShareToken.findUnique({
     where: { token: shareToken },
@@ -406,11 +422,11 @@ groceryRouter.get("/api/grocery/shared/:token", async (request, response) => {
 });
 
 groceryRouter.patch("/api/grocery/shared/:token/items/:itemId", async (request, response) => {
-  const shareToken = request.params.token;
+  const shareToken = parseShareToken(request.params.token);
   const itemId = parsePlanId(request.params.itemId);
 
-  if (!itemId) {
-    response.status(400).json({ message: "Invalid item id." });
+  if (!shareToken || !itemId) {
+    response.status(400).json({ message: "Invalid share token or item id." });
     return;
   }
 

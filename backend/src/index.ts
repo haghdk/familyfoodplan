@@ -29,11 +29,11 @@ app.use((request, response, next) => {
 app.use(express.json());
 app.use(healthRouter);
 app.use(authRouter);
+app.use(groceryRouter);
+app.use(realtimeRouter);
 app.use(membersRouter);
 app.use(plansRouter);
 app.use(planDaysRouter);
-app.use(groceryRouter);
-app.use(realtimeRouter);
 
 const commitSha = process.env.COMMIT_SHA || process.env.GIT_SHA || "unknown";
 const buildTime = process.env.BUILD_TIME || new Date().toISOString();
