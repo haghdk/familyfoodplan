@@ -2,6 +2,14 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import { adminSessionCookieName, backendApiUrl } from "../lib/auth";
 import CurrentPlanTable from "../components/plan/CurrentPlanTable";
+import {
+  ArrowRightIcon,
+  CalendarIcon,
+  ClipboardListIcon,
+  PlusCircleIcon,
+  ShoppingCartIcon,
+  SparklesIcon
+} from "../components/ui/icons";
 
 type PlanListItem = {
   id: number;
@@ -198,7 +206,8 @@ export default async function HomePage() {
     return (
       <section className="space-y-8">
         <div className="rounded-3xl bg-white p-10 shadow-sm ring-1 ring-slate-200">
-          <p className="text-sm font-semibold uppercase tracking-wide text-emerald-600">
+          <p className="inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-emerald-600">
+            <SparklesIcon className="h-4 w-4" />
             Weekly planning made simple
           </p>
           <h1 className="mt-3 text-4xl font-semibold text-slate-900">
@@ -210,9 +219,10 @@ export default async function HomePage() {
           </p>
           <div className="mt-6 flex flex-wrap gap-4">
             <Link
-              className="rounded-full bg-emerald-600 px-5 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
+              className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-5 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
               href="/plan/new"
             >
+              <PlusCircleIcon className="h-4 w-4" />
               Create a plan
             </Link>
           </div>
@@ -236,7 +246,8 @@ export default async function HomePage() {
       <div className="rounded-3xl bg-white p-8 shadow-sm ring-1 ring-slate-200">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-wide text-emerald-600">
+            <p className="inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-emerald-600">
+              <CalendarIcon className="h-4 w-4" />
               Current plan
             </p>
             <h1 className="mt-2 text-3xl font-semibold text-slate-900">
@@ -244,9 +255,10 @@ export default async function HomePage() {
             </h1>
           </div>
           <Link
-            className="rounded-full bg-emerald-600 px-5 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
+            className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-5 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
             href="/plan/new"
           >
+            <PlusCircleIcon className="h-4 w-4" />
             Create new plan
           </Link>
         </div>
@@ -261,15 +273,17 @@ export default async function HomePage() {
         {currentPlan ? (
           <div className="mt-4 flex flex-wrap gap-2">
             <Link
-              className="rounded-full bg-emerald-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700"
+              className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700"
               href={`/plan/${currentPlan.id}`}
             >
+              <ArrowRightIcon className="h-3.5 w-3.5" />
               Open plan
             </Link>
             <Link
-              className="rounded-full border border-slate-300 px-4 py-1.5 text-xs font-semibold text-slate-700 hover:border-slate-400"
+              className="inline-flex items-center gap-1.5 rounded-full border border-slate-300 px-4 py-1.5 text-xs font-semibold text-slate-700 hover:border-slate-400"
               href={`/plan/${currentPlan.id}/grocery-list`}
             >
+              <ShoppingCartIcon className="h-3.5 w-3.5" />
               Grocery list
             </Link>
           </div>
@@ -279,7 +293,8 @@ export default async function HomePage() {
       <div className="rounded-3xl bg-white p-8 shadow-sm ring-1 ring-slate-200">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-semibold text-slate-900">
+            <h2 className="inline-flex items-center gap-2 text-2xl font-semibold text-slate-900">
+              <ClipboardListIcon className="h-6 w-6 text-emerald-600" />
               Recent plans (last 4 weeks)
             </h2>
             <p className="mt-1 text-sm text-slate-600">
@@ -287,9 +302,10 @@ export default async function HomePage() {
             </p>
           </div>
           <Link
-            className="rounded-full border border-slate-300 px-5 py-2 text-sm font-semibold text-slate-700 hover:border-slate-400"
+            className="inline-flex items-center gap-2 rounded-full border border-slate-300 px-5 py-2 text-sm font-semibold text-slate-700 hover:border-slate-400"
             href="/plan"
           >
+            <CalendarIcon className="h-4 w-4" />
             View all plans
           </Link>
         </div>
@@ -303,8 +319,18 @@ export default async function HomePage() {
             <table className="min-w-full divide-y divide-slate-200 text-left text-sm">
               <thead className="bg-slate-50 text-slate-700">
                 <tr>
-                  <th className="px-4 py-3 font-semibold">Plan</th>
-                  <th className="px-4 py-3 font-semibold">Date range</th>
+                  <th className="px-4 py-3 font-semibold">
+                  <span className="inline-flex items-center gap-2">
+                    <ClipboardListIcon className="h-4 w-4" />
+                    Plan
+                  </span>
+                </th>
+                  <th className="px-4 py-3 font-semibold">
+                  <span className="inline-flex items-center gap-2">
+                    <CalendarIcon className="h-4 w-4" />
+                    Date range
+                  </span>
+                </th>
                   <th className="px-4 py-3 font-semibold">Days</th>
                   <th className="px-4 py-3 font-semibold">Actions</th>
                 </tr>
@@ -322,15 +348,17 @@ export default async function HomePage() {
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap gap-2">
                         <Link
-                          className="rounded-full bg-emerald-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700"
+                          className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700"
                           href={`/plan/${plan.id}`}
                         >
+                          <ArrowRightIcon className="h-3.5 w-3.5" />
                           Open plan
                         </Link>
                         <Link
-                          className="rounded-full border border-slate-300 px-4 py-1.5 text-xs font-semibold text-slate-700 hover:border-slate-400"
+                          className="inline-flex items-center gap-1.5 rounded-full border border-slate-300 px-4 py-1.5 text-xs font-semibold text-slate-700 hover:border-slate-400"
                           href={`/plan/${plan.id}/grocery-list`}
                         >
+                          <ShoppingCartIcon className="h-3.5 w-3.5" />
                           Grocery list
                         </Link>
                       </div>
