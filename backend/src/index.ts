@@ -1,3 +1,4 @@
+import { execSync } from "node:child_process";
 import express from "express";
 import healthRouter from "./routes/health";
 import authRouter from "./routes/auth";

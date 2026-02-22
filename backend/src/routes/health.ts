@@ -1,3 +1,4 @@
+import { execSync } from "node:child_process";
 import { Router } from "express";
 
 const healthRouter = Router();
