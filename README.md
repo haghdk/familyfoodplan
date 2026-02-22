@@ -67,7 +67,7 @@ Family Food Planner is a weekly meal-planning app for families. Admins create pl
 
 ### Health / Build Diagnostics
 - `GET /health` — basic liveness check.
-- `GET /health/details` — liveness plus build metadata (`version`, `commitSha`, `buildTime`) to help verify deployed backend revision (falls back to `git rev-parse --short HEAD` and server start time when env vars are not set).
+- `GET /health/details` — liveness plus build metadata (`version`, `commitSha`, `buildTime`) to help verify deployed backend revision (falls back to `unknown` commit and server start time when env vars are not set).
 
 ### Members
 - `GET /api/members` — list members.
