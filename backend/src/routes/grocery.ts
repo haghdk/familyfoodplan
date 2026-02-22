@@ -133,13 +133,52 @@ groceryRouter.post("/api/plans/:id/share-link", requireAdminAuth, async (request
     return;
   }
 
-  const groceryShareToken = await prisma.groceryShareToken.upsert({
+  const existingShareToken = await prisma.groceryShareToken.findUnique({
     where: { planDayId: planId },
-    update: { token: createShareToken() },
-    create: { planDayId: planId, token: createShareToken() }
+    select: { token: true }
   });
 
-  response.status(200).json({ token: groceryShareToken.token });
+  if (existingShareToken) {
+    response.status(200).json({ token: existingShareToken.token, existed: true });
+    return;
+  }
+
+  const groceryShareToken = await prisma.groceryShareToken.create({
+    data: { planDayId: planId, token: createShareToken() },
+    select: { token: true }
+  });
+
+  response.status(200).json({ token: groceryShareToken.token, existed: false });
+});
+
+groceryRouter.post("/api/plans/:id/share-link/rotate", requireAdminAuth, async (request, response) => {
+  const planId = parsePlanId(request.params.id);
+
+  if (!planId) {
+    response.status(400).json({ message: "Invalid plan id." });
+    return;
+  }
+
+  const planDay = await prisma.planDay.findUnique({
+    where: { id: planId },
+    select: { id: true }
+  });
+
+  if (!planDay) {
+    response.status(404).json({ message: "Plan not found." });
+    return;
+  }
+
+  const nextToken = createShareToken();
+
+  const groceryShareToken = await prisma.groceryShareToken.upsert({
+    where: { planDayId: planId },
+    update: { token: nextToken },
+    create: { planDayId: planId, token: nextToken },
+    select: { token: true }
+  });
+
+  response.status(200).json({ token: groceryShareToken.token, rotated: true });
 });
 
 groceryRouter.post("/api/plans/:planId/grocery-items", requireAdminAuth, async (request, response) => {
