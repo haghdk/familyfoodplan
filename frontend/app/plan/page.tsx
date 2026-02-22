@@ -1,12 +1,7 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { adminSessionCookieName, backendApiUrl } from "../../lib/auth";
-import {
-  ArrowRightIcon,
-  CalendarIcon,
-  PlusCircleIcon,
-  ShoppingCartIcon
-} from "../../components/ui/icons";
+import { ArrowRight, Calendar, PlusCircle, ShoppingCart } from "lucide-react";
 
 type PlanListItem = {
   id: number;
@@ -58,7 +53,7 @@ export default async function PlansPage() {
     <section className="space-y-6">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="inline-flex items-center gap-2 text-3xl font-semibold text-slate-900"><CalendarIcon className="h-7 w-7 text-emerald-600" />Plans</h1>
+          <h1 className="inline-flex items-center gap-2 text-3xl font-semibold text-slate-900"><Calendar className="h-7 w-7 text-emerald-600" />Plans</h1>
           <p className="mt-2 text-sm text-slate-600">
             Select a weekly plan to edit meals or open related grocery views.
           </p>
@@ -67,7 +62,7 @@ export default async function PlansPage() {
           className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
           href="/plan/new"
         >
-          <PlusCircleIcon className="h-4 w-4" />
+          <PlusCircle className="h-4 w-4" />
           Create new plan
         </Link>
       </div>
@@ -94,14 +89,14 @@ export default async function PlansPage() {
                   className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
                   href={`/plan/${plan.id}`}
                 >
-                  <ArrowRightIcon className="h-4 w-4" />
+                  <ArrowRight className="h-4 w-4" />
                   Open plan
                 </Link>
                 <Link
                   className="inline-flex items-center gap-2 rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:border-slate-400"
                   href={`/plan/${plan.id}/grocery-list`}
                 >
-                  <ShoppingCartIcon className="h-4 w-4" />
+                  <ShoppingCart className="h-4 w-4" />
                   Grocery list
                 </Link>
               </div>
