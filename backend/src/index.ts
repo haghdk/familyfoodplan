@@ -1,3 +1,4 @@
+import { execSync } from "node:child_process";
 import express from "express";
 import healthRouter from "./routes/health";
 import authRouter from "./routes/auth";
@@ -34,6 +35,26 @@ app.use(planDaysRouter);
 app.use(groceryRouter);
 app.use(realtimeRouter);
 
+const resolveCommitSha = () => {
+  if (process.env.COMMIT_SHA) {
+    return process.env.COMMIT_SHA;
+  }
+
+  if (process.env.GIT_SHA) {
+    return process.env.GIT_SHA;
+  }
+
+  try {
+    return execSync("git rev-parse --short HEAD", { encoding: "utf8" }).trim();
+  } catch (_error) {
+    return "unknown";
+  }
+};
+
+const commitSha = resolveCommitSha();
+const buildTime = process.env.BUILD_TIME || new Date().toISOString();
+
 app.listen(port, () => {
   console.log(`Backend server listening on port ${port}`);
+  console.log(`Build metadata: commit=${commitSha} buildTime=${buildTime}`);
 });
