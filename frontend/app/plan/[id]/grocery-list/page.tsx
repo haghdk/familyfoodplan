@@ -216,10 +216,28 @@ export default function GroceryListPage() {
       return;
     }
 
+    const data = (await response.json()) as { token: string; existed: boolean };
+    const nextShareLink = `${window.location.origin}/grocery/${data.token}`;
+    setShareLink(nextShareLink);
+    setShareFeedback(data.existed ? "Existing share link loaded." : "Share link ready.");
+  };
+
+
+  const rotateShareLink = async () => {
+    const response = await fetch(`${backendApiUrl}/api/plans/${planId}/share-link/rotate`, {
+      method: "POST",
+      credentials: "include"
+    });
+
+    if (!response.ok) {
+      setShareFeedback("Could not rotate share link.");
+      return;
+    }
+
     const data = (await response.json()) as { token: string };
     const nextShareLink = `${window.location.origin}/grocery/${data.token}`;
     setShareLink(nextShareLink);
-    setShareFeedback("Share link is ready.");
+    setShareFeedback("Share link rotated.");
   };
 
   const copyShareLink = async () => {
@@ -381,9 +399,10 @@ export default function GroceryListPage() {
 
       <article className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4">
         <h2 className="font-semibold text-slate-900">Share grocery list</h2>
-        <p className="text-sm text-slate-500">Create or rotate a public link for checking items while shopping.</p>
+        <p className="text-sm text-slate-500">Load the existing share link or create one if none exists. Rotate only when you need to invalidate old links.</p>
         <div className="flex flex-wrap gap-2">
-          <button className="rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white" type="button" onClick={createShareLink}>Create / rotate link</button>
+          <button className="rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white" type="button" onClick={createShareLink}>Load / create link</button>
+          <button className="rounded-full border border-amber-300 px-4 py-2 text-sm font-semibold text-amber-800" type="button" onClick={rotateShareLink}>Rotate link</button>
           <button className="rounded-full border px-4 py-2 text-sm font-semibold" type="button" onClick={copyShareLink}>Copy link</button>
         </div>
         {shareLink ? <p className="break-all text-sm text-slate-700">{shareLink}</p> : null}
