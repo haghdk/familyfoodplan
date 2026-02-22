@@ -14,6 +14,18 @@ const parsePlanId = (rawValue: string | undefined) => {
   return Number.isNaN(parsedValue) ? null : parsedValue;
 };
 
+
+const parseShareToken = (rawValue: string | undefined) => {
+  if (!rawValue) {
+    return null;
+  }
+
+  const decodedValue = decodeURIComponent(rawValue).trim();
+  const tokenMatch = decodedValue.match(/[a-f0-9]{64}/i);
+
+  return tokenMatch?.[0]?.toLowerCase() ?? null;
+};
+
 const writeSseEvent = (response: Response, payload: GroceryEventPayload) => {
   response.write(`event: ${payload.eventType}\n`);
   response.write(`data: ${JSON.stringify(payload)}\n\n`);
@@ -64,7 +76,12 @@ realtimeRouter.get("/api/realtime/grocery/admin", requireAdminAuth, async (reque
 });
 
 realtimeRouter.get("/api/realtime/grocery/shared/:token", async (request, response) => {
-  const token = request.params.token;
+  const token = parseShareToken(request.params.token);
+
+  if (!token) {
+    response.status(404).json({ message: "Shared grocery list not found." });
+    return;
+  }
 
   const sharedPlan = await prisma.groceryShareToken.findUnique({
     where: { token },
