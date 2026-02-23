@@ -43,15 +43,6 @@ const parseShareToken = (rawValue: string | undefined) => {
 };
 
 const resolvePlanDayId = async (planOrPlanDayId: number) => {
-  const planDay = await prisma.planDay.findUnique({
-    where: { id: planOrPlanDayId },
-    select: { id: true }
-  });
-
-  if (planDay) {
-    return planDay.id;
-  }
-
   const plan = await prisma.plan.findUnique({
     where: { id: planOrPlanDayId },
     select: { days: { select: { id: true }, orderBy: { date: "asc" }, take: 1 } }
@@ -59,6 +50,15 @@ const resolvePlanDayId = async (planOrPlanDayId: number) => {
 
   if (plan?.days[0]) {
     return plan.days[0].id;
+  }
+
+  const planDay = await prisma.planDay.findUnique({
+    where: { id: planOrPlanDayId },
+    select: { id: true }
+  });
+
+  if (planDay) {
+    return planDay.id;
   }
 
   return null;
