@@ -201,6 +201,25 @@ export default function GroceryListPage() {
     return plan.lunchDishes.map((lunch) => ({ id: String(lunch.id), label: `Lunch: ${lunch.name}` }));
   }, [plan, selectedMealType]);
 
+  const hasDinnerOption = Boolean(plan?.dinnerDish);
+  const hasLunchOption = (plan?.lunchDishes.length ?? 0) > 0;
+  const hasMealOptions = hasDinnerOption || hasLunchOption;
+
+  useEffect(() => {
+    if (!hasMealOptions) {
+      return;
+    }
+
+    if (selectedMealType === "dinner" && !hasDinnerOption && hasLunchOption) {
+      setSelectedMealType("lunch");
+      return;
+    }
+
+    if (selectedMealType === "lunch" && !hasLunchOption && hasDinnerOption) {
+      setSelectedMealType("dinner");
+    }
+  }, [hasDinnerOption, hasLunchOption, hasMealOptions, selectedMealType]);
+
   useEffect(() => {
     setSelectedMealId(mealOptions[0]?.id ?? "");
   }, [mealOptions]);
@@ -426,7 +445,7 @@ export default function GroceryListPage() {
             <option value="dinner">Dinner</option>
             <option value="lunch">Lunch</option>
           </select>
-          <select className="rounded border px-3 py-2" value={selectedMealId} onChange={(event) => setSelectedMealId(event.target.value)}>
+          <select className="rounded border px-3 py-2" value={selectedMealId} onChange={(event) => setSelectedMealId(event.target.value)} disabled={!hasMealOptions}>
             <option value="">Select meal</option>
             {mealOptions.map((meal) => (
               <option key={meal.id} value={meal.id}>{meal.label}</option>
@@ -436,6 +455,7 @@ export default function GroceryListPage() {
           <input className="rounded border px-3 py-2" placeholder="Quantity" type="number" min="0.1" step="0.1" value={ingredientQuantity} onChange={(event) => setIngredientQuantity(event.target.value)} />
           <input className="rounded border px-3 py-2 md:col-span-2" placeholder="Unit (optional)" value={ingredientUnit} onChange={(event) => setIngredientUnit(event.target.value)} />
         </div>
+        {!hasMealOptions ? <p className="text-sm text-amber-700">Add at least one lunch or dinner dish for this day before creating ingredient items.</p> : null}
         <button className="rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white" type="button" onClick={createIngredientItem}>Add ingredient item</button>
       </article>
 
