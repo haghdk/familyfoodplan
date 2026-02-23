@@ -21,6 +21,10 @@ type SharedResponse = {
   groceryItems: GroceryItem[];
 };
 
+type UpdateGroceryItemResponse = {
+  groceryItem: GroceryItem;
+};
+
 type GroceryRealtimeEvent = {
   eventType: "grocery_item_created" | "grocery_item_updated" | "grocery_item_deleted";
   planId: number;
@@ -137,10 +141,12 @@ export default function SharedGroceryPage() {
       return;
     }
 
+    const data = (await response.json()) as UpdateGroceryItemResponse;
+
     setItems((currentItems) =>
       currentItems.map((currentItem) =>
         currentItem.id === item.id
-          ? { ...currentItem, isChecked: !currentItem.isChecked }
+          ? data.groceryItem
           : currentItem
       )
     );
