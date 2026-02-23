@@ -9,11 +9,16 @@ type MealRef = {
   name: string;
 };
 
-type PlanPayload = {
+type PlanDayPayload = {
   id: number;
   date: string;
   dinnerDish: MealRef | null;
   lunchDishes: MealRef[];
+};
+
+type MealOption = {
+  id: string;
+  label: string;
 };
 
 type GroceryItem = {
@@ -38,7 +43,7 @@ type MergedGroceryItem = {
 };
 
 type GroceryResponse = {
-  plan: PlanPayload;
+  planDays: PlanDayPayload[];
   groceryItems: GroceryItem[];
   mergedItems: MergedGroceryItem[];
 };
@@ -61,7 +66,7 @@ type GroceryRealtimeEvent = {
 export default function GroceryListPage() {
   const params = useParams<{ id: string }>();
   const planId = Number(params.id);
-  const [plan, setPlan] = useState<PlanPayload | null>(null);
+  const [planDays, setPlanDays] = useState<PlanDayPayload[]>([]);
   const [groceryItems, setGroceryItems] = useState<GroceryItem[]>([]);
   const [mergedItems, setMergedItems] = useState<MergedGroceryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -98,7 +103,7 @@ export default function GroceryListPage() {
       }
 
       const data = (await response.json()) as GroceryResponse;
-      setPlan(data.plan);
+      setPlanDays(data.planDays);
       setGroceryItems(data.groceryItems);
       setMergedItems(data.mergedItems);
     } catch (_error) {
@@ -188,18 +193,59 @@ export default function GroceryListPage() {
   }, [loadItems, planId]);
 
   const mealOptions = useMemo(() => {
-    if (!plan) {
-      return [] as Array<{ id: string; label: string }>;
+    const formatDayLabel = (dateValue: string) => {
+      const parsedDate = new Date(dateValue);
+
+      if (Number.isNaN(parsedDate.valueOf())) {
+        return dateValue;
+      }
+
+      return parsedDate.toLocaleDateString(undefined, {
+        weekday: "short",
+        month: "short",
+        day: "numeric"
+      });
+    };
+
+    const dinnerOptions: MealOption[] = planDays.flatMap((day) =>
+      day.dinnerDish
+        ? [
+            {
+              id: String(day.dinnerDish.id),
+              label: `${formatDayLabel(day.date)} · Dinner: ${day.dinnerDish.name}`
+            }
+          ]
+        : []
+    );
+
+    const lunchOptions: MealOption[] = planDays.flatMap((day) =>
+      day.lunchDishes.map((lunchDish) => ({
+        id: String(lunchDish.id),
+        label: `${formatDayLabel(day.date)} · Lunch: ${lunchDish.name}`
+      }))
+    );
+
+    return selectedMealType === "dinner" ? dinnerOptions : lunchOptions;
+  }, [planDays, selectedMealType]);
+
+  const hasDinnerOption = planDays.some((day) => Boolean(day.dinnerDish));
+  const hasLunchOption = planDays.some((day) => day.lunchDishes.length > 0);
+  const hasMealOptions = hasDinnerOption || hasLunchOption;
+
+  useEffect(() => {
+    if (!hasMealOptions) {
+      return;
     }
 
-    if (selectedMealType === "dinner") {
-      return plan.dinnerDish
-        ? [{ id: String(plan.dinnerDish.id), label: `Dinner: ${plan.dinnerDish.name}` }]
-        : [];
+    if (selectedMealType === "dinner" && !hasDinnerOption && hasLunchOption) {
+      setSelectedMealType("lunch");
+      return;
     }
 
-    return plan.lunchDishes.map((lunch) => ({ id: String(lunch.id), label: `Lunch: ${lunch.name}` }));
-  }, [plan, selectedMealType]);
+    if (selectedMealType === "lunch" && !hasLunchOption && hasDinnerOption) {
+      setSelectedMealType("dinner");
+    }
+  }, [hasDinnerOption, hasLunchOption, hasMealOptions, selectedMealType]);
 
   useEffect(() => {
     setSelectedMealId(mealOptions[0]?.id ?? "");
@@ -426,7 +472,7 @@ export default function GroceryListPage() {
             <option value="dinner">Dinner</option>
             <option value="lunch">Lunch</option>
           </select>
-          <select className="rounded border px-3 py-2" value={selectedMealId} onChange={(event) => setSelectedMealId(event.target.value)}>
+          <select className="rounded border px-3 py-2" value={selectedMealId} onChange={(event) => setSelectedMealId(event.target.value)} disabled={!hasMealOptions}>
             <option value="">Select meal</option>
             {mealOptions.map((meal) => (
               <option key={meal.id} value={meal.id}>{meal.label}</option>
@@ -436,6 +482,7 @@ export default function GroceryListPage() {
           <input className="rounded border px-3 py-2" placeholder="Quantity" type="number" min="0.1" step="0.1" value={ingredientQuantity} onChange={(event) => setIngredientQuantity(event.target.value)} />
           <input className="rounded border px-3 py-2 md:col-span-2" placeholder="Unit (optional)" value={ingredientUnit} onChange={(event) => setIngredientUnit(event.target.value)} />
         </div>
+        {!hasMealOptions ? <p className="text-sm text-amber-700">Add at least one lunch or dinner dish for this day before creating ingredient items.</p> : null}
         <button className="rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white" type="button" onClick={createIngredientItem}>Add ingredient item</button>
       </article>
 
