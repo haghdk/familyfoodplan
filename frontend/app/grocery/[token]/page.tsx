@@ -42,7 +42,9 @@ export default function SharedGroceryPage() {
     setIsLoading(true);
     setErrorMessage("");
 
-    const response = await fetch(`${backendApiUrl}/api/grocery/shared/${token}`);
+    const response = await fetch(`${backendApiUrl}/api/grocery/shared/${token}`, {
+      credentials: "include"
+    });
 
     if (!response.ok) {
       setErrorMessage("Shared list not found or no longer available.");
@@ -64,7 +66,9 @@ export default function SharedGroceryPage() {
     let isMounted = true;
     let reconnectAttempts = 0;
 
-    const eventSource = new EventSource(`${backendApiUrl}/api/realtime/grocery/shared/${token}`);
+    const eventSource = new EventSource(`${backendApiUrl}/api/realtime/grocery/shared/${token}`, {
+      withCredentials: true
+    });
 
     eventSource.onopen = () => {
       if (!isMounted) {
@@ -124,6 +128,7 @@ export default function SharedGroceryPage() {
     const response = await fetch(`${backendApiUrl}/api/grocery/shared/${token}/items/${item.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
       body: JSON.stringify({ isChecked: !item.isChecked })
     });
 
