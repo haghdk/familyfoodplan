@@ -3,7 +3,7 @@ import crypto from "node:crypto";
 import { Router } from "express";
 import { prisma } from "../lib/prisma";
 import { requireAdminAuth } from "../middleware/auth";
-import { getMergedGroceryItemsByPlanDay } from "../services/grocery";
+import { getMergedGroceryItemsByPlanDays } from "../services/grocery";
 import { GroceryEventType, realtimeBus } from "../realtime/events";
 
 const groceryRouter = Router();
@@ -42,23 +42,29 @@ const parseShareToken = (rawValue: string | undefined) => {
   return tokenMatch?.[0]?.toLowerCase() ?? null;
 };
 
-const resolvePlanDayId = async (planOrPlanDayId: number) => {
+const resolvePlanScope = async (planOrPlanDayId: number) => {
+  const plan = await prisma.plan.findUnique({
+    where: { id: planOrPlanDayId },
+    select: { id: true, days: { select: { id: true, date: true }, orderBy: { date: "asc" } } }
+  });
+
+  if (plan?.days.length) {
+    return {
+      planDayIds: plan.days.map((day) => day.id),
+      defaultPlanDayId: plan.days[0].id
+    };
+  }
+
   const planDay = await prisma.planDay.findUnique({
     where: { id: planOrPlanDayId },
     select: { id: true }
   });
 
   if (planDay) {
-    return planDay.id;
-  }
-
-  const plan = await prisma.plan.findUnique({
-    where: { id: planOrPlanDayId },
-    select: { days: { select: { id: true }, orderBy: { date: "asc" }, take: 1 } }
-  });
-
-  if (plan?.days[0]) {
-    return plan.days[0].id;
+    return {
+      planDayIds: [planDay.id],
+      defaultPlanDayId: planDay.id
+    };
   }
 
   return null;
@@ -114,35 +120,26 @@ groceryRouter.get("/api/plans/:planId/grocery-items", requireAdminAuth, async (r
     return;
   }
 
-  const planDayId = await resolvePlanDayId(planOrPlanDayId);
+  const planScope = await resolvePlanScope(planOrPlanDayId);
 
-  if (!planDayId) {
+  if (!planScope) {
     response.status(404).json({ message: "Plan not found." });
     return;
   }
 
-  const planDay = await prisma.planDay.findUnique({
-    where: { id: planDayId },
-    select: { id: true }
-  });
-
-  if (!planDay) {
-    response.status(404).json({ message: "Plan not found." });
-    return;
-  }
-
-  const planMeals = await prisma.planDay.findUnique({
-    where: { id: planDayId },
+  const planMeals = await prisma.planDay.findMany({
+    where: { id: { in: planScope.planDayIds } },
     select: {
       id: true,
       date: true,
       dinnerDish: { select: { id: true, name: true } },
       lunchDishes: { select: { id: true, name: true }, orderBy: { createdAt: "asc" } }
-    }
+    },
+    orderBy: { date: "asc" }
   });
 
   const groceryItems = await prisma.groceryItem.findMany({
-    where: { planDayId },
+    where: { planDayId: { in: planScope.planDayIds } },
     include: {
       dinnerDish: { select: { id: true, name: true } },
       lunchDish: { select: { id: true, name: true } }
@@ -150,9 +147,9 @@ groceryRouter.get("/api/plans/:planId/grocery-items", requireAdminAuth, async (r
     orderBy: [{ category: "asc" }, { name: "asc" }, { createdAt: "asc" }]
   });
 
-  const mergedItems = await getMergedGroceryItemsByPlanDay(planDayId);
+  const mergedItems = await getMergedGroceryItemsByPlanDays(planScope.planDayIds);
 
-  response.status(200).json({ plan: planMeals, groceryItems, mergedItems });
+  response.status(200).json({ planDays: planMeals, groceryItems, mergedItems });
 });
 
 groceryRouter.post("/api/plans/:id/share-link", requireAdminAuth, async (request, response) => {
@@ -163,15 +160,15 @@ groceryRouter.post("/api/plans/:id/share-link", requireAdminAuth, async (request
     return;
   }
 
-  const planDayId = await resolvePlanDayId(planId);
+  const planScope = await resolvePlanScope(planId);
 
-  if (!planDayId) {
+  if (!planScope) {
     response.status(404).json({ message: "Plan not found." });
     return;
   }
 
   const existingShareToken = await prisma.groceryShareToken.findUnique({
-    where: { planDayId },
+    where: { planDayId: planScope.defaultPlanDayId },
     select: { token: true }
   });
 
@@ -181,7 +178,7 @@ groceryRouter.post("/api/plans/:id/share-link", requireAdminAuth, async (request
   }
 
   const groceryShareToken = await prisma.groceryShareToken.create({
-    data: { planDayId, token: createShareToken() },
+    data: { planDayId: planScope.defaultPlanDayId, token: createShareToken() },
     select: { token: true }
   });
 
@@ -196,9 +193,9 @@ groceryRouter.post("/api/plans/:id/share-link/rotate", requireAdminAuth, async (
     return;
   }
 
-  const planDayId = await resolvePlanDayId(planId);
+  const planScope = await resolvePlanScope(planId);
 
-  if (!planDayId) {
+  if (!planScope) {
     response.status(404).json({ message: "Plan not found." });
     return;
   }
@@ -206,9 +203,9 @@ groceryRouter.post("/api/plans/:id/share-link/rotate", requireAdminAuth, async (
   const nextToken = createShareToken();
 
   const groceryShareToken = await prisma.groceryShareToken.upsert({
-    where: { planDayId },
+    where: { planDayId: planScope.defaultPlanDayId },
     update: { token: nextToken },
-    create: { planDayId, token: nextToken },
+    create: { planDayId: planScope.defaultPlanDayId, token: nextToken },
     select: { token: true }
   });
 
@@ -244,45 +241,41 @@ groceryRouter.post("/api/plans/:planId/grocery-items", requireAdminAuth, async (
     return;
   }
 
-  const planDayId = await resolvePlanDayId(planOrPlanDayId);
+  const planScope = await resolvePlanScope(planOrPlanDayId);
 
-  if (!planDayId) {
+  if (!planScope) {
     response.status(404).json({ message: "Plan not found." });
     return;
   }
 
-  const planDay = await prisma.planDay.findUnique({
-    where: { id: planDayId },
-    select: { id: true }
-  });
-
-  if (!planDay) {
-    response.status(404).json({ message: "Plan not found." });
-    return;
-  }
+  let itemPlanDayId = planScope.defaultPlanDayId;
 
   if (typeof dinnerDishId === "number") {
     const dinnerDish = await prisma.dinnerDish.findFirst({
-      where: { id: dinnerDishId, planDayId },
-      select: { id: true }
+      where: { id: dinnerDishId, planDayId: { in: planScope.planDayIds } },
+      select: { id: true, planDayId: true }
     });
 
     if (!dinnerDish) {
       response.status(400).json({ message: "Dinner dish does not belong to this plan." });
       return;
     }
+
+    itemPlanDayId = dinnerDish.planDayId;
   }
 
   if (typeof lunchDishId === "number") {
     const lunchDish = await prisma.lunchDish.findFirst({
-      where: { id: lunchDishId, planDayId },
-      select: { id: true }
+      where: { id: lunchDishId, planDayId: { in: planScope.planDayIds } },
+      select: { id: true, planDayId: true }
     });
 
     if (!lunchDish) {
       response.status(400).json({ message: "Lunch dish does not belong to this plan." });
       return;
     }
+
+    itemPlanDayId = lunchDish.planDayId;
   }
 
   const groceryItem = await prisma.groceryItem.create({
@@ -291,7 +284,7 @@ groceryRouter.post("/api/plans/:planId/grocery-items", requireAdminAuth, async (
       quantity: normalizeQuantity(quantity),
       unit: typeof unit === "string" ? unit.trim() || null : null,
       category: parseCategory(category),
-      planDayId,
+      planDayId: itemPlanDayId,
       dinnerDishId: typeof dinnerDishId === "number" ? dinnerDishId : null,
       lunchDishId: typeof lunchDishId === "number" ? lunchDishId : null
     },
@@ -301,7 +294,7 @@ groceryRouter.post("/api/plans/:planId/grocery-items", requireAdminAuth, async (
     }
   });
 
-  await emitGroceryEvent(planDayId, "grocery_item_created", {
+  await emitGroceryEvent(itemPlanDayId, "grocery_item_created", {
     item: groceryItem,
     deletedItemId: null
   });
@@ -318,16 +311,16 @@ groceryRouter.put("/api/plans/:planId/grocery-items/:itemId", requireAdminAuth, 
     return;
   }
 
-  const planDayId = await resolvePlanDayId(planOrPlanDayId);
+  const planScope = await resolvePlanScope(planOrPlanDayId);
 
-  if (!planDayId) {
+  if (!planScope) {
     response.status(404).json({ message: "Plan not found." });
     return;
   }
 
   const existingItem = await prisma.groceryItem.findFirst({
-    where: { id: itemId, planDayId },
-    select: { id: true }
+    where: { id: itemId, planDayId: { in: planScope.planDayIds } },
+    select: { id: true, planDayId: true }
   });
 
   if (!existingItem) {
@@ -361,7 +354,7 @@ groceryRouter.put("/api/plans/:planId/grocery-items/:itemId", requireAdminAuth, 
     }
   });
 
-  await emitGroceryEvent(planDayId, "grocery_item_updated", {
+  await emitGroceryEvent(existingItem.planDayId, "grocery_item_updated", {
     item: groceryItem,
     deletedItemId: null
   });
@@ -381,16 +374,16 @@ groceryRouter.delete(
       return;
     }
 
-    const planDayId = await resolvePlanDayId(planOrPlanDayId);
+    const planScope = await resolvePlanScope(planOrPlanDayId);
 
-    if (!planDayId) {
+    if (!planScope) {
       response.status(404).json({ message: "Plan not found." });
       return;
     }
 
     const existingItem = await prisma.groceryItem.findFirst({
-      where: { id: itemId, planDayId },
-      select: { id: true }
+      where: { id: itemId, planDayId: { in: planScope.planDayIds } },
+      select: { id: true, planDayId: true }
     });
 
     if (!existingItem) {
@@ -400,7 +393,7 @@ groceryRouter.delete(
 
     await prisma.groceryItem.delete({ where: { id: itemId } });
 
-    await emitGroceryEvent(planDayId, "grocery_item_deleted", {
+    await emitGroceryEvent(existingItem.planDayId, "grocery_item_deleted", {
       item: null,
       deletedItemId: itemId
     });
@@ -441,7 +434,7 @@ groceryRouter.get("/api/grocery/shared/:token", async (request, response) => {
     return;
   }
 
-  const mergedItems = await getMergedGroceryItemsByPlanDay(sharedPlan.planDay.id);
+  const mergedItems = await getMergedGroceryItemsByPlanDays([sharedPlan.planDay.id]);
 
   response.status(200).json({
     plan: {

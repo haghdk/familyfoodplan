@@ -15,6 +15,24 @@ const parsePlanId = (rawValue: string | undefined) => {
 };
 
 
+const resolvePlanDayIds = async (planOrPlanDayId: number) => {
+  const plan = await prisma.plan.findUnique({
+    where: { id: planOrPlanDayId },
+    select: { days: { select: { id: true }, orderBy: { date: "asc" } } }
+  });
+
+  if (plan?.days.length) {
+    return plan.days.map((day) => day.id);
+  }
+
+  const planDay = await prisma.planDay.findUnique({
+    where: { id: planOrPlanDayId },
+    select: { id: true }
+  });
+
+  return planDay ? [planDay.id] : null;
+};
+
 const parseShareToken = (rawValue: string | undefined) => {
   if (!rawValue) {
     return null;
@@ -39,12 +57,9 @@ realtimeRouter.get("/api/realtime/grocery/admin", requireAdminAuth, async (reque
     return;
   }
 
-  const planDay = await prisma.planDay.findUnique({
-    where: { id: planId },
-    select: { id: true }
-  });
+  const planDayIds = await resolvePlanDayIds(planId);
 
-  if (!planDay) {
+  if (!planDayIds) {
     response.status(404).json({ message: "Plan not found." });
     return;
   }
@@ -57,7 +72,7 @@ realtimeRouter.get("/api/realtime/grocery/admin", requireAdminAuth, async (reque
   response.write(": connected\n\n");
 
   const unsubscribe = realtimeBus.subscribe((payload) => {
-    if (payload.planId !== planId) {
+    if (!planDayIds.includes(payload.planId)) {
       return;
     }
 

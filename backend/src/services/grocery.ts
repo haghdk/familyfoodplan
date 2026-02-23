@@ -14,11 +14,15 @@ export type MergedGroceryItem = {
 const normalizeKeyPart = (value: string | null | undefined) =>
   value?.trim().toLowerCase() || "";
 
-export const getMergedGroceryItemsByPlanDay = async (
-  planDayId: number
+export const getMergedGroceryItemsByPlanDays = async (
+  planDayIds: number[]
 ): Promise<MergedGroceryItem[]> => {
+  if (planDayIds.length === 0) {
+    return [];
+  }
+
   const groceryItems = await prisma.groceryItem.findMany({
-    where: { planDayId },
+    where: { planDayId: { in: planDayIds } },
     include: {
       dinnerDish: { select: { id: true, name: true } },
       lunchDish: { select: { id: true, name: true } }
@@ -66,3 +70,8 @@ export const getMergedGroceryItemsByPlanDay = async (
 
   return Array.from(mergedMap.values());
 };
+
+
+export const getMergedGroceryItemsByPlanDay = async (
+  planDayId: number
+): Promise<MergedGroceryItem[]> => getMergedGroceryItemsByPlanDays([planDayId]);
