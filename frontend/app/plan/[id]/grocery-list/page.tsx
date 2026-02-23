@@ -9,11 +9,16 @@ type MealRef = {
   name: string;
 };
 
-type PlanPayload = {
+type PlanDayPayload = {
   id: number;
   date: string;
   dinnerDish: MealRef | null;
   lunchDishes: MealRef[];
+};
+
+type MealOption = {
+  id: string;
+  label: string;
 };
 
 type GroceryItem = {
@@ -38,7 +43,7 @@ type MergedGroceryItem = {
 };
 
 type GroceryResponse = {
-  plan: PlanPayload;
+  planDays: PlanDayPayload[];
   groceryItems: GroceryItem[];
   mergedItems: MergedGroceryItem[];
 };
@@ -61,7 +66,7 @@ type GroceryRealtimeEvent = {
 export default function GroceryListPage() {
   const params = useParams<{ id: string }>();
   const planId = Number(params.id);
-  const [plan, setPlan] = useState<PlanPayload | null>(null);
+  const [planDays, setPlanDays] = useState<PlanDayPayload[]>([]);
   const [groceryItems, setGroceryItems] = useState<GroceryItem[]>([]);
   const [mergedItems, setMergedItems] = useState<MergedGroceryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -98,7 +103,7 @@ export default function GroceryListPage() {
       }
 
       const data = (await response.json()) as GroceryResponse;
-      setPlan(data.plan);
+      setPlanDays(data.planDays);
       setGroceryItems(data.groceryItems);
       setMergedItems(data.mergedItems);
     } catch (_error) {
@@ -188,18 +193,59 @@ export default function GroceryListPage() {
   }, [loadItems, planId]);
 
   const mealOptions = useMemo(() => {
-    if (!plan) {
-      return [] as Array<{ id: string; label: string }>;
+    const formatDayLabel = (dateValue: string) => {
+      const parsedDate = new Date(dateValue);
+
+      if (Number.isNaN(parsedDate.valueOf())) {
+        return dateValue;
+      }
+
+      return parsedDate.toLocaleDateString(undefined, {
+        weekday: "short",
+        month: "short",
+        day: "numeric"
+      });
+    };
+
+    const dinnerOptions: MealOption[] = planDays.flatMap((day) =>
+      day.dinnerDish
+        ? [
+            {
+              id: String(day.dinnerDish.id),
+              label: `${formatDayLabel(day.date)} · Dinner: ${day.dinnerDish.name}`
+            }
+          ]
+        : []
+    );
+
+    const lunchOptions: MealOption[] = planDays.flatMap((day) =>
+      day.lunchDishes.map((lunchDish) => ({
+        id: String(lunchDish.id),
+        label: `${formatDayLabel(day.date)} · Lunch: ${lunchDish.name}`
+      }))
+    );
+
+    return selectedMealType === "dinner" ? dinnerOptions : lunchOptions;
+  }, [planDays, selectedMealType]);
+
+  const hasDinnerOption = planDays.some((day) => Boolean(day.dinnerDish));
+  const hasLunchOption = planDays.some((day) => day.lunchDishes.length > 0);
+  const hasMealOptions = hasDinnerOption || hasLunchOption;
+
+  useEffect(() => {
+    if (!hasMealOptions) {
+      return;
     }
 
-    if (selectedMealType === "dinner") {
-      return plan.dinnerDish
-        ? [{ id: String(plan.dinnerDish.id), label: `Dinner: ${plan.dinnerDish.name}` }]
-        : [];
+    if (selectedMealType === "dinner" && !hasDinnerOption && hasLunchOption) {
+      setSelectedMealType("lunch");
+      return;
     }
 
-    return plan.lunchDishes.map((lunch) => ({ id: String(lunch.id), label: `Lunch: ${lunch.name}` }));
-  }, [plan, selectedMealType]);
+    if (selectedMealType === "lunch" && !hasLunchOption && hasDinnerOption) {
+      setSelectedMealType("dinner");
+    }
+  }, [hasDinnerOption, hasLunchOption, hasMealOptions, selectedMealType]);
 
   const hasDinnerOption = Boolean(plan?.dinnerDish);
   const hasLunchOption = (plan?.lunchDishes.length ?? 0) > 0;
