@@ -247,6 +247,25 @@ export default function GroceryListPage() {
     }
   }, [hasDinnerOption, hasLunchOption, hasMealOptions, selectedMealType]);
 
+  const hasDinnerOption = Boolean(plan?.dinnerDish);
+  const hasLunchOption = (plan?.lunchDishes.length ?? 0) > 0;
+  const hasMealOptions = hasDinnerOption || hasLunchOption;
+
+  useEffect(() => {
+    if (!hasMealOptions) {
+      return;
+    }
+
+    if (selectedMealType === "dinner" && !hasDinnerOption && hasLunchOption) {
+      setSelectedMealType("lunch");
+      return;
+    }
+
+    if (selectedMealType === "lunch" && !hasLunchOption && hasDinnerOption) {
+      setSelectedMealType("dinner");
+    }
+  }, [hasDinnerOption, hasLunchOption, hasMealOptions, selectedMealType]);
+
   useEffect(() => {
     setSelectedMealId(mealOptions[0]?.id ?? "");
   }, [mealOptions]);
