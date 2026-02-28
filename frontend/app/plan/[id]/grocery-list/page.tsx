@@ -243,7 +243,6 @@ export default function GroceryListPage() {
     if (!mealAvailability.hasAnyMeals) {
       return;
     }
-  }, [hasDinnerOption, hasLunchOption, hasMealOptions, selectedMealType]);
 
     if (selectedMealType === "dinner" && !mealAvailability.hasDinner && mealAvailability.hasLunch) {
       setSelectedMealType("lunch");
