@@ -25,6 +25,7 @@ export const getMergedGroceryItemsByPlanDays = async (
     where: { planDayId: { in: planDayIds } },
     include: {
       dinnerDish: { select: { id: true, name: true } },
+      breakfastDish: { select: { id: true, name: true } },
       lunchDish: { select: { id: true, name: true } }
     },
     orderBy: [{ name: "asc" }, { createdAt: "asc" }]
@@ -41,9 +42,11 @@ export const getMergedGroceryItemsByPlanDays = async (
 
     const sourceLabel = groceryItem.dinnerDish
       ? `Dinner: ${groceryItem.dinnerDish.name}`
-      : groceryItem.lunchDish
-        ? `Lunch: ${groceryItem.lunchDish.name}`
-        : "General";
+      : groceryItem.breakfastDish
+        ? `Breakfast: ${groceryItem.breakfastDish.name}`
+        : groceryItem.lunchDish
+          ? `Lunch: ${groceryItem.lunchDish.name}`
+          : "General";
 
     const currentMerged = mergedMap.get(mergeKey);
 

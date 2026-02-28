@@ -15,6 +15,13 @@ type DinnerDish = {
   notes: string | null;
 };
 
+type BreakfastDish = {
+  id: number;
+  name: string;
+  notes: string | null;
+  familyMemberId: number | null;
+};
+
 type LunchDish = {
   id: number;
   name: string;
@@ -22,7 +29,7 @@ type LunchDish = {
   familyMemberId: number | null;
 };
 
-type LunchRow = {
+type MealRow = {
   localId: string;
   id?: number;
   name: string;
@@ -37,15 +44,16 @@ type PlanDayCardProps = {
   dayLabel: string;
   dayKey: string;
   initialDinner?: DinnerDish | null;
+  initialBreakfastes?: BreakfastDish[];
   initialLunches?: LunchDish[];
 };
 
-const createLocalLunchRow = (lunch?: LunchDish): LunchRow => ({
-  localId: `${lunch?.id ?? "new"}-${crypto.randomUUID()}`,
-  id: lunch?.id,
-  name: lunch?.name ?? "",
-  notes: lunch?.notes ?? "",
-  familyMemberId: lunch?.familyMemberId ?? null,
+const createLocalMealRow = (meal?: BreakfastDish | LunchDish): MealRow => ({
+  localId: `${meal?.id ?? "new"}-${crypto.randomUUID()}`,
+  id: meal?.id,
+  name: meal?.name ?? "",
+  notes: meal?.notes ?? "",
+  familyMemberId: meal?.familyMemberId ?? null,
   isSaving: false,
   errorMessage: ""
 });
@@ -55,6 +63,7 @@ export default function PlanDayCard({
   dayLabel,
   dayKey,
   initialDinner,
+  initialBreakfastes = [],
   initialLunches = []
 }: PlanDayCardProps) {
   const [members, setMembers] = useState<Member[]>([]);
@@ -62,8 +71,11 @@ export default function PlanDayCard({
   const [dinnerName, setDinnerName] = useState(initialDinner?.name ?? "");
   const [dinnerNotes, setDinnerNotes] = useState(initialDinner?.notes ?? "");
   const [isSavingDinner, setIsSavingDinner] = useState(false);
-  const [lunchRows, setLunchRows] = useState<LunchRow[]>(
-    initialLunches.map((lunch) => createLocalLunchRow(lunch))
+  const [breakfastRows, setBreakfastRows] = useState<MealRow[]>(
+    initialBreakfastes.map((breakfast) => createLocalMealRow(breakfast))
+  );
+  const [lunchRows, setLunchRows] = useState<MealRow[]>(
+    initialLunches.map((lunch) => createLocalMealRow(lunch))
   );
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
@@ -81,7 +93,7 @@ export default function PlanDayCard({
         const data = (await response.json()) as { members: Member[] };
         setMembers(data.members.filter((member) => member.isActive));
       } catch (_error) {
-        setMembersErrorMessage("Could not load members for lunch assignments.");
+        setMembersErrorMessage("Could not load members for breakfast/lunch assignments.");
       }
     };
 
@@ -130,32 +142,40 @@ export default function PlanDayCard({
     }
   };
 
-  const addLunchRow = () => {
-    setLunchRows((currentRows) => [...currentRows, createLocalLunchRow()]);
-  };
+  const updateMealRow = (
+    rows: MealRow[],
+    localId: string,
+    updates: Partial<MealRow>
+  ) => rows.map((row) => (row.localId === localId ? { ...row, ...updates, errorMessage: "" } : row));
 
-  const updateLunchRow = (localId: string, updates: Partial<LunchRow>) => {
-    setLunchRows((currentRows) =>
-      currentRows.map((row) =>
-        row.localId === localId ? { ...row, ...updates, errorMessage: "" } : row
-      )
-    );
-  };
-
-  const saveLunchRow = async (row: LunchRow) => {
+  const saveMealRow = async (
+    row: MealRow,
+    mealType: "breakfast" | "lunch"
+  ) => {
     const normalizedName = row.name.trim();
 
     if (!normalizedName) {
-      updateLunchRow(row.localId, { errorMessage: "Lunch name is required." });
+      const message = `${mealType === "breakfast" ? "Breakfast" : "Lunch"} name is required.`;
+      if (mealType === "breakfast") {
+        setBreakfastRows((currentRows) => updateMealRow(currentRows, row.localId, { errorMessage: message }));
+      } else {
+        setLunchRows((currentRows) => updateMealRow(currentRows, row.localId, { errorMessage: message }));
+      }
       return;
     }
 
-    updateLunchRow(row.localId, { isSaving: true });
+    if (mealType === "breakfast") {
+      setBreakfastRows((currentRows) => updateMealRow(currentRows, row.localId, { isSaving: true }));
+    } else {
+      setLunchRows((currentRows) => updateMealRow(currentRows, row.localId, { isSaving: true }));
+    }
+
     setFeedback(null);
 
+    const mealPath = mealType === "breakfast" ? "breakfasts" : "lunches";
     const endpoint = row.id
-      ? `${backendApiUrl}/api/plans/${planId}/days/${dayKey}/lunches/${row.id}`
-      : `${backendApiUrl}/api/plans/${planId}/days/${dayKey}/lunches`;
+      ? `${backendApiUrl}/api/plans/${planId}/days/${dayKey}/${mealPath}/${row.id}`
+      : `${backendApiUrl}/api/plans/${planId}/days/${dayKey}/${mealPath}`;
     const method = row.id ? "PUT" : "POST";
 
     try {
@@ -171,46 +191,59 @@ export default function PlanDayCard({
       });
 
       if (!response.ok) {
-        throw new Error("Unable to save lunch.");
+        throw new Error(`Unable to save ${mealType}.`);
       }
 
-      const data = (await response.json()) as { lunchDish: LunchDish };
+      const data = (await response.json()) as {
+        breakfastDish?: BreakfastDish;
+        lunchDish?: LunchDish;
+      };
+      const savedMeal = mealType === "breakfast" ? data.breakfastDish : data.lunchDish;
 
-      setLunchRows((currentRows) =>
+      if (!savedMeal) {
+        throw new Error(`Missing ${mealType} payload.`);
+      }
+
+      const setter = mealType === "breakfast" ? setBreakfastRows : setLunchRows;
+      setter((currentRows) =>
         currentRows.map((currentRow) =>
-          currentRow.localId === row.localId
-            ? createLocalLunchRow(data.lunchDish)
-            : currentRow
+          currentRow.localId === row.localId ? createLocalMealRow(savedMeal) : currentRow
         )
       );
-      setFeedback({ type: "success", message: "Lunch saved." });
+      setFeedback({ type: "success", message: `${mealType === "breakfast" ? "Breakfast" : "Lunch"} saved.` });
     } catch (_error) {
-      updateLunchRow(row.localId, {
-        errorMessage: "Could not save this lunch right now.",
-        isSaving: false
+      const setter = mealType === "breakfast" ? setBreakfastRows : setLunchRows;
+      setter((currentRows) =>
+        updateMealRow(currentRows, row.localId, {
+          errorMessage: `Could not save this ${mealType} right now.`,
+          isSaving: false
+        })
+      );
+      setFeedback({
+        type: "error",
+        message: `One or more ${mealType} rows failed to save.`
       });
-      setFeedback({ type: "error", message: "One or more lunch rows failed to save." });
       return;
     }
 
-    updateLunchRow(row.localId, { isSaving: false });
+    const setter = mealType === "breakfast" ? setBreakfastRows : setLunchRows;
+    setter((currentRows) => updateMealRow(currentRows, row.localId, { isSaving: false }));
   };
 
-  const deleteLunchRow = async (row: LunchRow) => {
+  const deleteMealRow = async (row: MealRow, mealType: "breakfast" | "lunch") => {
     setFeedback(null);
+    const setter = mealType === "breakfast" ? setBreakfastRows : setLunchRows;
 
     if (!row.id) {
-      setLunchRows((currentRows) =>
-        currentRows.filter((currentRow) => currentRow.localId !== row.localId)
-      );
+      setter((currentRows) => currentRows.filter((currentRow) => currentRow.localId !== row.localId));
       return;
     }
 
-    updateLunchRow(row.localId, { isSaving: true });
+    setter((currentRows) => updateMealRow(currentRows, row.localId, { isSaving: true }));
 
     try {
       const response = await fetch(
-        `${backendApiUrl}/api/plans/${planId}/days/${dayKey}/lunches/${row.id}`,
+        `${backendApiUrl}/api/plans/${planId}/days/${dayKey}/${mealType === "breakfast" ? "breakfasts" : "lunches"}/${row.id}`,
         {
           method: "DELETE",
           credentials: "include"
@@ -218,19 +251,19 @@ export default function PlanDayCard({
       );
 
       if (!response.ok) {
-        throw new Error("Unable to delete lunch.");
+        throw new Error(`Unable to delete ${mealType}.`);
       }
 
-      setLunchRows((currentRows) =>
-        currentRows.filter((currentRow) => currentRow.localId !== row.localId)
-      );
-      setFeedback({ type: "success", message: "Lunch deleted." });
+      setter((currentRows) => currentRows.filter((currentRow) => currentRow.localId !== row.localId));
+      setFeedback({ type: "success", message: `${mealType === "breakfast" ? "Breakfast" : "Lunch"} deleted.` });
     } catch (_error) {
-      updateLunchRow(row.localId, {
-        isSaving: false,
-        errorMessage: "Could not delete this lunch right now."
-      });
-      setFeedback({ type: "error", message: "Could not delete lunch." });
+      setter((currentRows) =>
+        updateMealRow(currentRows, row.localId, {
+          isSaving: false,
+          errorMessage: `Could not delete this ${mealType} right now.`
+        })
+      );
+      setFeedback({ type: "error", message: `Could not delete ${mealType}.` });
     }
   };
 
@@ -255,103 +288,66 @@ export default function PlanDayCard({
 
       <section className="space-y-3 rounded-xl border border-slate-200 p-4">
         <h4 className="font-semibold text-slate-900">Dinner</h4>
-        <input
-          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-          onChange={(event) => setDinnerName(event.target.value)}
-          placeholder="Dinner dish"
-          type="text"
-          value={dinnerName}
-        />
-        <textarea
-          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-          onChange={(event) => setDinnerNotes(event.target.value)}
-          placeholder="Notes (optional)"
-          rows={2}
-          value={dinnerNotes}
-        />
-        <button
-          className="rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
-          disabled={isSavingDinner}
-          onClick={saveDinner}
-          type="button"
-        >
+        <input className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" onChange={(event) => setDinnerName(event.target.value)} placeholder="Dinner dish" type="text" value={dinnerName} />
+        <textarea className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" onChange={(event) => setDinnerNotes(event.target.value)} placeholder="Notes (optional)" rows={2} value={dinnerNotes} />
+        <button className="rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60" disabled={isSavingDinner} onClick={saveDinner} type="button">
           {isSavingDinner ? "Saving..." : "Save dinner"}
         </button>
       </section>
 
       <section className="space-y-3 rounded-xl border border-slate-200 p-4">
         <div className="flex items-center justify-between">
+          <h4 className="font-semibold text-slate-900">Breakfasts</h4>
+          <button className="rounded-full border border-slate-300 px-3 py-1 text-sm font-semibold text-slate-700 hover:border-slate-400" onClick={() => setBreakfastRows((rows) => [...rows, createLocalMealRow()])} type="button">
+            Add breakfast row
+          </button>
+        </div>
+
+        {membersErrorMessage ? <p className="text-sm text-rose-700">{membersErrorMessage}</p> : null}
+        {breakfastRows.length === 0 ? <p className="text-sm text-slate-500">No breakfasts added yet.</p> : null}
+
+        {breakfastRows.map((row) => (
+          <div key={row.localId} className="space-y-2 rounded-lg border border-slate-200 p-3">
+            <input className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" onChange={(event) => setBreakfastRows((currentRows) => updateMealRow(currentRows, row.localId, { name: event.target.value }))} placeholder="Breakfast dish" type="text" value={row.name} />
+            <select className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" onChange={(event) => setBreakfastRows((currentRows) => updateMealRow(currentRows, row.localId, { familyMemberId: event.target.value ? Number(event.target.value) : null }))} value={row.familyMemberId ?? ""}>
+              {memberOptions.map((member) => (
+                <option key={member.id ?? "none"} value={member.id ?? ""}>{member.name}</option>
+              ))}
+            </select>
+            <input className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" onChange={(event) => setBreakfastRows((currentRows) => updateMealRow(currentRows, row.localId, { notes: event.target.value }))} placeholder="Notes (optional)" type="text" value={row.notes} />
+            {row.errorMessage ? <p className="text-sm text-rose-700">{row.errorMessage}</p> : null}
+            <div className="flex gap-2">
+              <button className="rounded-full bg-emerald-600 px-4 py-1.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60" disabled={row.isSaving} onClick={() => saveMealRow(row, "breakfast")} type="button">{row.isSaving ? "Saving..." : "Save"}</button>
+              <button className="rounded-full border border-rose-200 px-4 py-1.5 text-sm font-semibold text-rose-700 hover:border-rose-300 disabled:opacity-60" disabled={row.isSaving} onClick={() => deleteMealRow(row, "breakfast")} type="button">Delete</button>
+            </div>
+          </div>
+        ))}
+      </section>
+
+      <section className="space-y-3 rounded-xl border border-slate-200 p-4">
+        <div className="flex items-center justify-between">
           <h4 className="font-semibold text-slate-900">Lunches</h4>
-          <button
-            className="rounded-full border border-slate-300 px-3 py-1 text-sm font-semibold text-slate-700 hover:border-slate-400"
-            onClick={addLunchRow}
-            type="button"
-          >
+          <button className="rounded-full border border-slate-300 px-3 py-1 text-sm font-semibold text-slate-700 hover:border-slate-400" onClick={() => setLunchRows((rows) => [...rows, createLocalMealRow()])} type="button">
             Add lunch row
           </button>
         </div>
 
-        {membersErrorMessage ? (
-          <p className="text-sm text-rose-700">{membersErrorMessage}</p>
-        ) : null}
-
-        {lunchRows.length === 0 ? (
-          <p className="text-sm text-slate-500">No lunches added yet.</p>
-        ) : null}
+        {membersErrorMessage ? <p className="text-sm text-rose-700">{membersErrorMessage}</p> : null}
+        {lunchRows.length === 0 ? <p className="text-sm text-slate-500">No lunches added yet.</p> : null}
 
         {lunchRows.map((row) => (
           <div key={row.localId} className="space-y-2 rounded-lg border border-slate-200 p-3">
-            <input
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-              onChange={(event) => updateLunchRow(row.localId, { name: event.target.value })}
-              placeholder="Lunch dish"
-              type="text"
-              value={row.name}
-            />
-            <select
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-              onChange={(event) =>
-                updateLunchRow(row.localId, {
-                  familyMemberId: event.target.value ? Number(event.target.value) : null
-                })
-              }
-              value={row.familyMemberId ?? ""}
-            >
+            <input className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" onChange={(event) => setLunchRows((currentRows) => updateMealRow(currentRows, row.localId, { name: event.target.value }))} placeholder="Lunch dish" type="text" value={row.name} />
+            <select className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" onChange={(event) => setLunchRows((currentRows) => updateMealRow(currentRows, row.localId, { familyMemberId: event.target.value ? Number(event.target.value) : null }))} value={row.familyMemberId ?? ""}>
               {memberOptions.map((member) => (
-                <option key={member.id ?? "none"} value={member.id ?? ""}>
-                  {member.name}
-                </option>
+                <option key={member.id ?? "none"} value={member.id ?? ""}>{member.name}</option>
               ))}
             </select>
-            <input
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-              onChange={(event) => updateLunchRow(row.localId, { notes: event.target.value })}
-              placeholder="Notes (optional)"
-              type="text"
-              value={row.notes}
-            />
-
-            {row.errorMessage ? (
-              <p className="text-sm text-rose-700">{row.errorMessage}</p>
-            ) : null}
-
+            <input className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" onChange={(event) => setLunchRows((currentRows) => updateMealRow(currentRows, row.localId, { notes: event.target.value }))} placeholder="Notes (optional)" type="text" value={row.notes} />
+            {row.errorMessage ? <p className="text-sm text-rose-700">{row.errorMessage}</p> : null}
             <div className="flex gap-2">
-              <button
-                className="rounded-full bg-emerald-600 px-4 py-1.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
-                disabled={row.isSaving}
-                onClick={() => saveLunchRow(row)}
-                type="button"
-              >
-                {row.isSaving ? "Saving..." : "Save"}
-              </button>
-              <button
-                className="rounded-full border border-rose-200 px-4 py-1.5 text-sm font-semibold text-rose-700 hover:border-rose-300 disabled:opacity-60"
-                disabled={row.isSaving}
-                onClick={() => deleteLunchRow(row)}
-                type="button"
-              >
-                Delete
-              </button>
+              <button className="rounded-full bg-emerald-600 px-4 py-1.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60" disabled={row.isSaving} onClick={() => saveMealRow(row, "lunch")} type="button">{row.isSaving ? "Saving..." : "Save"}</button>
+              <button className="rounded-full border border-rose-200 px-4 py-1.5 text-sm font-semibold text-rose-700 hover:border-rose-300 disabled:opacity-60" disabled={row.isSaving} onClick={() => deleteMealRow(row, "lunch")} type="button">Delete</button>
             </div>
           </div>
         ))}

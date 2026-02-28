@@ -7,9 +7,9 @@ Family Food Planner is a weekly meal-planning app for families. Admins create pl
 - **Admin login**: secure admin authentication with session-based access to protected pages.
 - **Initial admin bootstrap**: Docker setup now seeds a default admin user automatically on first startup.
 - **Members management**: create, edit, list, and archive family members.
-- **Weekly plans**: define week ranges and build day-by-day meal plans (dinner + repeatable lunch rows).
+- **Weekly plans**: define week ranges and build day-by-day meal plans (dinner + repeatable breakfast/lunch rows).
 - **Plan creation API**: admins can create a plan in one call using either explicit dates or weekday boundaries anchored to a specific date, with automatic `PlanDay` generation.
-- **Plan browsing APIs + UI**: admins can list plans sorted by latest start date and open a plan detail view with nested day cards (dinner + lunches) for in-place calendar editing.
+- **Plan browsing APIs + UI**: admins can list plans sorted by latest start date and open a plan detail view with nested day cards (dinner + breakfasts + lunches) for in-place calendar editing.
 - **Homepage current-plan presentation component**: the home page now renders a reusable read-only `CurrentPlanTable` card with plan name/date range metadata plus responsive day/lunch/dinner layouts for desktop and small screens.
 - **UI icon polish**: the homepage and plans overview now include Lucide icons on key headings, table labels, and action buttons to improve scanability and visual hierarchy.
 - **Plan creation UI**: admins can create a new plan directly from the Plans screen by choosing a name and date range, then jump straight into editing.
@@ -18,7 +18,8 @@ Family Food Planner is a weekly meal-planning app for families. Admins create pl
 - **Plan deletion API**: admins can delete a plan by id; relational cascading removes associated plan-day and grocery records.
 - **Shared plan date utilities**: backend routes now reuse a common plan service for ISO day-key parsing, date range generation, transactional plan/day creation, and typed error mapping for stable HTTP responses.
 - **Plan-scoped plan days**: day entries are now scoped to a `Plan`, and legacy rows are migrated into a default `Legacy Plan` during database migration/seed.
-- **Plan-scoped day editing routes**: dinner and lunch write endpoints now require both `planId` and `dayKey` (`/api/plans/:planId/days/:dayKey/...`) so updates are validated against the selected plan before persisting.
+- **Plan-scoped day editing routes**: dinner, breakfast, and lunch write endpoints now require both `planId` and `dayKey` (`/api/plans/:planId/days/:dayKey/...`) so updates are validated against the selected plan before persisting.
+- **Breakfast planning support**: each plan day now supports repeatable breakfast rows with optional member assignment, matching lunch behavior in APIs/UI and allowing breakfast-linked grocery ingredients.
 - **Grocery sharing**: generate tokenized public grocery links so non-admin shoppers can check off items.
 - **Realtime grocery updates**: grocery item check/uncheck and edits are synchronized live across admin and shared views.
 
@@ -78,10 +79,10 @@ Family Food Planner is a weekly meal-planning app for families. Admins create pl
 - `DELETE /api/members/:id` (or archive endpoint depending on implementation) — archive/remove member from active planning.
 
 ### Weekly Plans / Meals
-- Plan and meal endpoints under `/api/plans/...` handle week creation, day meal entries, lunch rows, and dinner updates.
+- Plan and meal endpoints under `/api/plans/...` handle week creation, day meal entries, breakfast/lunch rows, and dinner updates.
 - `POST /api/plans` — create a plan and all plan-day rows for a validated date range (admin-auth required).
 - `GET /api/plans` — list plans ordered by newest `startDate` first for plan selection cards.
-- `GET /api/plans/:planId` — fetch one plan with nested `planDays`, `dinnerDish`, and `lunchDishes` for calendar/day-card rendering.
+- `GET /api/plans/:planId` — fetch one plan with nested `planDays`, `dinnerDish`, `breakfastDishes`, and `lunchDishes` for calendar/day-card rendering.
 - `PUT /api/plans/:planId` — update plan name and date range; the backend adds/removes `PlanDay` rows to keep data aligned with the new range.
 - `DELETE /api/plans/:planId` — delete a plan by id; returns `404` when the plan does not exist and cascades removal of related plan-day and grocery data.
 

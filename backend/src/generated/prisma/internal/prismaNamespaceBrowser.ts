@@ -58,6 +58,7 @@ export const ModelName = {
   GroceryShareToken: 'GroceryShareToken',
   DinnerDish: 'DinnerDish',
   LunchDish: 'LunchDish',
+  BreakfastDish: 'BreakfastDish',
   GroceryItem: 'GroceryItem'
 } as const
 
@@ -158,6 +159,19 @@ export const LunchDishScalarFieldEnum = {
 export type LunchDishScalarFieldEnum = (typeof LunchDishScalarFieldEnum)[keyof typeof LunchDishScalarFieldEnum]
 
 
+export const BreakfastDishScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  notes: 'notes',
+  planDayId: 'planDayId',
+  familyMemberId: 'familyMemberId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type BreakfastDishScalarFieldEnum = (typeof BreakfastDishScalarFieldEnum)[keyof typeof BreakfastDishScalarFieldEnum]
+
+
 export const GroceryItemScalarFieldEnum = {
   id: 'id',
   name: 'name',
@@ -167,6 +181,7 @@ export const GroceryItemScalarFieldEnum = {
   isChecked: 'isChecked',
   planDayId: 'planDayId',
   dinnerDishId: 'dinnerDishId',
+  breakfastDishId: 'breakfastDishId',
   lunchDishId: 'lunchDishId',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'

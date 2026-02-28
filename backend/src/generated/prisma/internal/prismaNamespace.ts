@@ -391,6 +391,7 @@ export const ModelName = {
   GroceryShareToken: 'GroceryShareToken',
   DinnerDish: 'DinnerDish',
   LunchDish: 'LunchDish',
+  BreakfastDish: 'BreakfastDish',
   GroceryItem: 'GroceryItem'
 } as const
 
@@ -407,7 +408,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "adminUser" | "familyMember" | "plan" | "planDay" | "groceryShareToken" | "dinnerDish" | "lunchDish" | "groceryItem"
+    modelProps: "adminUser" | "familyMember" | "plan" | "planDay" | "groceryShareToken" | "dinnerDish" | "lunchDish" | "breakfastDish" | "groceryItem"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -929,6 +930,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    BreakfastDish: {
+      payload: Prisma.$BreakfastDishPayload<ExtArgs>
+      fields: Prisma.BreakfastDishFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.BreakfastDishFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BreakfastDishPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.BreakfastDishFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BreakfastDishPayload>
+        }
+        findFirst: {
+          args: Prisma.BreakfastDishFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BreakfastDishPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.BreakfastDishFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BreakfastDishPayload>
+        }
+        findMany: {
+          args: Prisma.BreakfastDishFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BreakfastDishPayload>[]
+        }
+        create: {
+          args: Prisma.BreakfastDishCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BreakfastDishPayload>
+        }
+        createMany: {
+          args: Prisma.BreakfastDishCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.BreakfastDishCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BreakfastDishPayload>[]
+        }
+        delete: {
+          args: Prisma.BreakfastDishDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BreakfastDishPayload>
+        }
+        update: {
+          args: Prisma.BreakfastDishUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BreakfastDishPayload>
+        }
+        deleteMany: {
+          args: Prisma.BreakfastDishDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.BreakfastDishUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.BreakfastDishUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BreakfastDishPayload>[]
+        }
+        upsert: {
+          args: Prisma.BreakfastDishUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BreakfastDishPayload>
+        }
+        aggregate: {
+          args: Prisma.BreakfastDishAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateBreakfastDish>
+        }
+        groupBy: {
+          args: Prisma.BreakfastDishGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.BreakfastDishGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.BreakfastDishCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.BreakfastDishCountAggregateOutputType> | number
+        }
+      }
+    }
     GroceryItem: {
       payload: Prisma.$GroceryItemPayload<ExtArgs>
       fields: Prisma.GroceryItemFieldRefs
@@ -1123,6 +1198,19 @@ export const LunchDishScalarFieldEnum = {
 export type LunchDishScalarFieldEnum = (typeof LunchDishScalarFieldEnum)[keyof typeof LunchDishScalarFieldEnum]
 
 
+export const BreakfastDishScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  notes: 'notes',
+  planDayId: 'planDayId',
+  familyMemberId: 'familyMemberId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type BreakfastDishScalarFieldEnum = (typeof BreakfastDishScalarFieldEnum)[keyof typeof BreakfastDishScalarFieldEnum]
+
+
 export const GroceryItemScalarFieldEnum = {
   id: 'id',
   name: 'name',
@@ -1132,6 +1220,7 @@ export const GroceryItemScalarFieldEnum = {
   isChecked: 'isChecked',
   planDayId: 'planDayId',
   dinnerDishId: 'dinnerDishId',
+  breakfastDishId: 'breakfastDishId',
   lunchDishId: 'lunchDishId',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
@@ -1348,6 +1437,7 @@ export type GlobalOmitConfig = {
   groceryShareToken?: Prisma.GroceryShareTokenOmit
   dinnerDish?: Prisma.DinnerDishOmit
   lunchDish?: Prisma.LunchDishOmit
+  breakfastDish?: Prisma.BreakfastDishOmit
   groceryItem?: Prisma.GroceryItemOmit
 }
 

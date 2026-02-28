@@ -13,6 +13,7 @@ type PlanDayPayload = {
   id: number;
   date: string;
   dinnerDish: MealRef | null;
+  breakfastDishes: MealRef[];
   lunchDishes: MealRef[];
 };
 
@@ -29,6 +30,7 @@ type GroceryItem = {
   category: "GENERAL" | "INGREDIENT";
   isChecked: boolean;
   dinnerDish: MealRef | null;
+  breakfastDish: MealRef | null;
   lunchDish: MealRef | null;
 };
 
@@ -84,7 +86,7 @@ export default function GroceryListPage() {
   const [ingredientName, setIngredientName] = useState("");
   const [ingredientQuantity, setIngredientQuantity] = useState("1");
   const [ingredientUnit, setIngredientUnit] = useState("");
-  const [selectedMealType, setSelectedMealType] = useState<"dinner" | "lunch">("dinner");
+  const [selectedMealType, setSelectedMealType] = useState<"dinner" | "breakfast" | "lunch">("dinner");
   const [selectedMealId, setSelectedMealId] = useState("");
 
   const [editingRows, setEditingRows] = useState<Record<number, EditableRow>>({});
@@ -218,6 +220,13 @@ export default function GroceryListPage() {
         : []
     );
 
+    const breakfastOptions: MealOption[] = planDays.flatMap((day) =>
+      day.breakfastDishes.map((breakfastDish) => ({
+        id: String(breakfastDish.id),
+        label: `${formatDayLabel(day.date)} · Breakfast: ${breakfastDish.name}`
+      }))
+    );
+
     const lunchOptions: MealOption[] = planDays.flatMap((day) =>
       day.lunchDishes.map((lunchDish) => ({
         id: String(lunchDish.id),
@@ -225,17 +234,23 @@ export default function GroceryListPage() {
       }))
     );
 
-    return selectedMealType === "dinner" ? dinnerOptions : lunchOptions;
+    if (selectedMealType === "dinner") {
+      return dinnerOptions;
+    }
+
+    return selectedMealType === "breakfast" ? breakfastOptions : lunchOptions;
   }, [planDays, selectedMealType]);
 
   const mealAvailability = useMemo(() => {
     const hasDinner = planDays.some((day) => Boolean(day.dinnerDish));
+    const hasBreakfast = planDays.some((day) => day.breakfastDishes.length > 0);
     const hasLunch = planDays.some((day) => day.lunchDishes.length > 0);
 
     return {
       hasDinner,
+      hasBreakfast,
       hasLunch,
-      hasAnyMeals: hasDinner || hasLunch
+      hasAnyMeals: hasDinner || hasBreakfast || hasLunch
     };
   }, [planDays]);
 
@@ -244,13 +259,30 @@ export default function GroceryListPage() {
       return;
     }
 
-    if (selectedMealType === "dinner" && !mealAvailability.hasDinner && mealAvailability.hasLunch) {
-      setSelectedMealType("lunch");
+    if (selectedMealType === "dinner" && !mealAvailability.hasDinner) {
+      if (mealAvailability.hasBreakfast) {
+        setSelectedMealType("breakfast");
+      } else if (mealAvailability.hasLunch) {
+        setSelectedMealType("lunch");
+      }
       return;
     }
 
-    if (selectedMealType === "lunch" && !mealAvailability.hasLunch && mealAvailability.hasDinner) {
-      setSelectedMealType("dinner");
+    if (selectedMealType === "breakfast" && !mealAvailability.hasBreakfast) {
+      if (mealAvailability.hasDinner) {
+        setSelectedMealType("dinner");
+      } else if (mealAvailability.hasLunch) {
+        setSelectedMealType("lunch");
+      }
+      return;
+    }
+
+    if (selectedMealType === "lunch" && !mealAvailability.hasLunch) {
+      if (mealAvailability.hasDinner) {
+        setSelectedMealType("dinner");
+      } else if (mealAvailability.hasBreakfast) {
+        setSelectedMealType("breakfast");
+      }
     }
   }, [mealAvailability, selectedMealType]);
 
@@ -375,6 +407,7 @@ export default function GroceryListPage() {
       unit: ingredientUnit.trim() || null,
       category: "INGREDIENT",
       dinnerDishId: selectedMealType === "dinner" ? Number(selectedMealId) : null,
+      breakfastDishId: selectedMealType === "breakfast" ? Number(selectedMealId) : null,
       lunchDishId: selectedMealType === "lunch" ? Number(selectedMealId) : null
     };
 
@@ -497,8 +530,9 @@ export default function GroceryListPage() {
       <article className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4">
         <h2 className="font-semibold text-slate-900">Add ingredient for meal</h2>
         <div className="grid gap-2 md:grid-cols-2">
-          <select className="rounded border px-3 py-2" value={selectedMealType} onChange={(event) => setSelectedMealType(event.target.value as "dinner" | "lunch")}>
+          <select className="rounded border px-3 py-2" value={selectedMealType} onChange={(event) => setSelectedMealType(event.target.value as "dinner" | "breakfast" | "lunch")}>
             <option value="dinner">Dinner</option>
+            <option value="breakfast">Breakfast</option>
             <option value="lunch">Lunch</option>
           </select>
           <select className="rounded border px-3 py-2" value={selectedMealId} onChange={(event) => setSelectedMealId(event.target.value)} disabled={!mealAvailability.hasAnyMeals}>
@@ -511,7 +545,7 @@ export default function GroceryListPage() {
           <input className="rounded border px-3 py-2" placeholder="Quantity" type="number" min="0.1" step="0.1" value={ingredientQuantity} onChange={(event) => setIngredientQuantity(event.target.value)} />
           <input className="rounded border px-3 py-2 md:col-span-2" placeholder="Unit (optional)" value={ingredientUnit} onChange={(event) => setIngredientUnit(event.target.value)} />
         </div>
-        {!mealAvailability.hasAnyMeals ? <p className="text-sm text-amber-700">Add at least one lunch or dinner dish in this plan before creating ingredient items.</p> : null}
+        {!mealAvailability.hasAnyMeals ? <p className="text-sm text-amber-700">Add at least one breakfast, lunch, or dinner dish in this plan before creating ingredient items.</p> : null}
         <button className="rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white" type="button" onClick={createIngredientItem}>Add ingredient item</button>
       </article>
 
@@ -537,7 +571,7 @@ export default function GroceryListPage() {
               {!editingRow ? (
                 <>
                   <p className={item.isChecked ? "text-sm font-medium text-slate-400 line-through" : "text-sm font-medium text-slate-900"}>{item.name} ({item.quantity} {item.unit ?? ""})</p>
-                  <p className="text-xs text-slate-500">{item.category} {item.dinnerDish ? `· Dinner: ${item.dinnerDish.name}` : ""} {item.lunchDish ? `· Lunch: ${item.lunchDish.name}` : ""}</p>
+                  <p className="text-xs text-slate-500">{item.category} {item.dinnerDish ? `· Dinner: ${item.dinnerDish.name}` : ""} {item.breakfastDish ? `· Breakfast: ${item.breakfastDish.name}` : ""} {item.lunchDish ? `· Lunch: ${item.lunchDish.name}` : ""}</p>
                   <div className="flex gap-2">
                     <button className="rounded-full border px-3 py-1 text-sm" type="button" onClick={() => startEditing(item)}>Edit</button>
                     <button className="rounded-full border border-rose-300 px-3 py-1 text-sm text-rose-700" type="button" onClick={() => removeItem(item.id)}>Remove</button>

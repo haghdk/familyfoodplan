@@ -31,6 +31,7 @@ export type GroceryItemAvgAggregateOutputType = {
   quantity: number | null
   planDayId: number | null
   dinnerDishId: number | null
+  breakfastDishId: number | null
   lunchDishId: number | null
 }
 
@@ -39,6 +40,7 @@ export type GroceryItemSumAggregateOutputType = {
   quantity: number | null
   planDayId: number | null
   dinnerDishId: number | null
+  breakfastDishId: number | null
   lunchDishId: number | null
 }
 
@@ -51,6 +53,7 @@ export type GroceryItemMinAggregateOutputType = {
   isChecked: boolean | null
   planDayId: number | null
   dinnerDishId: number | null
+  breakfastDishId: number | null
   lunchDishId: number | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -65,6 +68,7 @@ export type GroceryItemMaxAggregateOutputType = {
   isChecked: boolean | null
   planDayId: number | null
   dinnerDishId: number | null
+  breakfastDishId: number | null
   lunchDishId: number | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -79,6 +83,7 @@ export type GroceryItemCountAggregateOutputType = {
   isChecked: number
   planDayId: number
   dinnerDishId: number
+  breakfastDishId: number
   lunchDishId: number
   createdAt: number
   updatedAt: number
@@ -91,6 +96,7 @@ export type GroceryItemAvgAggregateInputType = {
   quantity?: true
   planDayId?: true
   dinnerDishId?: true
+  breakfastDishId?: true
   lunchDishId?: true
 }
 
@@ -99,6 +105,7 @@ export type GroceryItemSumAggregateInputType = {
   quantity?: true
   planDayId?: true
   dinnerDishId?: true
+  breakfastDishId?: true
   lunchDishId?: true
 }
 
@@ -111,6 +118,7 @@ export type GroceryItemMinAggregateInputType = {
   isChecked?: true
   planDayId?: true
   dinnerDishId?: true
+  breakfastDishId?: true
   lunchDishId?: true
   createdAt?: true
   updatedAt?: true
@@ -125,6 +133,7 @@ export type GroceryItemMaxAggregateInputType = {
   isChecked?: true
   planDayId?: true
   dinnerDishId?: true
+  breakfastDishId?: true
   lunchDishId?: true
   createdAt?: true
   updatedAt?: true
@@ -139,6 +148,7 @@ export type GroceryItemCountAggregateInputType = {
   isChecked?: true
   planDayId?: true
   dinnerDishId?: true
+  breakfastDishId?: true
   lunchDishId?: true
   createdAt?: true
   updatedAt?: true
@@ -240,6 +250,7 @@ export type GroceryItemGroupByOutputType = {
   isChecked: boolean
   planDayId: number
   dinnerDishId: number | null
+  breakfastDishId: number | null
   lunchDishId: number | null
   createdAt: Date
   updatedAt: Date
@@ -277,11 +288,13 @@ export type GroceryItemWhereInput = {
   isChecked?: Prisma.BoolFilter<"GroceryItem"> | boolean
   planDayId?: Prisma.IntFilter<"GroceryItem"> | number
   dinnerDishId?: Prisma.IntNullableFilter<"GroceryItem"> | number | null
+  breakfastDishId?: Prisma.IntNullableFilter<"GroceryItem"> | number | null
   lunchDishId?: Prisma.IntNullableFilter<"GroceryItem"> | number | null
   createdAt?: Prisma.DateTimeFilter<"GroceryItem"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"GroceryItem"> | Date | string
   planDay?: Prisma.XOR<Prisma.PlanDayScalarRelationFilter, Prisma.PlanDayWhereInput>
   dinnerDish?: Prisma.XOR<Prisma.DinnerDishNullableScalarRelationFilter, Prisma.DinnerDishWhereInput> | null
+  breakfastDish?: Prisma.XOR<Prisma.BreakfastDishNullableScalarRelationFilter, Prisma.BreakfastDishWhereInput> | null
   lunchDish?: Prisma.XOR<Prisma.LunchDishNullableScalarRelationFilter, Prisma.LunchDishWhereInput> | null
 }
 
@@ -294,11 +307,13 @@ export type GroceryItemOrderByWithRelationInput = {
   isChecked?: Prisma.SortOrder
   planDayId?: Prisma.SortOrder
   dinnerDishId?: Prisma.SortOrderInput | Prisma.SortOrder
+  breakfastDishId?: Prisma.SortOrderInput | Prisma.SortOrder
   lunchDishId?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   planDay?: Prisma.PlanDayOrderByWithRelationInput
   dinnerDish?: Prisma.DinnerDishOrderByWithRelationInput
+  breakfastDish?: Prisma.BreakfastDishOrderByWithRelationInput
   lunchDish?: Prisma.LunchDishOrderByWithRelationInput
 }
 
@@ -314,11 +329,13 @@ export type GroceryItemWhereUniqueInput = Prisma.AtLeast<{
   isChecked?: Prisma.BoolFilter<"GroceryItem"> | boolean
   planDayId?: Prisma.IntFilter<"GroceryItem"> | number
   dinnerDishId?: Prisma.IntNullableFilter<"GroceryItem"> | number | null
+  breakfastDishId?: Prisma.IntNullableFilter<"GroceryItem"> | number | null
   lunchDishId?: Prisma.IntNullableFilter<"GroceryItem"> | number | null
   createdAt?: Prisma.DateTimeFilter<"GroceryItem"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"GroceryItem"> | Date | string
   planDay?: Prisma.XOR<Prisma.PlanDayScalarRelationFilter, Prisma.PlanDayWhereInput>
   dinnerDish?: Prisma.XOR<Prisma.DinnerDishNullableScalarRelationFilter, Prisma.DinnerDishWhereInput> | null
+  breakfastDish?: Prisma.XOR<Prisma.BreakfastDishNullableScalarRelationFilter, Prisma.BreakfastDishWhereInput> | null
   lunchDish?: Prisma.XOR<Prisma.LunchDishNullableScalarRelationFilter, Prisma.LunchDishWhereInput> | null
 }, "id">
 
@@ -331,6 +348,7 @@ export type GroceryItemOrderByWithAggregationInput = {
   isChecked?: Prisma.SortOrder
   planDayId?: Prisma.SortOrder
   dinnerDishId?: Prisma.SortOrderInput | Prisma.SortOrder
+  breakfastDishId?: Prisma.SortOrderInput | Prisma.SortOrder
   lunchDishId?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -353,6 +371,7 @@ export type GroceryItemScalarWhereWithAggregatesInput = {
   isChecked?: Prisma.BoolWithAggregatesFilter<"GroceryItem"> | boolean
   planDayId?: Prisma.IntWithAggregatesFilter<"GroceryItem"> | number
   dinnerDishId?: Prisma.IntNullableWithAggregatesFilter<"GroceryItem"> | number | null
+  breakfastDishId?: Prisma.IntNullableWithAggregatesFilter<"GroceryItem"> | number | null
   lunchDishId?: Prisma.IntNullableWithAggregatesFilter<"GroceryItem"> | number | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"GroceryItem"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"GroceryItem"> | Date | string
@@ -368,6 +387,7 @@ export type GroceryItemCreateInput = {
   updatedAt?: Date | string
   planDay: Prisma.PlanDayCreateNestedOneWithoutGroceryItemsInput
   dinnerDish?: Prisma.DinnerDishCreateNestedOneWithoutGroceryItemsInput
+  breakfastDish?: Prisma.BreakfastDishCreateNestedOneWithoutGroceryItemsInput
   lunchDish?: Prisma.LunchDishCreateNestedOneWithoutGroceryItemsInput
 }
 
@@ -380,6 +400,7 @@ export type GroceryItemUncheckedCreateInput = {
   isChecked?: boolean
   planDayId: number
   dinnerDishId?: number | null
+  breakfastDishId?: number | null
   lunchDishId?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -395,6 +416,7 @@ export type GroceryItemUpdateInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   planDay?: Prisma.PlanDayUpdateOneRequiredWithoutGroceryItemsNestedInput
   dinnerDish?: Prisma.DinnerDishUpdateOneWithoutGroceryItemsNestedInput
+  breakfastDish?: Prisma.BreakfastDishUpdateOneWithoutGroceryItemsNestedInput
   lunchDish?: Prisma.LunchDishUpdateOneWithoutGroceryItemsNestedInput
 }
 
@@ -407,6 +429,7 @@ export type GroceryItemUncheckedUpdateInput = {
   isChecked?: Prisma.BoolFieldUpdateOperationsInput | boolean
   planDayId?: Prisma.IntFieldUpdateOperationsInput | number
   dinnerDishId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  breakfastDishId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   lunchDishId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -421,6 +444,7 @@ export type GroceryItemCreateManyInput = {
   isChecked?: boolean
   planDayId: number
   dinnerDishId?: number | null
+  breakfastDishId?: number | null
   lunchDishId?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -445,6 +469,7 @@ export type GroceryItemUncheckedUpdateManyInput = {
   isChecked?: Prisma.BoolFieldUpdateOperationsInput | boolean
   planDayId?: Prisma.IntFieldUpdateOperationsInput | number
   dinnerDishId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  breakfastDishId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   lunchDishId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -469,6 +494,7 @@ export type GroceryItemCountOrderByAggregateInput = {
   isChecked?: Prisma.SortOrder
   planDayId?: Prisma.SortOrder
   dinnerDishId?: Prisma.SortOrder
+  breakfastDishId?: Prisma.SortOrder
   lunchDishId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -479,6 +505,7 @@ export type GroceryItemAvgOrderByAggregateInput = {
   quantity?: Prisma.SortOrder
   planDayId?: Prisma.SortOrder
   dinnerDishId?: Prisma.SortOrder
+  breakfastDishId?: Prisma.SortOrder
   lunchDishId?: Prisma.SortOrder
 }
 
@@ -491,6 +518,7 @@ export type GroceryItemMaxOrderByAggregateInput = {
   isChecked?: Prisma.SortOrder
   planDayId?: Prisma.SortOrder
   dinnerDishId?: Prisma.SortOrder
+  breakfastDishId?: Prisma.SortOrder
   lunchDishId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -505,6 +533,7 @@ export type GroceryItemMinOrderByAggregateInput = {
   isChecked?: Prisma.SortOrder
   planDayId?: Prisma.SortOrder
   dinnerDishId?: Prisma.SortOrder
+  breakfastDishId?: Prisma.SortOrder
   lunchDishId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -515,6 +544,7 @@ export type GroceryItemSumOrderByAggregateInput = {
   quantity?: Prisma.SortOrder
   planDayId?: Prisma.SortOrder
   dinnerDishId?: Prisma.SortOrder
+  breakfastDishId?: Prisma.SortOrder
   lunchDishId?: Prisma.SortOrder
 }
 
@@ -644,6 +674,48 @@ export type GroceryItemUncheckedUpdateManyWithoutLunchDishNestedInput = {
   deleteMany?: Prisma.GroceryItemScalarWhereInput | Prisma.GroceryItemScalarWhereInput[]
 }
 
+export type GroceryItemCreateNestedManyWithoutBreakfastDishInput = {
+  create?: Prisma.XOR<Prisma.GroceryItemCreateWithoutBreakfastDishInput, Prisma.GroceryItemUncheckedCreateWithoutBreakfastDishInput> | Prisma.GroceryItemCreateWithoutBreakfastDishInput[] | Prisma.GroceryItemUncheckedCreateWithoutBreakfastDishInput[]
+  connectOrCreate?: Prisma.GroceryItemCreateOrConnectWithoutBreakfastDishInput | Prisma.GroceryItemCreateOrConnectWithoutBreakfastDishInput[]
+  createMany?: Prisma.GroceryItemCreateManyBreakfastDishInputEnvelope
+  connect?: Prisma.GroceryItemWhereUniqueInput | Prisma.GroceryItemWhereUniqueInput[]
+}
+
+export type GroceryItemUncheckedCreateNestedManyWithoutBreakfastDishInput = {
+  create?: Prisma.XOR<Prisma.GroceryItemCreateWithoutBreakfastDishInput, Prisma.GroceryItemUncheckedCreateWithoutBreakfastDishInput> | Prisma.GroceryItemCreateWithoutBreakfastDishInput[] | Prisma.GroceryItemUncheckedCreateWithoutBreakfastDishInput[]
+  connectOrCreate?: Prisma.GroceryItemCreateOrConnectWithoutBreakfastDishInput | Prisma.GroceryItemCreateOrConnectWithoutBreakfastDishInput[]
+  createMany?: Prisma.GroceryItemCreateManyBreakfastDishInputEnvelope
+  connect?: Prisma.GroceryItemWhereUniqueInput | Prisma.GroceryItemWhereUniqueInput[]
+}
+
+export type GroceryItemUpdateManyWithoutBreakfastDishNestedInput = {
+  create?: Prisma.XOR<Prisma.GroceryItemCreateWithoutBreakfastDishInput, Prisma.GroceryItemUncheckedCreateWithoutBreakfastDishInput> | Prisma.GroceryItemCreateWithoutBreakfastDishInput[] | Prisma.GroceryItemUncheckedCreateWithoutBreakfastDishInput[]
+  connectOrCreate?: Prisma.GroceryItemCreateOrConnectWithoutBreakfastDishInput | Prisma.GroceryItemCreateOrConnectWithoutBreakfastDishInput[]
+  upsert?: Prisma.GroceryItemUpsertWithWhereUniqueWithoutBreakfastDishInput | Prisma.GroceryItemUpsertWithWhereUniqueWithoutBreakfastDishInput[]
+  createMany?: Prisma.GroceryItemCreateManyBreakfastDishInputEnvelope
+  set?: Prisma.GroceryItemWhereUniqueInput | Prisma.GroceryItemWhereUniqueInput[]
+  disconnect?: Prisma.GroceryItemWhereUniqueInput | Prisma.GroceryItemWhereUniqueInput[]
+  delete?: Prisma.GroceryItemWhereUniqueInput | Prisma.GroceryItemWhereUniqueInput[]
+  connect?: Prisma.GroceryItemWhereUniqueInput | Prisma.GroceryItemWhereUniqueInput[]
+  update?: Prisma.GroceryItemUpdateWithWhereUniqueWithoutBreakfastDishInput | Prisma.GroceryItemUpdateWithWhereUniqueWithoutBreakfastDishInput[]
+  updateMany?: Prisma.GroceryItemUpdateManyWithWhereWithoutBreakfastDishInput | Prisma.GroceryItemUpdateManyWithWhereWithoutBreakfastDishInput[]
+  deleteMany?: Prisma.GroceryItemScalarWhereInput | Prisma.GroceryItemScalarWhereInput[]
+}
+
+export type GroceryItemUncheckedUpdateManyWithoutBreakfastDishNestedInput = {
+  create?: Prisma.XOR<Prisma.GroceryItemCreateWithoutBreakfastDishInput, Prisma.GroceryItemUncheckedCreateWithoutBreakfastDishInput> | Prisma.GroceryItemCreateWithoutBreakfastDishInput[] | Prisma.GroceryItemUncheckedCreateWithoutBreakfastDishInput[]
+  connectOrCreate?: Prisma.GroceryItemCreateOrConnectWithoutBreakfastDishInput | Prisma.GroceryItemCreateOrConnectWithoutBreakfastDishInput[]
+  upsert?: Prisma.GroceryItemUpsertWithWhereUniqueWithoutBreakfastDishInput | Prisma.GroceryItemUpsertWithWhereUniqueWithoutBreakfastDishInput[]
+  createMany?: Prisma.GroceryItemCreateManyBreakfastDishInputEnvelope
+  set?: Prisma.GroceryItemWhereUniqueInput | Prisma.GroceryItemWhereUniqueInput[]
+  disconnect?: Prisma.GroceryItemWhereUniqueInput | Prisma.GroceryItemWhereUniqueInput[]
+  delete?: Prisma.GroceryItemWhereUniqueInput | Prisma.GroceryItemWhereUniqueInput[]
+  connect?: Prisma.GroceryItemWhereUniqueInput | Prisma.GroceryItemWhereUniqueInput[]
+  update?: Prisma.GroceryItemUpdateWithWhereUniqueWithoutBreakfastDishInput | Prisma.GroceryItemUpdateWithWhereUniqueWithoutBreakfastDishInput[]
+  updateMany?: Prisma.GroceryItemUpdateManyWithWhereWithoutBreakfastDishInput | Prisma.GroceryItemUpdateManyWithWhereWithoutBreakfastDishInput[]
+  deleteMany?: Prisma.GroceryItemScalarWhereInput | Prisma.GroceryItemScalarWhereInput[]
+}
+
 export type FloatFieldUpdateOperationsInput = {
   set?: number
   increment?: number
@@ -665,6 +737,7 @@ export type GroceryItemCreateWithoutPlanDayInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   dinnerDish?: Prisma.DinnerDishCreateNestedOneWithoutGroceryItemsInput
+  breakfastDish?: Prisma.BreakfastDishCreateNestedOneWithoutGroceryItemsInput
   lunchDish?: Prisma.LunchDishCreateNestedOneWithoutGroceryItemsInput
 }
 
@@ -676,6 +749,7 @@ export type GroceryItemUncheckedCreateWithoutPlanDayInput = {
   category?: $Enums.GroceryCategory
   isChecked?: boolean
   dinnerDishId?: number | null
+  breakfastDishId?: number | null
   lunchDishId?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -719,6 +793,7 @@ export type GroceryItemScalarWhereInput = {
   isChecked?: Prisma.BoolFilter<"GroceryItem"> | boolean
   planDayId?: Prisma.IntFilter<"GroceryItem"> | number
   dinnerDishId?: Prisma.IntNullableFilter<"GroceryItem"> | number | null
+  breakfastDishId?: Prisma.IntNullableFilter<"GroceryItem"> | number | null
   lunchDishId?: Prisma.IntNullableFilter<"GroceryItem"> | number | null
   createdAt?: Prisma.DateTimeFilter<"GroceryItem"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"GroceryItem"> | Date | string
@@ -733,6 +808,7 @@ export type GroceryItemCreateWithoutDinnerDishInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   planDay: Prisma.PlanDayCreateNestedOneWithoutGroceryItemsInput
+  breakfastDish?: Prisma.BreakfastDishCreateNestedOneWithoutGroceryItemsInput
   lunchDish?: Prisma.LunchDishCreateNestedOneWithoutGroceryItemsInput
 }
 
@@ -744,6 +820,7 @@ export type GroceryItemUncheckedCreateWithoutDinnerDishInput = {
   category?: $Enums.GroceryCategory
   isChecked?: boolean
   planDayId: number
+  breakfastDishId?: number | null
   lunchDishId?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -785,6 +862,7 @@ export type GroceryItemCreateWithoutLunchDishInput = {
   updatedAt?: Date | string
   planDay: Prisma.PlanDayCreateNestedOneWithoutGroceryItemsInput
   dinnerDish?: Prisma.DinnerDishCreateNestedOneWithoutGroceryItemsInput
+  breakfastDish?: Prisma.BreakfastDishCreateNestedOneWithoutGroceryItemsInput
 }
 
 export type GroceryItemUncheckedCreateWithoutLunchDishInput = {
@@ -796,6 +874,7 @@ export type GroceryItemUncheckedCreateWithoutLunchDishInput = {
   isChecked?: boolean
   planDayId: number
   dinnerDishId?: number | null
+  breakfastDishId?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -826,6 +905,59 @@ export type GroceryItemUpdateManyWithWhereWithoutLunchDishInput = {
   data: Prisma.XOR<Prisma.GroceryItemUpdateManyMutationInput, Prisma.GroceryItemUncheckedUpdateManyWithoutLunchDishInput>
 }
 
+export type GroceryItemCreateWithoutBreakfastDishInput = {
+  name: string
+  quantity?: number
+  unit?: string | null
+  category?: $Enums.GroceryCategory
+  isChecked?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  planDay: Prisma.PlanDayCreateNestedOneWithoutGroceryItemsInput
+  dinnerDish?: Prisma.DinnerDishCreateNestedOneWithoutGroceryItemsInput
+  lunchDish?: Prisma.LunchDishCreateNestedOneWithoutGroceryItemsInput
+}
+
+export type GroceryItemUncheckedCreateWithoutBreakfastDishInput = {
+  id?: number
+  name: string
+  quantity?: number
+  unit?: string | null
+  category?: $Enums.GroceryCategory
+  isChecked?: boolean
+  planDayId: number
+  dinnerDishId?: number | null
+  lunchDishId?: number | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+}
+
+export type GroceryItemCreateOrConnectWithoutBreakfastDishInput = {
+  where: Prisma.GroceryItemWhereUniqueInput
+  create: Prisma.XOR<Prisma.GroceryItemCreateWithoutBreakfastDishInput, Prisma.GroceryItemUncheckedCreateWithoutBreakfastDishInput>
+}
+
+export type GroceryItemCreateManyBreakfastDishInputEnvelope = {
+  data: Prisma.GroceryItemCreateManyBreakfastDishInput | Prisma.GroceryItemCreateManyBreakfastDishInput[]
+  skipDuplicates?: boolean
+}
+
+export type GroceryItemUpsertWithWhereUniqueWithoutBreakfastDishInput = {
+  where: Prisma.GroceryItemWhereUniqueInput
+  update: Prisma.XOR<Prisma.GroceryItemUpdateWithoutBreakfastDishInput, Prisma.GroceryItemUncheckedUpdateWithoutBreakfastDishInput>
+  create: Prisma.XOR<Prisma.GroceryItemCreateWithoutBreakfastDishInput, Prisma.GroceryItemUncheckedCreateWithoutBreakfastDishInput>
+}
+
+export type GroceryItemUpdateWithWhereUniqueWithoutBreakfastDishInput = {
+  where: Prisma.GroceryItemWhereUniqueInput
+  data: Prisma.XOR<Prisma.GroceryItemUpdateWithoutBreakfastDishInput, Prisma.GroceryItemUncheckedUpdateWithoutBreakfastDishInput>
+}
+
+export type GroceryItemUpdateManyWithWhereWithoutBreakfastDishInput = {
+  where: Prisma.GroceryItemScalarWhereInput
+  data: Prisma.XOR<Prisma.GroceryItemUpdateManyMutationInput, Prisma.GroceryItemUncheckedUpdateManyWithoutBreakfastDishInput>
+}
+
 export type GroceryItemCreateManyPlanDayInput = {
   id?: number
   name: string
@@ -834,6 +966,7 @@ export type GroceryItemCreateManyPlanDayInput = {
   category?: $Enums.GroceryCategory
   isChecked?: boolean
   dinnerDishId?: number | null
+  breakfastDishId?: number | null
   lunchDishId?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -848,6 +981,7 @@ export type GroceryItemUpdateWithoutPlanDayInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   dinnerDish?: Prisma.DinnerDishUpdateOneWithoutGroceryItemsNestedInput
+  breakfastDish?: Prisma.BreakfastDishUpdateOneWithoutGroceryItemsNestedInput
   lunchDish?: Prisma.LunchDishUpdateOneWithoutGroceryItemsNestedInput
 }
 
@@ -859,6 +993,7 @@ export type GroceryItemUncheckedUpdateWithoutPlanDayInput = {
   category?: Prisma.EnumGroceryCategoryFieldUpdateOperationsInput | $Enums.GroceryCategory
   isChecked?: Prisma.BoolFieldUpdateOperationsInput | boolean
   dinnerDishId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  breakfastDishId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   lunchDishId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -872,6 +1007,7 @@ export type GroceryItemUncheckedUpdateManyWithoutPlanDayInput = {
   category?: Prisma.EnumGroceryCategoryFieldUpdateOperationsInput | $Enums.GroceryCategory
   isChecked?: Prisma.BoolFieldUpdateOperationsInput | boolean
   dinnerDishId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  breakfastDishId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   lunchDishId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -885,6 +1021,7 @@ export type GroceryItemCreateManyDinnerDishInput = {
   category?: $Enums.GroceryCategory
   isChecked?: boolean
   planDayId: number
+  breakfastDishId?: number | null
   lunchDishId?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -899,6 +1036,7 @@ export type GroceryItemUpdateWithoutDinnerDishInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   planDay?: Prisma.PlanDayUpdateOneRequiredWithoutGroceryItemsNestedInput
+  breakfastDish?: Prisma.BreakfastDishUpdateOneWithoutGroceryItemsNestedInput
   lunchDish?: Prisma.LunchDishUpdateOneWithoutGroceryItemsNestedInput
 }
 
@@ -910,6 +1048,7 @@ export type GroceryItemUncheckedUpdateWithoutDinnerDishInput = {
   category?: Prisma.EnumGroceryCategoryFieldUpdateOperationsInput | $Enums.GroceryCategory
   isChecked?: Prisma.BoolFieldUpdateOperationsInput | boolean
   planDayId?: Prisma.IntFieldUpdateOperationsInput | number
+  breakfastDishId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   lunchDishId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -923,6 +1062,7 @@ export type GroceryItemUncheckedUpdateManyWithoutDinnerDishInput = {
   category?: Prisma.EnumGroceryCategoryFieldUpdateOperationsInput | $Enums.GroceryCategory
   isChecked?: Prisma.BoolFieldUpdateOperationsInput | boolean
   planDayId?: Prisma.IntFieldUpdateOperationsInput | number
+  breakfastDishId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   lunchDishId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -937,6 +1077,7 @@ export type GroceryItemCreateManyLunchDishInput = {
   isChecked?: boolean
   planDayId: number
   dinnerDishId?: number | null
+  breakfastDishId?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -951,6 +1092,7 @@ export type GroceryItemUpdateWithoutLunchDishInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   planDay?: Prisma.PlanDayUpdateOneRequiredWithoutGroceryItemsNestedInput
   dinnerDish?: Prisma.DinnerDishUpdateOneWithoutGroceryItemsNestedInput
+  breakfastDish?: Prisma.BreakfastDishUpdateOneWithoutGroceryItemsNestedInput
 }
 
 export type GroceryItemUncheckedUpdateWithoutLunchDishInput = {
@@ -962,6 +1104,7 @@ export type GroceryItemUncheckedUpdateWithoutLunchDishInput = {
   isChecked?: Prisma.BoolFieldUpdateOperationsInput | boolean
   planDayId?: Prisma.IntFieldUpdateOperationsInput | number
   dinnerDishId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  breakfastDishId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -975,6 +1118,62 @@ export type GroceryItemUncheckedUpdateManyWithoutLunchDishInput = {
   isChecked?: Prisma.BoolFieldUpdateOperationsInput | boolean
   planDayId?: Prisma.IntFieldUpdateOperationsInput | number
   dinnerDishId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  breakfastDishId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type GroceryItemCreateManyBreakfastDishInput = {
+  id?: number
+  name: string
+  quantity?: number
+  unit?: string | null
+  category?: $Enums.GroceryCategory
+  isChecked?: boolean
+  planDayId: number
+  dinnerDishId?: number | null
+  lunchDishId?: number | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+}
+
+export type GroceryItemUpdateWithoutBreakfastDishInput = {
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  quantity?: Prisma.FloatFieldUpdateOperationsInput | number
+  unit?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  category?: Prisma.EnumGroceryCategoryFieldUpdateOperationsInput | $Enums.GroceryCategory
+  isChecked?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  planDay?: Prisma.PlanDayUpdateOneRequiredWithoutGroceryItemsNestedInput
+  dinnerDish?: Prisma.DinnerDishUpdateOneWithoutGroceryItemsNestedInput
+  lunchDish?: Prisma.LunchDishUpdateOneWithoutGroceryItemsNestedInput
+}
+
+export type GroceryItemUncheckedUpdateWithoutBreakfastDishInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  quantity?: Prisma.FloatFieldUpdateOperationsInput | number
+  unit?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  category?: Prisma.EnumGroceryCategoryFieldUpdateOperationsInput | $Enums.GroceryCategory
+  isChecked?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  planDayId?: Prisma.IntFieldUpdateOperationsInput | number
+  dinnerDishId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  lunchDishId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type GroceryItemUncheckedUpdateManyWithoutBreakfastDishInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  quantity?: Prisma.FloatFieldUpdateOperationsInput | number
+  unit?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  category?: Prisma.EnumGroceryCategoryFieldUpdateOperationsInput | $Enums.GroceryCategory
+  isChecked?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  planDayId?: Prisma.IntFieldUpdateOperationsInput | number
+  dinnerDishId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  lunchDishId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -990,11 +1189,13 @@ export type GroceryItemSelect<ExtArgs extends runtime.Types.Extensions.InternalA
   isChecked?: boolean
   planDayId?: boolean
   dinnerDishId?: boolean
+  breakfastDishId?: boolean
   lunchDishId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   planDay?: boolean | Prisma.PlanDayDefaultArgs<ExtArgs>
   dinnerDish?: boolean | Prisma.GroceryItem$dinnerDishArgs<ExtArgs>
+  breakfastDish?: boolean | Prisma.GroceryItem$breakfastDishArgs<ExtArgs>
   lunchDish?: boolean | Prisma.GroceryItem$lunchDishArgs<ExtArgs>
 }, ExtArgs["result"]["groceryItem"]>
 
@@ -1007,11 +1208,13 @@ export type GroceryItemSelectCreateManyAndReturn<ExtArgs extends runtime.Types.E
   isChecked?: boolean
   planDayId?: boolean
   dinnerDishId?: boolean
+  breakfastDishId?: boolean
   lunchDishId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   planDay?: boolean | Prisma.PlanDayDefaultArgs<ExtArgs>
   dinnerDish?: boolean | Prisma.GroceryItem$dinnerDishArgs<ExtArgs>
+  breakfastDish?: boolean | Prisma.GroceryItem$breakfastDishArgs<ExtArgs>
   lunchDish?: boolean | Prisma.GroceryItem$lunchDishArgs<ExtArgs>
 }, ExtArgs["result"]["groceryItem"]>
 
@@ -1024,11 +1227,13 @@ export type GroceryItemSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.E
   isChecked?: boolean
   planDayId?: boolean
   dinnerDishId?: boolean
+  breakfastDishId?: boolean
   lunchDishId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   planDay?: boolean | Prisma.PlanDayDefaultArgs<ExtArgs>
   dinnerDish?: boolean | Prisma.GroceryItem$dinnerDishArgs<ExtArgs>
+  breakfastDish?: boolean | Prisma.GroceryItem$breakfastDishArgs<ExtArgs>
   lunchDish?: boolean | Prisma.GroceryItem$lunchDishArgs<ExtArgs>
 }, ExtArgs["result"]["groceryItem"]>
 
@@ -1041,25 +1246,29 @@ export type GroceryItemSelectScalar = {
   isChecked?: boolean
   planDayId?: boolean
   dinnerDishId?: boolean
+  breakfastDishId?: boolean
   lunchDishId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type GroceryItemOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "quantity" | "unit" | "category" | "isChecked" | "planDayId" | "dinnerDishId" | "lunchDishId" | "createdAt" | "updatedAt", ExtArgs["result"]["groceryItem"]>
+export type GroceryItemOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "quantity" | "unit" | "category" | "isChecked" | "planDayId" | "dinnerDishId" | "breakfastDishId" | "lunchDishId" | "createdAt" | "updatedAt", ExtArgs["result"]["groceryItem"]>
 export type GroceryItemInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   planDay?: boolean | Prisma.PlanDayDefaultArgs<ExtArgs>
   dinnerDish?: boolean | Prisma.GroceryItem$dinnerDishArgs<ExtArgs>
+  breakfastDish?: boolean | Prisma.GroceryItem$breakfastDishArgs<ExtArgs>
   lunchDish?: boolean | Prisma.GroceryItem$lunchDishArgs<ExtArgs>
 }
 export type GroceryItemIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   planDay?: boolean | Prisma.PlanDayDefaultArgs<ExtArgs>
   dinnerDish?: boolean | Prisma.GroceryItem$dinnerDishArgs<ExtArgs>
+  breakfastDish?: boolean | Prisma.GroceryItem$breakfastDishArgs<ExtArgs>
   lunchDish?: boolean | Prisma.GroceryItem$lunchDishArgs<ExtArgs>
 }
 export type GroceryItemIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   planDay?: boolean | Prisma.PlanDayDefaultArgs<ExtArgs>
   dinnerDish?: boolean | Prisma.GroceryItem$dinnerDishArgs<ExtArgs>
+  breakfastDish?: boolean | Prisma.GroceryItem$breakfastDishArgs<ExtArgs>
   lunchDish?: boolean | Prisma.GroceryItem$lunchDishArgs<ExtArgs>
 }
 
@@ -1068,6 +1277,7 @@ export type $GroceryItemPayload<ExtArgs extends runtime.Types.Extensions.Interna
   objects: {
     planDay: Prisma.$PlanDayPayload<ExtArgs>
     dinnerDish: Prisma.$DinnerDishPayload<ExtArgs> | null
+    breakfastDish: Prisma.$BreakfastDishPayload<ExtArgs> | null
     lunchDish: Prisma.$LunchDishPayload<ExtArgs> | null
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
@@ -1079,6 +1289,7 @@ export type $GroceryItemPayload<ExtArgs extends runtime.Types.Extensions.Interna
     isChecked: boolean
     planDayId: number
     dinnerDishId: number | null
+    breakfastDishId: number | null
     lunchDishId: number | null
     createdAt: Date
     updatedAt: Date
@@ -1478,6 +1689,7 @@ export interface Prisma__GroceryItemClient<T, Null = never, ExtArgs extends runt
   readonly [Symbol.toStringTag]: "PrismaPromise"
   planDay<T extends Prisma.PlanDayDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.PlanDayDefaultArgs<ExtArgs>>): Prisma.Prisma__PlanDayClient<runtime.Types.Result.GetResult<Prisma.$PlanDayPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   dinnerDish<T extends Prisma.GroceryItem$dinnerDishArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.GroceryItem$dinnerDishArgs<ExtArgs>>): Prisma.Prisma__DinnerDishClient<runtime.Types.Result.GetResult<Prisma.$DinnerDishPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  breakfastDish<T extends Prisma.GroceryItem$breakfastDishArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.GroceryItem$breakfastDishArgs<ExtArgs>>): Prisma.Prisma__BreakfastDishClient<runtime.Types.Result.GetResult<Prisma.$BreakfastDishPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   lunchDish<T extends Prisma.GroceryItem$lunchDishArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.GroceryItem$lunchDishArgs<ExtArgs>>): Prisma.Prisma__LunchDishClient<runtime.Types.Result.GetResult<Prisma.$LunchDishPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
@@ -1516,6 +1728,7 @@ export interface GroceryItemFieldRefs {
   readonly isChecked: Prisma.FieldRef<"GroceryItem", 'Boolean'>
   readonly planDayId: Prisma.FieldRef<"GroceryItem", 'Int'>
   readonly dinnerDishId: Prisma.FieldRef<"GroceryItem", 'Int'>
+  readonly breakfastDishId: Prisma.FieldRef<"GroceryItem", 'Int'>
   readonly lunchDishId: Prisma.FieldRef<"GroceryItem", 'Int'>
   readonly createdAt: Prisma.FieldRef<"GroceryItem", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"GroceryItem", 'DateTime'>
@@ -1931,6 +2144,25 @@ export type GroceryItem$dinnerDishArgs<ExtArgs extends runtime.Types.Extensions.
    */
   include?: Prisma.DinnerDishInclude<ExtArgs> | null
   where?: Prisma.DinnerDishWhereInput
+}
+
+/**
+ * GroceryItem.breakfastDish
+ */
+export type GroceryItem$breakfastDishArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the BreakfastDish
+   */
+  select?: Prisma.BreakfastDishSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the BreakfastDish
+   */
+  omit?: Prisma.BreakfastDishOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.BreakfastDishInclude<ExtArgs> | null
+  where?: Prisma.BreakfastDishWhereInput
 }
 
 /**
