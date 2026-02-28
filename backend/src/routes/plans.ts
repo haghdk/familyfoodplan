@@ -160,6 +160,7 @@ plansRouter.post("/api/plans", async (request, response) => {
       plan: {
         id: plan.id,
         name: plan.name,
+        isCurrent: plan.isCurrent,
         startDate: formatDateKey(plan.startDate ?? resolvedRange.startDate),
         endDate: formatDateKey(plan.endDate ?? resolvedRange.endDate)
       },
@@ -190,6 +191,7 @@ plansRouter.get("/api/plans", async (_request, response) => {
     select: {
       id: true,
       name: true,
+      isCurrent: true,
       startDate: true,
       endDate: true,
       _count: {
@@ -204,6 +206,7 @@ plansRouter.get("/api/plans", async (_request, response) => {
     plans: plans.map((plan) => ({
       id: plan.id,
       name: plan.name,
+      isCurrent: plan.isCurrent,
       startDate: formatOptionalDateKey(plan.startDate),
       endDate: formatOptionalDateKey(plan.endDate),
       daysCount: plan._count.days
@@ -224,6 +227,7 @@ plansRouter.get("/api/plans/:planId", async (request, response) => {
     select: {
       id: true,
       name: true,
+      isCurrent: true,
       startDate: true,
       endDate: true,
       days: {
@@ -282,6 +286,7 @@ plansRouter.get("/api/plans/:planId", async (request, response) => {
     plan: {
       id: plan.id,
       name: plan.name,
+      isCurrent: plan.isCurrent,
       startDate: formatOptionalDateKey(plan.startDate),
       endDate: formatOptionalDateKey(plan.endDate),
       planDays: plan.days.map((day) => ({
@@ -314,6 +319,47 @@ plansRouter.get("/api/plans/:planId", async (request, response) => {
         }))
       }))
     }
+  });
+});
+
+plansRouter.post("/api/plans/:planId/set-current", async (request, response) => {
+  const planId = Number(request.params.planId);
+
+  if (Number.isNaN(planId)) {
+    response.status(400).json({ message: "Invalid plan id." });
+    return;
+  }
+
+  const plan = await prisma.plan.findUnique({
+    where: { id: planId },
+    select: {
+      id: true
+    }
+  });
+
+  if (!plan) {
+    response.status(404).json({ message: "Plan not found." });
+    return;
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.plan.updateMany({
+      data: {
+        isCurrent: false
+      }
+    });
+
+    await tx.plan.update({
+      where: { id: planId },
+      data: {
+        isCurrent: true
+      }
+    });
+  });
+
+  response.status(200).json({
+    message: "Current plan updated.",
+    planId
   });
 });
 

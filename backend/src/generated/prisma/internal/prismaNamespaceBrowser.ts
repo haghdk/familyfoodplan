@@ -103,6 +103,7 @@ export type FamilyMemberScalarFieldEnum = (typeof FamilyMemberScalarFieldEnum)[k
 export const PlanScalarFieldEnum = {
   id: 'id',
   name: 'name',
+  isCurrent: 'isCurrent',
   startDate: 'startDate',
   endDate: 'endDate',
   createdAt: 'createdAt',
