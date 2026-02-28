@@ -1,8 +1,9 @@
 type CurrentPlanTableDayRow = {
   id: number;
   date: string;
+  breakfasts?: string[];
   lunches: string[];
-  dinner: string;
+  dinners: string[];
 };
 
 type CurrentPlanTableProps = {
@@ -16,6 +17,20 @@ export default function CurrentPlanTable({
   dateRange,
   dayRows
 }: CurrentPlanTableProps) {
+  const showBreakfastRow = dayRows.some((row) => (row.breakfasts?.length ?? 0) > 0);
+
+  const mealSections: Array<{
+    key: "breakfasts" | "lunches" | "dinners";
+    label: string;
+    emptyText: string;
+  }> = [
+    ...(showBreakfastRow
+      ? [{ key: "breakfasts" as const, label: "Breakfast", emptyText: "No breakfast set" }]
+      : []),
+    { key: "lunches" as const, label: "Lunch", emptyText: "No lunch set" },
+    { key: "dinners" as const, label: "Dinner", emptyText: "No dinner set" }
+  ];
+
   return (
     <div className="mt-6 space-y-4">
       <div className="rounded-2xl border border-emerald-100 bg-emerald-50/60 px-4 py-3">
@@ -33,25 +48,32 @@ export default function CurrentPlanTable({
         <table className="hidden min-w-full divide-y divide-slate-200 text-left text-sm md:table">
           <thead className="bg-slate-50 text-slate-700">
             <tr>
-              <th className="px-4 py-3 font-semibold">Day</th>
-              <th className="px-4 py-3 font-semibold">Lunch</th>
-              <th className="px-4 py-3 font-semibold">Dinner</th>
+              <th className="px-4 py-3 font-semibold">Meal</th>
+              {dayRows.map((row) => (
+                <th key={row.id} className="px-4 py-3 font-semibold">
+                  {row.date}
+                </th>
+              ))}
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200 bg-white text-slate-600">
             {dayRows.length === 0 ? (
               <tr>
-                <td className="px-4 py-3 text-slate-500" colSpan={3}>
+                <td className="px-4 py-3 text-slate-500" colSpan={1}>
                   Could not load meals for the selected plan.
                 </td>
               </tr>
-            ) : dayRows.map((row) => (
-              <tr key={row.id}>
-                <td className="px-4 py-3 font-medium text-slate-900">{row.date}</td>
-                <td className="px-4 py-3">
-                  {row.lunches.length > 0 ? row.lunches.join(", ") : "No lunch set"}
-                </td>
-                <td className="px-4 py-3">{row.dinner}</td>
+            ) : mealSections.map((section) => (
+              <tr key={section.key}>
+                <td className="px-4 py-3 font-medium text-slate-900">{section.label}</td>
+                {dayRows.map((row) => {
+                  const dishes = row[section.key] ?? [];
+                  return (
+                    <td key={row.id} className="px-4 py-3 align-top">
+                      {dishes.length > 0 ? dishes.join(", ") : section.emptyText}
+                    </td>
+                  );
+                })}
               </tr>
             ))}
           </tbody>
@@ -69,6 +91,18 @@ export default function CurrentPlanTable({
             >
               <p className="text-sm font-semibold text-slate-900">{row.date}</p>
               <dl className="mt-3 space-y-2 text-sm text-slate-700">
+                {showBreakfastRow ? (
+                  <div>
+                    <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      Breakfast
+                    </dt>
+                    <dd className="mt-0.5">
+                      {(row.breakfasts?.length ?? 0) > 0
+                        ? row.breakfasts?.join(", ")
+                        : "No breakfast set"}
+                    </dd>
+                  </div>
+                ) : null}
                 <div>
                   <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                     Lunch
@@ -81,7 +115,9 @@ export default function CurrentPlanTable({
                   <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                     Dinner
                   </dt>
-                  <dd className="mt-0.5">{row.dinner}</dd>
+                  <dd className="mt-0.5">
+                    {row.dinners.length > 0 ? row.dinners.join(", ") : "No dinner set"}
+                  </dd>
                 </div>
               </dl>
             </article>
