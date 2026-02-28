@@ -258,21 +258,43 @@ export default function GroceryListPage() {
     setSelectedMealId(mealOptions[0]?.id ?? "");
   }, [mealOptions]);
 
-  const createShareLink = async () => {
-    const response = await fetch(`${backendApiUrl}/api/plans/${planId}/share-link`, {
-      method: "POST",
-      credentials: "include"
-    });
+  const toShareUrl = useCallback((token: string) => `${window.location.origin}/grocery/${token}`, []);
 
-    if (!response.ok) {
-      setShareFeedback("Could not create share link.");
+  const loadShareLink = useCallback(
+    async ({ showSuccessFeedback = false }: { showSuccessFeedback?: boolean } = {}) => {
+      const response = await fetch(`${backendApiUrl}/api/plans/${planId}/share-link`, {
+        method: "POST",
+        credentials: "include"
+      });
+
+      if (!response.ok) {
+        setShareFeedback("Could not load share link.");
+        return;
+      }
+
+      const data = (await response.json()) as { token: string; existed: boolean };
+      const nextShareLink = toShareUrl(data.token);
+      setShareLink(nextShareLink);
+
+      if (!showSuccessFeedback) {
+        return;
+      }
+
+      setShareFeedback(data.existed ? "Existing share link loaded." : "Share link ready.");
+    },
+    [planId, toShareUrl]
+  );
+
+  useEffect(() => {
+    if (Number.isNaN(planId)) {
       return;
     }
 
-    const data = (await response.json()) as { token: string; existed: boolean };
-    const nextShareLink = `${window.location.origin}/grocery/${data.token}`;
-    setShareLink(nextShareLink);
-    setShareFeedback(data.existed ? "Existing share link loaded." : "Share link ready.");
+    void loadShareLink();
+  }, [loadShareLink, planId]);
+
+  const createShareLink = async () => {
+    await loadShareLink({ showSuccessFeedback: true });
   };
 
 
@@ -288,7 +310,7 @@ export default function GroceryListPage() {
     }
 
     const data = (await response.json()) as { token: string };
-    const nextShareLink = `${window.location.origin}/grocery/${data.token}`;
+    const nextShareLink = toShareUrl(data.token);
     setShareLink(nextShareLink);
     setShareFeedback("Share link rotated.");
   };
