@@ -2,10 +2,12 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import { adminSessionCookieName, backendApiUrl } from "../../lib/auth";
 import { ArrowRight, Calendar, PlusCircle, ShoppingCart } from "lucide-react";
+import SetCurrentPlanButton from "../../components/plan/SetCurrentPlanButton";
 
 type PlanListItem = {
   id: number;
   name: string;
+  isCurrent: boolean;
   startDate: string | null;
   endDate: string | null;
   daysCount: number;
@@ -82,9 +84,10 @@ export default async function PlansPage() {
               <p className="mt-1 text-sm text-slate-500">
                 {formatDateRange(plan.startDate, plan.endDate)}
               </p>
+              {plan.isCurrent ? <p className="mt-1 text-sm font-semibold text-emerald-700">Current plan</p> : null}
               <p className="mt-2 text-sm text-slate-600">{plan.daysCount} day(s)</p>
 
-              <div className="mt-4 flex gap-3">
+              <div className="mt-4 flex flex-wrap gap-3">
                 <Link
                   className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
                   href={`/plan/${plan.id}`}
@@ -99,6 +102,12 @@ export default async function PlansPage() {
                   <ShoppingCart className="h-4 w-4" />
                   Grocery list
                 </Link>
+                <SetCurrentPlanButton
+                  idleLabel="Set as current"
+                  isCurrent={plan.isCurrent}
+                  loadingLabel="Setting..."
+                  planId={plan.id}
+                />
               </div>
             </article>
           ))}
