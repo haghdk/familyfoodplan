@@ -37,6 +37,7 @@ export type PlanSumAggregateOutputType = {
 export type PlanMinAggregateOutputType = {
   id: number | null
   name: string | null
+  isCurrent: boolean | null
   startDate: Date | null
   endDate: Date | null
   createdAt: Date | null
@@ -46,6 +47,7 @@ export type PlanMinAggregateOutputType = {
 export type PlanMaxAggregateOutputType = {
   id: number | null
   name: string | null
+  isCurrent: boolean | null
   startDate: Date | null
   endDate: Date | null
   createdAt: Date | null
@@ -55,6 +57,7 @@ export type PlanMaxAggregateOutputType = {
 export type PlanCountAggregateOutputType = {
   id: number
   name: number
+  isCurrent: number
   startDate: number
   endDate: number
   createdAt: number
@@ -74,6 +77,7 @@ export type PlanSumAggregateInputType = {
 export type PlanMinAggregateInputType = {
   id?: true
   name?: true
+  isCurrent?: true
   startDate?: true
   endDate?: true
   createdAt?: true
@@ -83,6 +87,7 @@ export type PlanMinAggregateInputType = {
 export type PlanMaxAggregateInputType = {
   id?: true
   name?: true
+  isCurrent?: true
   startDate?: true
   endDate?: true
   createdAt?: true
@@ -92,6 +97,7 @@ export type PlanMaxAggregateInputType = {
 export type PlanCountAggregateInputType = {
   id?: true
   name?: true
+  isCurrent?: true
   startDate?: true
   endDate?: true
   createdAt?: true
@@ -188,6 +194,7 @@ export type PlanGroupByArgs<ExtArgs extends runtime.Types.Extensions.InternalArg
 export type PlanGroupByOutputType = {
   id: number
   name: string
+  isCurrent: boolean
   startDate: Date | null
   endDate: Date | null
   createdAt: Date
@@ -220,6 +227,7 @@ export type PlanWhereInput = {
   NOT?: Prisma.PlanWhereInput | Prisma.PlanWhereInput[]
   id?: Prisma.IntFilter<"Plan"> | number
   name?: Prisma.StringFilter<"Plan"> | string
+  isCurrent?: Prisma.BoolFilter<"Plan"> | boolean
   startDate?: Prisma.DateTimeNullableFilter<"Plan"> | Date | string | null
   endDate?: Prisma.DateTimeNullableFilter<"Plan"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"Plan"> | Date | string
@@ -230,6 +238,7 @@ export type PlanWhereInput = {
 export type PlanOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   name?: Prisma.SortOrder
+  isCurrent?: Prisma.SortOrder
   startDate?: Prisma.SortOrderInput | Prisma.SortOrder
   endDate?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -243,6 +252,7 @@ export type PlanWhereUniqueInput = Prisma.AtLeast<{
   AND?: Prisma.PlanWhereInput | Prisma.PlanWhereInput[]
   OR?: Prisma.PlanWhereInput[]
   NOT?: Prisma.PlanWhereInput | Prisma.PlanWhereInput[]
+  isCurrent?: Prisma.BoolFilter<"Plan"> | boolean
   startDate?: Prisma.DateTimeNullableFilter<"Plan"> | Date | string | null
   endDate?: Prisma.DateTimeNullableFilter<"Plan"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"Plan"> | Date | string
@@ -253,6 +263,7 @@ export type PlanWhereUniqueInput = Prisma.AtLeast<{
 export type PlanOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   name?: Prisma.SortOrder
+  isCurrent?: Prisma.SortOrder
   startDate?: Prisma.SortOrderInput | Prisma.SortOrder
   endDate?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -270,6 +281,7 @@ export type PlanScalarWhereWithAggregatesInput = {
   NOT?: Prisma.PlanScalarWhereWithAggregatesInput | Prisma.PlanScalarWhereWithAggregatesInput[]
   id?: Prisma.IntWithAggregatesFilter<"Plan"> | number
   name?: Prisma.StringWithAggregatesFilter<"Plan"> | string
+  isCurrent?: Prisma.BoolWithAggregatesFilter<"Plan"> | boolean
   startDate?: Prisma.DateTimeNullableWithAggregatesFilter<"Plan"> | Date | string | null
   endDate?: Prisma.DateTimeNullableWithAggregatesFilter<"Plan"> | Date | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Plan"> | Date | string
@@ -278,6 +290,7 @@ export type PlanScalarWhereWithAggregatesInput = {
 
 export type PlanCreateInput = {
   name: string
+  isCurrent?: boolean
   startDate?: Date | string | null
   endDate?: Date | string | null
   createdAt?: Date | string
@@ -288,6 +301,7 @@ export type PlanCreateInput = {
 export type PlanUncheckedCreateInput = {
   id?: number
   name: string
+  isCurrent?: boolean
   startDate?: Date | string | null
   endDate?: Date | string | null
   createdAt?: Date | string
@@ -297,6 +311,7 @@ export type PlanUncheckedCreateInput = {
 
 export type PlanUpdateInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  isCurrent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   startDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   endDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -307,6 +322,7 @@ export type PlanUpdateInput = {
 export type PlanUncheckedUpdateInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  isCurrent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   startDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   endDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -317,6 +333,7 @@ export type PlanUncheckedUpdateInput = {
 export type PlanCreateManyInput = {
   id?: number
   name: string
+  isCurrent?: boolean
   startDate?: Date | string | null
   endDate?: Date | string | null
   createdAt?: Date | string
@@ -325,6 +342,7 @@ export type PlanCreateManyInput = {
 
 export type PlanUpdateManyMutationInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  isCurrent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   startDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   endDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -334,6 +352,7 @@ export type PlanUpdateManyMutationInput = {
 export type PlanUncheckedUpdateManyInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  isCurrent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   startDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   endDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -343,6 +362,7 @@ export type PlanUncheckedUpdateManyInput = {
 export type PlanCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   name?: Prisma.SortOrder
+  isCurrent?: Prisma.SortOrder
   startDate?: Prisma.SortOrder
   endDate?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -356,6 +376,7 @@ export type PlanAvgOrderByAggregateInput = {
 export type PlanMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   name?: Prisma.SortOrder
+  isCurrent?: Prisma.SortOrder
   startDate?: Prisma.SortOrder
   endDate?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -365,6 +386,7 @@ export type PlanMaxOrderByAggregateInput = {
 export type PlanMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   name?: Prisma.SortOrder
+  isCurrent?: Prisma.SortOrder
   startDate?: Prisma.SortOrder
   endDate?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -400,6 +422,7 @@ export type PlanUpdateOneRequiredWithoutDaysNestedInput = {
 
 export type PlanCreateWithoutDaysInput = {
   name: string
+  isCurrent?: boolean
   startDate?: Date | string | null
   endDate?: Date | string | null
   createdAt?: Date | string
@@ -409,6 +432,7 @@ export type PlanCreateWithoutDaysInput = {
 export type PlanUncheckedCreateWithoutDaysInput = {
   id?: number
   name: string
+  isCurrent?: boolean
   startDate?: Date | string | null
   endDate?: Date | string | null
   createdAt?: Date | string
@@ -433,6 +457,7 @@ export type PlanUpdateToOneWithWhereWithoutDaysInput = {
 
 export type PlanUpdateWithoutDaysInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  isCurrent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   startDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   endDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -442,6 +467,7 @@ export type PlanUpdateWithoutDaysInput = {
 export type PlanUncheckedUpdateWithoutDaysInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  isCurrent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   startDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   endDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -482,6 +508,7 @@ export type PlanCountOutputTypeCountDaysArgs<ExtArgs extends runtime.Types.Exten
 export type PlanSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   name?: boolean
+  isCurrent?: boolean
   startDate?: boolean
   endDate?: boolean
   createdAt?: boolean
@@ -493,6 +520,7 @@ export type PlanSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
 export type PlanSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   name?: boolean
+  isCurrent?: boolean
   startDate?: boolean
   endDate?: boolean
   createdAt?: boolean
@@ -502,6 +530,7 @@ export type PlanSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensio
 export type PlanSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   name?: boolean
+  isCurrent?: boolean
   startDate?: boolean
   endDate?: boolean
   createdAt?: boolean
@@ -511,13 +540,14 @@ export type PlanSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensio
 export type PlanSelectScalar = {
   id?: boolean
   name?: boolean
+  isCurrent?: boolean
   startDate?: boolean
   endDate?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type PlanOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "startDate" | "endDate" | "createdAt" | "updatedAt", ExtArgs["result"]["plan"]>
+export type PlanOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "isCurrent" | "startDate" | "endDate" | "createdAt" | "updatedAt", ExtArgs["result"]["plan"]>
 export type PlanInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   days?: boolean | Prisma.Plan$daysArgs<ExtArgs>
   _count?: boolean | Prisma.PlanCountOutputTypeDefaultArgs<ExtArgs>
@@ -533,6 +563,7 @@ export type $PlanPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: number
     name: string
+    isCurrent: boolean
     startDate: Date | null
     endDate: Date | null
     createdAt: Date
@@ -963,6 +994,7 @@ export interface Prisma__PlanClient<T, Null = never, ExtArgs extends runtime.Typ
 export interface PlanFieldRefs {
   readonly id: Prisma.FieldRef<"Plan", 'Int'>
   readonly name: Prisma.FieldRef<"Plan", 'String'>
+  readonly isCurrent: Prisma.FieldRef<"Plan", 'Boolean'>
   readonly startDate: Prisma.FieldRef<"Plan", 'DateTime'>
   readonly endDate: Prisma.FieldRef<"Plan", 'DateTime'>
   readonly createdAt: Prisma.FieldRef<"Plan", 'DateTime'>

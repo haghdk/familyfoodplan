@@ -7,6 +7,7 @@ import { ArrowRight, Calendar, ClipboardList, PlusCircle, ShoppingCart, Sparkles
 type PlanListItem = {
   id: number;
   name: string;
+  isCurrent: boolean;
   startDate: string | null;
   endDate: string | null;
   daysCount: number;
@@ -89,7 +90,13 @@ const formatDayLabel = (dayKey: string) => {
 };
 
 const findCurrentPlan = (plans: PlanListItem[], today: Date) => {
-  const matchingCurrentPlan = plans.find((plan) => {
+  const explicitlyCurrentPlan = plans.find((plan) => plan.isCurrent);
+
+  if (explicitlyCurrentPlan) {
+    return explicitlyCurrentPlan;
+  }
+
+  const dateRangeMatchingPlan = plans.find((plan) => {
     const startDate = asDate(plan.startDate);
     const endDate = asDate(plan.endDate);
 
@@ -103,7 +110,7 @@ const findCurrentPlan = (plans: PlanListItem[], today: Date) => {
     return normalizedStartDate <= today && today <= normalizedEndDate;
   });
 
-  return matchingCurrentPlan ?? plans[0] ?? null;
+  return dateRangeMatchingPlan ?? plans[0] ?? null;
 };
 
 const selectRecentPlans = (plans: PlanListItem[], today: Date) => {

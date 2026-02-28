@@ -79,6 +79,7 @@ export const createPlanWithDays = async (
   plan: {
     id: number;
     name: string;
+    isCurrent: boolean;
     startDate: Date | null;
     endDate: Date | null;
   };
@@ -124,6 +125,7 @@ export const createPlanWithDays = async (
         plan: {
           id: createdPlan.id,
           name: createdPlan.name,
+          isCurrent: createdPlan.isCurrent,
           startDate: createdPlan.startDate,
           endDate: createdPlan.endDate
         },

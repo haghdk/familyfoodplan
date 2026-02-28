@@ -28,6 +28,7 @@ model FamilyMember {
 model Plan {
   id        Int       @id @default(autoincrement())
   name      String    @unique
+  isCurrent Boolean   @default(false)
   startDate DateTime?
   endDate   DateTime?
   days      PlanDay[]
