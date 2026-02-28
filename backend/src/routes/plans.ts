@@ -414,4 +414,31 @@ plansRouter.put("/api/plans/:planId", async (request, response) => {
   }
 });
 
+plansRouter.delete("/api/plans/:planId", async (request, response) => {
+  const planId = Number(request.params.planId);
+
+  if (Number.isNaN(planId)) {
+    response.status(400).json({ message: "Invalid plan id." });
+    return;
+  }
+
+  const plan = await prisma.plan.findUnique({
+    where: { id: planId },
+    select: {
+      id: true
+    }
+  });
+
+  if (!plan) {
+    response.status(404).json({ message: "Plan not found." });
+    return;
+  }
+
+  await prisma.plan.delete({
+    where: { id: planId }
+  });
+
+  response.status(204).send();
+});
+
 export default plansRouter;

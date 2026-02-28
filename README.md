@@ -14,6 +14,7 @@ Family Food Planner is a weekly meal-planning app for families. Admins create pl
 - **UI icon polish**: the homepage and plans overview now include Lucide icons on key headings, table labels, and action buttons to improve scanability and visual hierarchy.
 - **Plan creation UI**: admins can create a new plan directly from the Plans screen by choosing a name and date range, then jump straight into editing.
 - **Plan editing**: admins can update a plan's title and date range after creation, with safe regeneration of `PlanDay` rows to match the new boundaries.
+- **Plan deletion API**: admins can delete a plan by id; relational cascading removes associated plan-day and grocery records.
 - **Shared plan date utilities**: backend routes now reuse a common plan service for ISO day-key parsing, date range generation, transactional plan/day creation, and typed error mapping for stable HTTP responses.
 - **Plan-scoped plan days**: day entries are now scoped to a `Plan`, and legacy rows are migrated into a default `Legacy Plan` during database migration/seed.
 - **Plan-scoped day editing routes**: dinner and lunch write endpoints now require both `planId` and `dayKey` (`/api/plans/:planId/days/:dayKey/...`) so updates are validated against the selected plan before persisting.
@@ -81,6 +82,7 @@ Family Food Planner is a weekly meal-planning app for families. Admins create pl
 - `GET /api/plans` — list plans ordered by newest `startDate` first for plan selection cards.
 - `GET /api/plans/:planId` — fetch one plan with nested `planDays`, `dinnerDish`, and `lunchDishes` for calendar/day-card rendering.
 - `PUT /api/plans/:planId` — update plan name and date range; the backend adds/removes `PlanDay` rows to keep data aligned with the new range.
+- `DELETE /api/plans/:planId` — delete a plan by id; returns `404` when the plan does not exist and cascades removal of related plan-day and grocery data.
 
 ### Grocery Lists
 - Admin grocery routes under `/api/plans/:id/grocery-list...` support create/update/delete and share-link management.
