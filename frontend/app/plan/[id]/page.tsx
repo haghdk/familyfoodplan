@@ -3,11 +3,13 @@ import { cookies } from "next/headers";
 import { adminSessionCookieName, backendApiUrl } from "../../../lib/auth";
 import PlanDayCard from "../../../components/plan/PlanDayCard";
 import PlanSettingsForm from "../../../components/plan/PlanSettingsForm";
+import SetCurrentPlanButton from "../../../components/plan/SetCurrentPlanButton";
 
 type PlanDetailResponse = {
   plan: {
     id: number;
     name: string;
+    isCurrent: boolean;
     startDate: string | null;
     endDate: string | null;
     planDays: Array<{
@@ -107,12 +109,19 @@ export default async function PlanPage({
             {formatDateRange(plan.startDate, plan.endDate)}
           </p>
         </div>
-        <Link
-          className="rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:border-slate-400"
-          href={`/plan/${plan.id}/grocery-list`}
-        >
-          Open grocery list
-        </Link>
+        <div className="flex flex-wrap justify-end gap-3">
+          <SetCurrentPlanButton
+            idleLabel="Set as current plan"
+            isCurrent={plan.isCurrent}
+            planId={plan.id}
+          />
+          <Link
+            className="rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:border-slate-400"
+            href={`/plan/${plan.id}/grocery-list`}
+          >
+            Open grocery list
+          </Link>
+        </div>
       </div>
 
       <PlanSettingsForm

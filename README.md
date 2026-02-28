@@ -14,6 +14,7 @@ Family Food Planner is a weekly meal-planning app for families. Admins create pl
 - **UI icon polish**: the homepage and plans overview now include Lucide icons on key headings, table labels, and action buttons to improve scanability and visual hierarchy.
 - **Plan creation UI**: admins can create a new plan directly from the Plans screen by choosing a name and date range, then jump straight into editing.
 - **Plan editing**: admins can update a plan's title and date range after creation, with safe regeneration of `PlanDay` rows to match the new boundaries.
+- **Set current plan controls**: admins can mark any plan as the current plan from both the plans list and individual plan detail pages, with immediate UI refresh across homepage and plan views.
 - **Reusable confirmation modal + plan deletion flow**: added a generic `ConfirmModal` component (accessible dialog semantics, Escape-to-close, and initial focus management) and wired plan deletion to run only after explicit modal confirmation, including warning copy that deleting a food plan also removes its grocery list.
 - **Plan deletion API**: admins can delete a plan by id; relational cascading removes associated plan-day and grocery records.
 - **Shared plan date utilities**: backend routes now reuse a common plan service for ISO day-key parsing, date range generation, transactional plan/day creation, and typed error mapping for stable HTTP responses.
