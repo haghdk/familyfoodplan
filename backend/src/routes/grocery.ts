@@ -133,6 +133,7 @@ groceryRouter.get("/api/plans/:planId/grocery-items", requireAdminAuth, async (r
       id: true,
       date: true,
       dinnerDish: { select: { id: true, name: true } },
+      breakfastDishes: { select: { id: true, name: true }, orderBy: { createdAt: "asc" } },
       lunchDishes: { select: { id: true, name: true }, orderBy: { createdAt: "asc" } }
     },
     orderBy: { date: "asc" }
@@ -142,6 +143,7 @@ groceryRouter.get("/api/plans/:planId/grocery-items", requireAdminAuth, async (r
     where: { planDayId: { in: planScope.planDayIds } },
     include: {
       dinnerDish: { select: { id: true, name: true } },
+      breakfastDish: { select: { id: true, name: true } },
       lunchDish: { select: { id: true, name: true } }
     },
     orderBy: [{ category: "asc" }, { name: "asc" }, { createdAt: "asc" }]
@@ -220,12 +222,13 @@ groceryRouter.post("/api/plans/:planId/grocery-items", requireAdminAuth, async (
     return;
   }
 
-  const { name, quantity, unit, category, dinnerDishId, lunchDishId } = request.body as {
+  const { name, quantity, unit, category, dinnerDishId, breakfastDishId, lunchDishId } = request.body as {
     name?: string;
     quantity?: number;
     unit?: string | null;
     category?: GroceryCategory;
     dinnerDishId?: number | null;
+    breakfastDishId?: number | null;
     lunchDishId?: number | null;
   };
 
@@ -236,8 +239,14 @@ groceryRouter.post("/api/plans/:planId/grocery-items", requireAdminAuth, async (
     return;
   }
 
-  if (typeof dinnerDishId === "number" && typeof lunchDishId === "number") {
-    response.status(400).json({ message: "Attach an item to either dinner or lunch, not both." });
+  const selectedMealIds = [dinnerDishId, breakfastDishId, lunchDishId].filter(
+    (value): value is number => typeof value === "number"
+  );
+
+  if (selectedMealIds.length > 1) {
+    response
+      .status(400)
+      .json({ message: "Attach an item to either dinner, breakfast, or lunch, not multiple meals." });
     return;
   }
 
@@ -264,6 +273,20 @@ groceryRouter.post("/api/plans/:planId/grocery-items", requireAdminAuth, async (
     itemPlanDayId = dinnerDish.planDayId;
   }
 
+  if (typeof breakfastDishId === "number") {
+    const breakfastDish = await prisma.breakfastDish.findFirst({
+      where: { id: breakfastDishId, planDayId: { in: planScope.planDayIds } },
+      select: { id: true, planDayId: true }
+    });
+
+    if (!breakfastDish) {
+      response.status(400).json({ message: "Breakfast dish does not belong to this plan." });
+      return;
+    }
+
+    itemPlanDayId = breakfastDish.planDayId;
+  }
+
   if (typeof lunchDishId === "number") {
     const lunchDish = await prisma.lunchDish.findFirst({
       where: { id: lunchDishId, planDayId: { in: planScope.planDayIds } },
@@ -286,10 +309,12 @@ groceryRouter.post("/api/plans/:planId/grocery-items", requireAdminAuth, async (
       category: parseCategory(category),
       planDayId: itemPlanDayId,
       dinnerDishId: typeof dinnerDishId === "number" ? dinnerDishId : null,
+      breakfastDishId: typeof breakfastDishId === "number" ? breakfastDishId : null,
       lunchDishId: typeof lunchDishId === "number" ? lunchDishId : null
     },
     include: {
       dinnerDish: { select: { id: true, name: true } },
+      breakfastDish: { select: { id: true, name: true } },
       lunchDish: { select: { id: true, name: true } }
     }
   });
@@ -350,6 +375,7 @@ groceryRouter.put("/api/plans/:planId/grocery-items/:itemId", requireAdminAuth, 
     },
     include: {
       dinnerDish: { select: { id: true, name: true } },
+      breakfastDish: { select: { id: true, name: true } },
       lunchDish: { select: { id: true, name: true } }
     }
   });
@@ -487,6 +513,7 @@ groceryRouter.patch("/api/grocery/shared/:token/items/:itemId", async (request, 
     data: { isChecked },
     include: {
       dinnerDish: { select: { id: true, name: true } },
+      breakfastDish: { select: { id: true, name: true } },
       lunchDish: { select: { id: true, name: true } }
     }
   });

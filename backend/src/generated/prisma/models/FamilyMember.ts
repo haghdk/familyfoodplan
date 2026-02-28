@@ -216,6 +216,7 @@ export type FamilyMemberWhereInput = {
   isActive?: Prisma.BoolFilter<"FamilyMember"> | boolean
   createdAt?: Prisma.DateTimeFilter<"FamilyMember"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"FamilyMember"> | Date | string
+  breakfasts?: Prisma.BreakfastDishListRelationFilter
   lunches?: Prisma.LunchDishListRelationFilter
 }
 
@@ -225,6 +226,7 @@ export type FamilyMemberOrderByWithRelationInput = {
   isActive?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  breakfasts?: Prisma.BreakfastDishOrderByRelationAggregateInput
   lunches?: Prisma.LunchDishOrderByRelationAggregateInput
 }
 
@@ -237,6 +239,7 @@ export type FamilyMemberWhereUniqueInput = Prisma.AtLeast<{
   isActive?: Prisma.BoolFilter<"FamilyMember"> | boolean
   createdAt?: Prisma.DateTimeFilter<"FamilyMember"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"FamilyMember"> | Date | string
+  breakfasts?: Prisma.BreakfastDishListRelationFilter
   lunches?: Prisma.LunchDishListRelationFilter
 }, "id">
 
@@ -269,6 +272,7 @@ export type FamilyMemberCreateInput = {
   isActive?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
+  breakfasts?: Prisma.BreakfastDishCreateNestedManyWithoutFamilyMemberInput
   lunches?: Prisma.LunchDishCreateNestedManyWithoutFamilyMemberInput
 }
 
@@ -278,6 +282,7 @@ export type FamilyMemberUncheckedCreateInput = {
   isActive?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
+  breakfasts?: Prisma.BreakfastDishUncheckedCreateNestedManyWithoutFamilyMemberInput
   lunches?: Prisma.LunchDishUncheckedCreateNestedManyWithoutFamilyMemberInput
 }
 
@@ -286,6 +291,7 @@ export type FamilyMemberUpdateInput = {
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  breakfasts?: Prisma.BreakfastDishUpdateManyWithoutFamilyMemberNestedInput
   lunches?: Prisma.LunchDishUpdateManyWithoutFamilyMemberNestedInput
 }
 
@@ -295,6 +301,7 @@ export type FamilyMemberUncheckedUpdateInput = {
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  breakfasts?: Prisma.BreakfastDishUncheckedUpdateManyWithoutFamilyMemberNestedInput
   lunches?: Prisma.LunchDishUncheckedUpdateManyWithoutFamilyMemberNestedInput
 }
 
@@ -378,11 +385,28 @@ export type FamilyMemberUpdateOneWithoutLunchesNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.FamilyMemberUpdateToOneWithWhereWithoutLunchesInput, Prisma.FamilyMemberUpdateWithoutLunchesInput>, Prisma.FamilyMemberUncheckedUpdateWithoutLunchesInput>
 }
 
+export type FamilyMemberCreateNestedOneWithoutBreakfastsInput = {
+  create?: Prisma.XOR<Prisma.FamilyMemberCreateWithoutBreakfastsInput, Prisma.FamilyMemberUncheckedCreateWithoutBreakfastsInput>
+  connectOrCreate?: Prisma.FamilyMemberCreateOrConnectWithoutBreakfastsInput
+  connect?: Prisma.FamilyMemberWhereUniqueInput
+}
+
+export type FamilyMemberUpdateOneWithoutBreakfastsNestedInput = {
+  create?: Prisma.XOR<Prisma.FamilyMemberCreateWithoutBreakfastsInput, Prisma.FamilyMemberUncheckedCreateWithoutBreakfastsInput>
+  connectOrCreate?: Prisma.FamilyMemberCreateOrConnectWithoutBreakfastsInput
+  upsert?: Prisma.FamilyMemberUpsertWithoutBreakfastsInput
+  disconnect?: Prisma.FamilyMemberWhereInput | boolean
+  delete?: Prisma.FamilyMemberWhereInput | boolean
+  connect?: Prisma.FamilyMemberWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.FamilyMemberUpdateToOneWithWhereWithoutBreakfastsInput, Prisma.FamilyMemberUpdateWithoutBreakfastsInput>, Prisma.FamilyMemberUncheckedUpdateWithoutBreakfastsInput>
+}
+
 export type FamilyMemberCreateWithoutLunchesInput = {
   name: string
   isActive?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
+  breakfasts?: Prisma.BreakfastDishCreateNestedManyWithoutFamilyMemberInput
 }
 
 export type FamilyMemberUncheckedCreateWithoutLunchesInput = {
@@ -391,6 +415,7 @@ export type FamilyMemberUncheckedCreateWithoutLunchesInput = {
   isActive?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
+  breakfasts?: Prisma.BreakfastDishUncheckedCreateNestedManyWithoutFamilyMemberInput
 }
 
 export type FamilyMemberCreateOrConnectWithoutLunchesInput = {
@@ -414,6 +439,7 @@ export type FamilyMemberUpdateWithoutLunchesInput = {
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  breakfasts?: Prisma.BreakfastDishUpdateManyWithoutFamilyMemberNestedInput
 }
 
 export type FamilyMemberUncheckedUpdateWithoutLunchesInput = {
@@ -422,6 +448,57 @@ export type FamilyMemberUncheckedUpdateWithoutLunchesInput = {
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  breakfasts?: Prisma.BreakfastDishUncheckedUpdateManyWithoutFamilyMemberNestedInput
+}
+
+export type FamilyMemberCreateWithoutBreakfastsInput = {
+  name: string
+  isActive?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  lunches?: Prisma.LunchDishCreateNestedManyWithoutFamilyMemberInput
+}
+
+export type FamilyMemberUncheckedCreateWithoutBreakfastsInput = {
+  id?: number
+  name: string
+  isActive?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  lunches?: Prisma.LunchDishUncheckedCreateNestedManyWithoutFamilyMemberInput
+}
+
+export type FamilyMemberCreateOrConnectWithoutBreakfastsInput = {
+  where: Prisma.FamilyMemberWhereUniqueInput
+  create: Prisma.XOR<Prisma.FamilyMemberCreateWithoutBreakfastsInput, Prisma.FamilyMemberUncheckedCreateWithoutBreakfastsInput>
+}
+
+export type FamilyMemberUpsertWithoutBreakfastsInput = {
+  update: Prisma.XOR<Prisma.FamilyMemberUpdateWithoutBreakfastsInput, Prisma.FamilyMemberUncheckedUpdateWithoutBreakfastsInput>
+  create: Prisma.XOR<Prisma.FamilyMemberCreateWithoutBreakfastsInput, Prisma.FamilyMemberUncheckedCreateWithoutBreakfastsInput>
+  where?: Prisma.FamilyMemberWhereInput
+}
+
+export type FamilyMemberUpdateToOneWithWhereWithoutBreakfastsInput = {
+  where?: Prisma.FamilyMemberWhereInput
+  data: Prisma.XOR<Prisma.FamilyMemberUpdateWithoutBreakfastsInput, Prisma.FamilyMemberUncheckedUpdateWithoutBreakfastsInput>
+}
+
+export type FamilyMemberUpdateWithoutBreakfastsInput = {
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  lunches?: Prisma.LunchDishUpdateManyWithoutFamilyMemberNestedInput
+}
+
+export type FamilyMemberUncheckedUpdateWithoutBreakfastsInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  lunches?: Prisma.LunchDishUncheckedUpdateManyWithoutFamilyMemberNestedInput
 }
 
 
@@ -430,10 +507,12 @@ export type FamilyMemberUncheckedUpdateWithoutLunchesInput = {
  */
 
 export type FamilyMemberCountOutputType = {
+  breakfasts: number
   lunches: number
 }
 
 export type FamilyMemberCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  breakfasts?: boolean | FamilyMemberCountOutputTypeCountBreakfastsArgs
   lunches?: boolean | FamilyMemberCountOutputTypeCountLunchesArgs
 }
 
@@ -450,6 +529,13 @@ export type FamilyMemberCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types
 /**
  * FamilyMemberCountOutputType without action
  */
+export type FamilyMemberCountOutputTypeCountBreakfastsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.BreakfastDishWhereInput
+}
+
+/**
+ * FamilyMemberCountOutputType without action
+ */
 export type FamilyMemberCountOutputTypeCountLunchesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.LunchDishWhereInput
 }
@@ -461,6 +547,7 @@ export type FamilyMemberSelect<ExtArgs extends runtime.Types.Extensions.Internal
   isActive?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  breakfasts?: boolean | Prisma.FamilyMember$breakfastsArgs<ExtArgs>
   lunches?: boolean | Prisma.FamilyMember$lunchesArgs<ExtArgs>
   _count?: boolean | Prisma.FamilyMemberCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["familyMember"]>
@@ -491,6 +578,7 @@ export type FamilyMemberSelectScalar = {
 
 export type FamilyMemberOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "isActive" | "createdAt" | "updatedAt", ExtArgs["result"]["familyMember"]>
 export type FamilyMemberInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  breakfasts?: boolean | Prisma.FamilyMember$breakfastsArgs<ExtArgs>
   lunches?: boolean | Prisma.FamilyMember$lunchesArgs<ExtArgs>
   _count?: boolean | Prisma.FamilyMemberCountOutputTypeDefaultArgs<ExtArgs>
 }
@@ -500,6 +588,7 @@ export type FamilyMemberIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types
 export type $FamilyMemberPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "FamilyMember"
   objects: {
+    breakfasts: Prisma.$BreakfastDishPayload<ExtArgs>[]
     lunches: Prisma.$LunchDishPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
@@ -902,6 +991,7 @@ readonly fields: FamilyMemberFieldRefs;
  */
 export interface Prisma__FamilyMemberClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
+  breakfasts<T extends Prisma.FamilyMember$breakfastsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.FamilyMember$breakfastsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$BreakfastDishPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   lunches<T extends Prisma.FamilyMember$lunchesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.FamilyMember$lunchesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$LunchDishPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
@@ -1322,6 +1412,30 @@ export type FamilyMemberDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.
    * Limit how many FamilyMembers to delete.
    */
   limit?: number
+}
+
+/**
+ * FamilyMember.breakfasts
+ */
+export type FamilyMember$breakfastsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the BreakfastDish
+   */
+  select?: Prisma.BreakfastDishSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the BreakfastDish
+   */
+  omit?: Prisma.BreakfastDishOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.BreakfastDishInclude<ExtArgs> | null
+  where?: Prisma.BreakfastDishWhereInput
+  orderBy?: Prisma.BreakfastDishOrderByWithRelationInput | Prisma.BreakfastDishOrderByWithRelationInput[]
+  cursor?: Prisma.BreakfastDishWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.BreakfastDishScalarFieldEnum | Prisma.BreakfastDishScalarFieldEnum[]
 }
 
 /**

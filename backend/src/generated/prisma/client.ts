@@ -73,6 +73,11 @@ export type DinnerDish = Prisma.DinnerDishModel
  */
 export type LunchDish = Prisma.LunchDishModel
 /**
+ * Model BreakfastDish
+ * 
+ */
+export type BreakfastDish = Prisma.BreakfastDishModel
+/**
  * Model GroceryItem
  * 
  */

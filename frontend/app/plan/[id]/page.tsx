@@ -18,6 +18,12 @@ type PlanDetailResponse = {
         name: string;
         notes: string | null;
       } | null;
+      breakfastDishes: Array<{
+        id: number;
+        name: string;
+        notes: string | null;
+        familyMemberId: number | null;
+      }>;
       lunchDishes: Array<{
         id: number;
         name: string;
@@ -123,6 +129,7 @@ export default async function PlanPage({
             dayKey={planDay.date}
             dayLabel={formatDayLabel(planDay.date)}
             initialDinner={planDay.dinnerDish}
+            initialBreakfastes={planDay.breakfastDishes}
             initialLunches={planDay.lunchDishes}
             key={planDay.id}
           />

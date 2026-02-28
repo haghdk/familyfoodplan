@@ -238,6 +238,21 @@ plansRouter.get("/api/plans/:planId", async (request, response) => {
               notes: true
             }
           },
+          breakfastDishes: {
+            orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+            select: {
+              id: true,
+              name: true,
+              notes: true,
+              familyMemberId: true,
+              familyMember: {
+                select: {
+                  id: true,
+                  name: true
+                }
+              }
+            }
+          },
           lunchDishes: {
             orderBy: [{ createdAt: "asc" }, { id: "asc" }],
             select: {
@@ -273,6 +288,18 @@ plansRouter.get("/api/plans/:planId", async (request, response) => {
         id: day.id,
         date: formatDateKey(day.date),
         dinnerDish: day.dinnerDish,
+        breakfastDishes: day.breakfastDishes.map((breakfastDish) => ({
+          id: breakfastDish.id,
+          name: breakfastDish.name,
+          notes: breakfastDish.notes,
+          familyMemberId: breakfastDish.familyMemberId,
+          familyMember: breakfastDish.familyMember
+            ? {
+                id: breakfastDish.familyMember.id,
+                name: breakfastDish.familyMember.name
+              }
+            : null
+        })),
         lunchDishes: day.lunchDishes.map((lunchDish) => ({
           id: lunchDish.id,
           name: lunchDish.name,

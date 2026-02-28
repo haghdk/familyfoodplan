@@ -19,6 +19,7 @@ model FamilyMember {
   id        Int         @id @default(autoincrement())
   name      String
   isActive  Boolean     @default(true)
+  breakfasts BreakfastDish[]
   lunches   LunchDish[]
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
@@ -40,6 +41,7 @@ model PlanDay {
   date              DateTime
   plan              Plan               @relation(fields: [planId], references: [id], onDelete: Cascade)
   dinnerDish        DinnerDish?
+  breakfastDishes   BreakfastDish[]
   lunchDishes       LunchDish[]
   groceryItems      GroceryItem[]
   groceryShareToken GroceryShareToken?
@@ -86,6 +88,22 @@ model LunchDish {
   @@index([familyMemberId])
 }
 
+model BreakfastDish {
+  id             Int           @id @default(autoincrement())
+  name           String
+  notes          String?
+  planDayId      Int
+  familyMemberId Int?
+  planDay        PlanDay       @relation(fields: [planDayId], references: [id], onDelete: Cascade)
+  familyMember   FamilyMember? @relation(fields: [familyMemberId], references: [id], onDelete: SetNull)
+  groceryItems   GroceryItem[]
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@index([planDayId])
+  @@index([familyMemberId])
+}
+
 enum GroceryCategory {
   GENERAL
   INGREDIENT
@@ -100,14 +118,17 @@ model GroceryItem {
   isChecked    Boolean         @default(false)
   planDayId    Int
   dinnerDishId Int?
+  breakfastDishId Int?
   lunchDishId  Int?
   planDay      PlanDay         @relation(fields: [planDayId], references: [id], onDelete: Cascade)
   dinnerDish   DinnerDish?     @relation(fields: [dinnerDishId], references: [id], onDelete: SetNull)
+  breakfastDish BreakfastDish? @relation(fields: [breakfastDishId], references: [id], onDelete: SetNull)
   lunchDish    LunchDish?      @relation(fields: [lunchDishId], references: [id], onDelete: SetNull)
   createdAt    DateTime        @default(now())
   updatedAt    DateTime        @updatedAt
 
   @@index([planDayId])
   @@index([dinnerDishId])
+  @@index([breakfastDishId])
   @@index([lunchDishId])
 }
