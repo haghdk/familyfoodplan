@@ -4,6 +4,7 @@ import { Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { backendApiUrl } from "../../lib/auth";
+import ConfirmModal from "../ui/ConfirmModal";
 
 type PlanSettingsFormProps = {
   planId: number;
@@ -170,34 +171,17 @@ export default function PlanSettingsForm({
         </div>
       </section>
 
-      {isDeleteModalOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 px-4">
-          <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl">
-            <h3 className="text-base font-semibold text-slate-900">Delete this plan?</h3>
-            <p className="mt-2 text-sm text-slate-600">
-              This action cannot be undone. All meals and shopping items in this plan will be removed.
-            </p>
-            <div className="mt-4 flex justify-end gap-2">
-              <button
-                className="rounded-full border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:text-slate-400"
-                disabled={isDeleting}
-                onClick={() => setIsDeleteModalOpen(false)}
-                type="button"
-              >
-                Cancel
-              </button>
-              <button
-                className="rounded-full bg-rose-600 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-700 disabled:cursor-not-allowed disabled:bg-rose-300"
-                disabled={isDeleting}
-                onClick={deletePlan}
-                type="button"
-              >
-                {isDeleting ? "Deleting..." : "Delete plan"}
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
+      <ConfirmModal
+        cancelLabel="Cancel"
+        confirmLabel="Delete plan"
+        confirmVariant="danger"
+        description="This action cannot be undone. Deleting this food plan will also delete its grocery list."
+        isLoading={isDeleting}
+        isOpen={isDeleteModalOpen}
+        onCancel={() => setIsDeleteModalOpen(false)}
+        onConfirm={deletePlan}
+        title="Delete this plan?"
+      />
     </>
   );
 }
