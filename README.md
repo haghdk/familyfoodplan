@@ -11,6 +11,7 @@ Family Food Planner is a weekly meal-planning app for families. Admins create pl
 - **Plan creation API**: admins can create a plan in one call using either explicit dates or weekday boundaries anchored to a specific date, with automatic `PlanDay` generation.
 - **Plan browsing APIs + UI**: admins can list plans sorted by latest start date and open a plan detail view with nested day cards (dinner + breakfasts + lunches) for in-place calendar editing.
 - **Homepage current-plan presentation component**: the home page now renders a reusable read-only `CurrentPlanTable` card with plan name/date range metadata plus responsive day/lunch/dinner layouts for desktop and small screens.
+- **Responsive weekly overview matrix**: current-plan desktop view now renders a reusable read-only meal-by-day grid (N-day columns), while mobile keeps stacked day cards with meal sections and empty-state copy for unset lunch/dinner entries.
 - **UI icon polish**: the homepage and plans overview now include Lucide icons on key headings, table labels, and action buttons to improve scanability and visual hierarchy.
 - **Plan creation UI**: admins can create a new plan directly from the Plans screen by choosing a name and date range, then jump straight into editing.
 - **Plan editing**: admins can update a plan's title and date range after creation, with safe regeneration of `PlanDay` rows to match the new boundaries.

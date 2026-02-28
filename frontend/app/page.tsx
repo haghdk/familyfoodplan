@@ -23,6 +23,10 @@ type PlanDetailResponse = {
         id: number;
         name: string;
       } | null;
+      breakfastDishes?: Array<{
+        id: number;
+        name: string;
+      }>;
       lunchDishes: Array<{
         id: number;
         name: string;
@@ -35,6 +39,10 @@ type PlanDetailResponse = {
         id: number;
         name: string;
       } | null;
+      breakfastDishes?: Array<{
+        id: number;
+        name: string;
+      }>;
       lunchDishes: Array<{
         id: number;
         name: string;
@@ -46,8 +54,9 @@ type PlanDetailResponse = {
 type CurrentPlanTableRow = {
   id: number;
   date: string;
+  breakfasts: string[];
   lunches: string[];
-  dinner: string;
+  dinners: string[];
 };
 
 const formatDateRange = (startDate: string | null, endDate: string | null) => {
@@ -186,7 +195,8 @@ const buildCurrentPlanTableRows = (
     id: number;
     date: string;
     dinnerDish: { id: number; name: string } | null;
-    lunchDishes: Array<{ id: number; name: string }>
+    breakfastDishes?: Array<{ id: number; name: string }>;
+    lunchDishes: Array<{ id: number; name: string }>;
   }>
 ): CurrentPlanTableRow[] => {
   return [...planDays]
@@ -194,8 +204,9 @@ const buildCurrentPlanTableRows = (
     .map((planDay) => ({
       id: planDay.id,
       date: formatDayLabel(planDay.date),
+      breakfasts: (planDay.breakfastDishes ?? []).map((breakfastDish) => breakfastDish.name),
       lunches: planDay.lunchDishes.map((lunchDish) => lunchDish.name),
-      dinner: planDay.dinnerDish?.name ?? "No dinner set"
+      dinners: planDay.dinnerDish ? [planDay.dinnerDish.name] : []
     }));
 };
 
