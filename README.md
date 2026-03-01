@@ -153,15 +153,15 @@ pnpm --dir backend dev
 pnpm --dir frontend dev
 ```
 
-- Frontend: `http://localhost:3000`
-- Backend: `http://localhost:4000`
+- Frontend: `http://localhost:3100`
+- Backend: `http://localhost:4100`
 
 ## Option B: Run with Docker Compose
 
 A root-level `docker-compose.yml` defines three services:
-- `database` (Postgres) on `localhost:5432`
-- `backend` on `localhost:4000`
-- `frontend` on `localhost:3000`
+- `database` (Postgres) on `localhost:55432`
+- `backend` on `localhost:4100`
+- `frontend` on `localhost:3100`
 
 Start all services:
 
