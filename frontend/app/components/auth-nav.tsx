@@ -2,8 +2,12 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { CalendarIcon, UsersIcon, LogOutIcon } from "lucide-react";
-import { adminSessionCookieName, backendApiUrl, userRoleCookieName } from "../../lib/auth";
+import { CalendarIcon, UsersIcon, ShieldUserIcon, LogOutIcon } from "lucide-react";
+import {
+  adminSessionCookieName,
+  backendApiUrl,
+  userRoleCookieName,
+} from "../../lib/auth";
 
 type AuthNavProps = {
   isAuthenticated: boolean;
@@ -46,32 +50,30 @@ export default function AuthNav({ isAuthenticated, isAdmin }: AuthNavProps) {
         <CalendarIcon className="size-4" />
         <span>Plans</span>
       </Link>
-      <Link
-        className="hover:text-slate-900 inline-flex gap-1 items-center"
-        href="/members"
-      >
-        <UsersIcon className="size-4" />
-
-        <span>Members</span>
-      </Link>
+      {isAdmin ? (
+        <>
+          <Link
+            className="hover:text-slate-900 inline-flex gap-1 items-center"
+            href="/members"
+          >
+            <UsersIcon className="size-4" />
+            Members
+          </Link>
+          <Link
+            className="hover:text-slate-900 inline-flex gap-1 items-center"
+            href="/users"
+          >
+            <ShieldUserIcon className="size-4" />
+            Users
+          </Link>
+        </>
+      ) : null}
       <button
         className="hover:text-slate-900 inline-flex gap-1 items-center"
         onClick={handleLogout}
         type="button"
       >
         <LogOutIcon className="size-4" />
-        <span>Logout</span>
-      {isAdmin ? (
-        <>
-          <Link className="hover:text-slate-900" href="/members">
-            Members
-          </Link>
-          <Link className="hover:text-slate-900" href="/users">
-            Users
-          </Link>
-        </>
-      ) : null}
-      <button className="hover:text-slate-900" onClick={handleLogout} type="button">
         Logout
       </button>
     </nav>
