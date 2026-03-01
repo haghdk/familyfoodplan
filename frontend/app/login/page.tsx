@@ -2,7 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
-import { adminSessionCookieName, backendApiUrl } from "../../lib/auth";
+import { adminSessionCookieName, backendApiUrl, userRoleCookieName } from "../../lib/auth";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -31,8 +31,9 @@ export default function LoginPage() {
         return;
       }
 
-      const data = (await response.json()) as { token: string };
+      const data = (await response.json()) as { token: string; user: { role: "ADMIN" | "VIEWER" } };
       document.cookie = `${adminSessionCookieName}=${data.token}; path=/; max-age=${60 * 60 * 24}; samesite=lax`;
+      document.cookie = `${userRoleCookieName}=${data.user.role}; path=/; max-age=${60 * 60 * 24}; samesite=lax`;
       router.push("/");
       router.refresh();
     } catch (_error) {
@@ -44,9 +45,9 @@ export default function LoginPage() {
 
   return (
     <section className="mx-auto max-w-lg rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-      <h1 className="text-2xl font-semibold text-slate-900">Admin login</h1>
+      <h1 className="text-2xl font-semibold text-slate-900">Login</h1>
       <p className="mt-2 text-sm text-slate-600">
-        Sign in with your admin account to manage the family meal plan.
+        Sign in to view your family meal plans.
       </p>
 
       <form className="mt-6 space-y-4" onSubmit={handleSubmit}>

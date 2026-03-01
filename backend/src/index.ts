@@ -5,6 +5,7 @@ import authRouter from "./routes/auth";
 import membersRouter from "./routes/members";
 import plansRouter from "./routes/plans";
 import planDaysRouter from "./routes/planDays";
+import usersRouter from "./routes/users";
 import groceryRouter from "./routes/grocery";
 import realtimeRouter from "./realtime/router";
 
@@ -32,6 +33,7 @@ app.use(authRouter);
 app.use(groceryRouter);
 app.use(realtimeRouter);
 app.use(membersRouter);
+app.use(usersRouter);
 app.use(plansRouter);
 app.use(planDaysRouter);
 

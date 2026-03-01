@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
-import { adminSessionCookieName, backendApiUrl } from "../../lib/auth";
+import { adminSessionCookieName, backendApiUrl, userRoleCookieName } from "../../lib/auth";
 import { ArrowRight, Calendar, PlusCircle, ShoppingCart } from "lucide-react";
 import SetCurrentPlanButton from "../../components/plan/SetCurrentPlanButton";
 
@@ -50,6 +50,8 @@ const getPlans = async (): Promise<PlanListItem[]> => {
 
 export default async function PlansPage() {
   const plans = await getPlans();
+  const cookieStore = await cookies();
+  const isAdmin = cookieStore.get(userRoleCookieName)?.value === "ADMIN";
 
   return (
     <section className="space-y-6">
@@ -60,6 +62,7 @@ export default async function PlansPage() {
             Select a weekly plan to edit meals or open related grocery views.
           </p>
         </div>
+        {isAdmin ? (
         <Link
           className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
           href="/plan/new"
@@ -67,6 +70,7 @@ export default async function PlansPage() {
           <PlusCircle className="h-4 w-4" />
           Create new plan
         </Link>
+        ) : null}
       </div>
 
       {plans.length === 0 ? (
@@ -102,12 +106,14 @@ export default async function PlansPage() {
                   <ShoppingCart className="h-4 w-4" />
                   Grocery list
                 </Link>
+                {isAdmin ? (
                 <SetCurrentPlanButton
                   idleLabel="Set as current"
                   isCurrent={plan.isCurrent}
                   loadingLabel="Setting..."
                   planId={plan.id}
                 />
+                ) : null}
               </div>
             </article>
           ))}

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import "./globals.css";
 import AuthNav from "./components/auth-nav";
-import { adminSessionCookieName } from "../lib/auth";
+import { adminSessionCookieName, userRoleCookieName } from "../lib/auth";
 import Link from "next/link";
 
 export const metadata: Metadata = {
@@ -19,6 +19,7 @@ export default async function RootLayout({
   const isAuthenticated = Boolean(
     cookieStore.get(adminSessionCookieName)?.value,
   );
+  const isAdmin = cookieStore.get(userRoleCookieName)?.value === "ADMIN";
 
   return (
     <html lang="en">
@@ -31,7 +32,7 @@ export default async function RootLayout({
                   Family Food Planner
                 </span>
               </Link>
-              <AuthNav isAuthenticated={isAuthenticated} />
+              <AuthNav isAuthenticated={isAuthenticated} isAdmin={isAdmin} />
             </div>
           </header>
           <main className="mx-auto max-w-5xl px-6 py-10">{children}</main>

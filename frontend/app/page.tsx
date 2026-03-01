@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
-import { adminSessionCookieName, backendApiUrl } from "../lib/auth";
+import { adminSessionCookieName, backendApiUrl, userRoleCookieName } from "../lib/auth";
 import CurrentPlanTable from "../components/plan/CurrentPlanTable";
 import { ArrowRight, Calendar, ClipboardList, PlusCircle, ShoppingCart, Sparkles } from "lucide-react";
 
@@ -212,6 +212,8 @@ const buildCurrentPlanTableRows = (
 
 export default async function HomePage() {
   const plans = await getPlans();
+  const cookieStore = await cookies();
+  const isAdmin = cookieStore.get(userRoleCookieName)?.value === "ADMIN";
 
   if (!plans || plans.length === 0) {
     return (
@@ -228,6 +230,7 @@ export default async function HomePage() {
             We could not load plans right now, or you have not created one yet.
             Start by creating your first weekly plan.
           </p>
+          {isAdmin ? (
           <div className="mt-6 flex flex-wrap gap-4">
             <Link
               className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-5 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
@@ -237,6 +240,7 @@ export default async function HomePage() {
               Create a plan
             </Link>
           </div>
+          ) : null}
         </div>
       </section>
     );
@@ -265,6 +269,7 @@ export default async function HomePage() {
               {currentPlan?.name ?? "No active plan"}
             </h1>
           </div>
+          {isAdmin ? (
           <Link
             className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-5 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
             href="/plan/new"
@@ -272,6 +277,7 @@ export default async function HomePage() {
             <PlusCircle className="h-4 w-4" />
             Create new plan
           </Link>
+          ) : null}
         </div>
 
         {currentPlan ? (

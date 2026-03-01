@@ -5,6 +5,8 @@ Family Food Planner is a weekly meal-planning app for families. Admins create pl
 ## Implemented Features
 
 - **Admin login**: secure admin authentication with session-based access to protected pages.
+- **User management + roles**: admins can create, edit, delete users, change admin email/password, and assign `ADMIN` or `VIEWER` role.
+- **Read-only regular users**: viewer users can sign in and view plans, but cannot access any editing APIs or admin-only screens.
 - **Initial admin bootstrap**: Docker setup now seeds a default admin user automatically on first startup.
 - **Members management**: create, edit, list, and archive family members.
 - **Weekly plans**: define week ranges and build day-by-day meal plans (dinner + repeatable breakfast/lunch rows).
@@ -66,27 +68,33 @@ Family Food Planner is a weekly meal-planning app for families. Admins create pl
 > Base backend URL is typically `http://localhost:4000` in local development.
 
 ### Authentication
-- `POST /api/auth/login` — authenticate admin user.
+- `POST /api/auth/login` — authenticate user (`ADMIN` or `VIEWER`) and return role-aware session payload.
 - `POST /api/auth/logout` — clear admin session.
-- `GET /api/auth/me` — fetch current authenticated admin.
+- `GET /api/auth/me` — fetch current authenticated user and role.
 
 ### Health / Build Diagnostics
 - `GET /health` — basic liveness check.
 - `GET /health/details` — liveness plus build metadata (`version`, `commitSha`, `buildTime`) to help verify deployed backend revision (falls back to `unknown` commit and server start time when env vars are not set).
 
 ### Members
-- `GET /api/members` — list members.
-- `POST /api/members` — create member.
-- `PATCH /api/members/:id` — update member.
-- `DELETE /api/members/:id` (or archive endpoint depending on implementation) — archive/remove member from active planning.
+- `GET /api/members` — list members (admin only).
+- `POST /api/members` — create member (admin only).
+- `PATCH /api/members/:id` — update member (admin only).
+- `DELETE /api/members/:id` (or archive endpoint depending on implementation) — archive/remove member from active planning (admin only).
+
+### Users
+- `GET /api/users` — list users (admin only).
+- `POST /api/users` — create user with role and password (admin only).
+- `PUT /api/users/:id` — update email, password, and/or role (admin only).
+- `DELETE /api/users/:id` — delete user, with safeguards to keep at least one admin (admin only).
 
 ### Weekly Plans / Meals
 - Plan and meal endpoints under `/api/plans/...` handle week creation, day meal entries, breakfast/lunch rows, and dinner updates.
-- `POST /api/plans` — create a plan and all plan-day rows for a validated date range (admin-auth required).
-- `GET /api/plans` — list plans ordered by newest `startDate` first for plan selection cards.
-- `GET /api/plans/:planId` — fetch one plan with nested `planDays`, `dinnerDish`, `breakfastDishes`, and `lunchDishes` for calendar/day-card rendering.
-- `PUT /api/plans/:planId` — update plan name and date range; the backend adds/removes `PlanDay` rows to keep data aligned with the new range.
-- `DELETE /api/plans/:planId` — delete a plan by id; returns `404` when the plan does not exist and cascades removal of related plan-day and grocery data.
+- `POST /api/plans` — create a plan and all plan-day rows for a validated date range (admin only).
+- `GET /api/plans` — list plans ordered by newest `startDate` first (authenticated users).
+- `GET /api/plans/:planId` — fetch one plan with nested `planDays`, `dinnerDish`, `breakfastDishes`, and `lunchDishes` (authenticated users).
+- `PUT /api/plans/:planId` — update plan name and date range; the backend adds/removes `PlanDay` rows to keep data aligned with the new range (admin only).
+- `DELETE /api/plans/:planId` — delete a plan by id; returns `404` when the plan does not exist and cascades removal of related plan-day and grocery data (admin only).
 
 ### Grocery Lists
 - Admin grocery routes under `/api/plans/:id/grocery-list...` support create/update/delete and share-link management.
