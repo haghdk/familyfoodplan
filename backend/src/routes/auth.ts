@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { createSessionToken, sessionMaxAgeSeconds } from "../auth/session";
-import { validateAdminLogin } from "../auth/login";
-import { requireAdminAuth } from "../middleware/auth";
+import { validateUserLogin } from "../auth/login";
+import { requireAuth } from "../middleware/auth";
 
 const authRouter = Router();
 
@@ -16,14 +16,14 @@ authRouter.post("/api/auth/login", async (request, response) => {
     return;
   }
 
-  const adminUser = await validateAdminLogin({ email, password });
+  const user = await validateUserLogin({ email, password });
 
-  if (!adminUser) {
+  if (!user) {
     response.status(401).json({ message: "Invalid credentials" });
     return;
   }
 
-  const token = createSessionToken(adminUser);
+  const token = createSessionToken(user);
 
   response.setHeader(
     "Set-Cookie",
@@ -33,8 +33,9 @@ authRouter.post("/api/auth/login", async (request, response) => {
   response.status(200).json({
     token,
     user: {
-      id: adminUser.id,
-      email: adminUser.email
+      id: user.id,
+      email: user.email,
+      role: user.role
     }
   });
 });
@@ -47,8 +48,8 @@ authRouter.post("/api/auth/logout", (_request, response) => {
   response.status(200).json({ success: true });
 });
 
-authRouter.get("/api/auth/me", requireAdminAuth, (_request, response) => {
-  response.status(200).json({ user: response.locals.adminUser });
+authRouter.get("/api/auth/me", requireAuth, (_request, response) => {
+  response.status(200).json({ user: response.locals.user });
 });
 
 export default authRouter;

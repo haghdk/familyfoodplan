@@ -3,6 +3,7 @@ import { createHmac } from "crypto";
 export type SessionPayload = {
   sub: number;
   email: string;
+  role: "ADMIN" | "VIEWER";
   iat: number;
   exp: number;
 };
@@ -33,17 +34,19 @@ const createSignature = (value: string): string =>
     .replace(/\+/g, "-")
     .replace(/\//g, "_");
 
-export const createSessionToken = (adminUser: {
+export const createSessionToken = (user: {
   id: number;
   email: string;
+  role: "ADMIN" | "VIEWER";
 }): string => {
   const header = toBase64Url(JSON.stringify({ alg: "HS256", typ: "JWT" }));
 
   const now = Math.floor(Date.now() / 1000);
   const payload = toBase64Url(
     JSON.stringify({
-      sub: adminUser.id,
-      email: adminUser.email,
+      sub: user.id,
+      email: user.email,
+      role: user.role,
       iat: now,
       exp: now + EXPIRES_IN_SECONDS
     } satisfies SessionPayload)

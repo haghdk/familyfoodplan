@@ -16,9 +16,7 @@ const extractCookieToken = (cookieHeader?: string): string | null => {
   }
 
   const cookies = cookieHeader.split(";").map((cookie) => cookie.trim());
-  const sessionCookie = cookies.find((cookie) =>
-    cookie.startsWith("admin_session=")
-  );
+  const sessionCookie = cookies.find((cookie) => cookie.startsWith("admin_session="));
 
   if (!sessionCookie) {
     return null;
@@ -27,7 +25,7 @@ const extractCookieToken = (cookieHeader?: string): string | null => {
   return sessionCookie.replace("admin_session=", "");
 };
 
-export const requireAdminAuth = async (
+export const requireAuth = async (
   request: Request,
   response: Response,
   next: NextFunction
@@ -48,21 +46,39 @@ export const requireAdminAuth = async (
     return;
   }
 
-  const adminUser = await prisma.adminUser.findUnique({
+  const user = await prisma.adminUser.findUnique({
     where: {
       id: payload.sub
     },
     select: {
       id: true,
-      email: true
+      email: true,
+      role: true
     }
   });
 
-  if (!adminUser) {
+  if (!user) {
     response.status(401).json({ message: "Unauthorized" });
     return;
   }
 
-  response.locals.adminUser = adminUser;
+  response.locals.user = user;
   next();
+};
+
+export const requireAdminAuth = async (
+  request: Request,
+  response: Response,
+  next: NextFunction
+): Promise<void> => {
+  await requireAuth(request, response, () => {
+    const user = response.locals.user as { role: "ADMIN" | "VIEWER" };
+
+    if (user.role !== "ADMIN") {
+      response.status(403).json({ message: "Forbidden" });
+      return;
+    }
+
+    next();
+  });
 };
