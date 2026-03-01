@@ -38,6 +38,7 @@ export type AdminUserMinAggregateOutputType = {
   id: number | null
   email: string | null
   passwordHash: string | null
+  role: $Enums.UserRole | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -46,6 +47,7 @@ export type AdminUserMaxAggregateOutputType = {
   id: number | null
   email: string | null
   passwordHash: string | null
+  role: $Enums.UserRole | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -54,6 +56,7 @@ export type AdminUserCountAggregateOutputType = {
   id: number
   email: number
   passwordHash: number
+  role: number
   createdAt: number
   updatedAt: number
   _all: number
@@ -72,6 +75,7 @@ export type AdminUserMinAggregateInputType = {
   id?: true
   email?: true
   passwordHash?: true
+  role?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -80,6 +84,7 @@ export type AdminUserMaxAggregateInputType = {
   id?: true
   email?: true
   passwordHash?: true
+  role?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -88,6 +93,7 @@ export type AdminUserCountAggregateInputType = {
   id?: true
   email?: true
   passwordHash?: true
+  role?: true
   createdAt?: true
   updatedAt?: true
   _all?: true
@@ -183,6 +189,7 @@ export type AdminUserGroupByOutputType = {
   id: number
   email: string
   passwordHash: string
+  role: $Enums.UserRole
   createdAt: Date
   updatedAt: Date
   _count: AdminUserCountAggregateOutputType | null
@@ -214,6 +221,7 @@ export type AdminUserWhereInput = {
   id?: Prisma.IntFilter<"AdminUser"> | number
   email?: Prisma.StringFilter<"AdminUser"> | string
   passwordHash?: Prisma.StringFilter<"AdminUser"> | string
+  role?: Prisma.EnumUserRoleFilter<"AdminUser"> | $Enums.UserRole
   createdAt?: Prisma.DateTimeFilter<"AdminUser"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"AdminUser"> | Date | string
 }
@@ -222,6 +230,7 @@ export type AdminUserOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   email?: Prisma.SortOrder
   passwordHash?: Prisma.SortOrder
+  role?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -233,6 +242,7 @@ export type AdminUserWhereUniqueInput = Prisma.AtLeast<{
   OR?: Prisma.AdminUserWhereInput[]
   NOT?: Prisma.AdminUserWhereInput | Prisma.AdminUserWhereInput[]
   passwordHash?: Prisma.StringFilter<"AdminUser"> | string
+  role?: Prisma.EnumUserRoleFilter<"AdminUser"> | $Enums.UserRole
   createdAt?: Prisma.DateTimeFilter<"AdminUser"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"AdminUser"> | Date | string
 }, "id" | "email">
@@ -241,6 +251,7 @@ export type AdminUserOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   email?: Prisma.SortOrder
   passwordHash?: Prisma.SortOrder
+  role?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.AdminUserCountOrderByAggregateInput
@@ -257,6 +268,7 @@ export type AdminUserScalarWhereWithAggregatesInput = {
   id?: Prisma.IntWithAggregatesFilter<"AdminUser"> | number
   email?: Prisma.StringWithAggregatesFilter<"AdminUser"> | string
   passwordHash?: Prisma.StringWithAggregatesFilter<"AdminUser"> | string
+  role?: Prisma.EnumUserRoleWithAggregatesFilter<"AdminUser"> | $Enums.UserRole
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"AdminUser"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"AdminUser"> | Date | string
 }
@@ -264,6 +276,7 @@ export type AdminUserScalarWhereWithAggregatesInput = {
 export type AdminUserCreateInput = {
   email: string
   passwordHash: string
+  role?: $Enums.UserRole
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -272,6 +285,7 @@ export type AdminUserUncheckedCreateInput = {
   id?: number
   email: string
   passwordHash: string
+  role?: $Enums.UserRole
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -279,6 +293,7 @@ export type AdminUserUncheckedCreateInput = {
 export type AdminUserUpdateInput = {
   email?: Prisma.StringFieldUpdateOperationsInput | string
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -287,6 +302,7 @@ export type AdminUserUncheckedUpdateInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   email?: Prisma.StringFieldUpdateOperationsInput | string
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -295,6 +311,7 @@ export type AdminUserCreateManyInput = {
   id?: number
   email: string
   passwordHash: string
+  role?: $Enums.UserRole
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -302,6 +319,7 @@ export type AdminUserCreateManyInput = {
 export type AdminUserUpdateManyMutationInput = {
   email?: Prisma.StringFieldUpdateOperationsInput | string
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -310,6 +328,7 @@ export type AdminUserUncheckedUpdateManyInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   email?: Prisma.StringFieldUpdateOperationsInput | string
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -318,6 +337,7 @@ export type AdminUserCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   email?: Prisma.SortOrder
   passwordHash?: Prisma.SortOrder
+  role?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -330,6 +350,7 @@ export type AdminUserMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   email?: Prisma.SortOrder
   passwordHash?: Prisma.SortOrder
+  role?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -338,6 +359,7 @@ export type AdminUserMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   email?: Prisma.SortOrder
   passwordHash?: Prisma.SortOrder
+  role?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -348,6 +370,10 @@ export type AdminUserSumOrderByAggregateInput = {
 
 export type StringFieldUpdateOperationsInput = {
   set?: string
+}
+
+export type EnumUserRoleFieldUpdateOperationsInput = {
+  set?: $Enums.UserRole
 }
 
 export type DateTimeFieldUpdateOperationsInput = {
@@ -368,6 +394,7 @@ export type AdminUserSelect<ExtArgs extends runtime.Types.Extensions.InternalArg
   id?: boolean
   email?: boolean
   passwordHash?: boolean
+  role?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }, ExtArgs["result"]["adminUser"]>
@@ -376,6 +403,7 @@ export type AdminUserSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Ext
   id?: boolean
   email?: boolean
   passwordHash?: boolean
+  role?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }, ExtArgs["result"]["adminUser"]>
@@ -384,6 +412,7 @@ export type AdminUserSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Ext
   id?: boolean
   email?: boolean
   passwordHash?: boolean
+  role?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }, ExtArgs["result"]["adminUser"]>
@@ -392,11 +421,12 @@ export type AdminUserSelectScalar = {
   id?: boolean
   email?: boolean
   passwordHash?: boolean
+  role?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type AdminUserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "email" | "passwordHash" | "createdAt" | "updatedAt", ExtArgs["result"]["adminUser"]>
+export type AdminUserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "email" | "passwordHash" | "role" | "createdAt" | "updatedAt", ExtArgs["result"]["adminUser"]>
 
 export type $AdminUserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "AdminUser"
@@ -405,6 +435,7 @@ export type $AdminUserPayload<ExtArgs extends runtime.Types.Extensions.InternalA
     id: number
     email: string
     passwordHash: string
+    role: $Enums.UserRole
     createdAt: Date
     updatedAt: Date
   }, ExtArgs["result"]["adminUser"]>
@@ -833,6 +864,7 @@ export interface AdminUserFieldRefs {
   readonly id: Prisma.FieldRef<"AdminUser", 'Int'>
   readonly email: Prisma.FieldRef<"AdminUser", 'String'>
   readonly passwordHash: Prisma.FieldRef<"AdminUser", 'String'>
+  readonly role: Prisma.FieldRef<"AdminUser", 'UserRole'>
   readonly createdAt: Prisma.FieldRef<"AdminUser", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"AdminUser", 'DateTime'>
 }
