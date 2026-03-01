@@ -6,10 +6,16 @@ export type LoginInput = {
   password: string;
 };
 
-export const validateAdminLogin = async ({
+export type AuthenticatedUser = {
+  id: number;
+  email: string;
+  role: "ADMIN" | "VIEWER";
+};
+
+export const validateUserLogin = async ({
   email,
   password
-}: LoginInput): Promise<{ id: number; email: string } | null> => {
+}: LoginInput): Promise<AuthenticatedUser | null> => {
   const adminUser = await prisma.adminUser.findUnique({
     where: {
       email: email.toLowerCase().trim()
@@ -28,6 +34,7 @@ export const validateAdminLogin = async ({
 
   return {
     id: adminUser.id,
-    email: adminUser.email
+    email: adminUser.email,
+    role: adminUser.role
   };
 };

@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { prisma } from "../lib/prisma";
-import { requireAdminAuth } from "../middleware/auth";
+import { requireAdminAuth, requireAuth } from "../middleware/auth";
 import {
   PlanConflictError,
   PlanValidationError,
@@ -10,8 +10,6 @@ import {
 } from "../services/plans";
 
 const plansRouter = Router();
-
-plansRouter.use(requireAdminAuth);
 
 const MAX_PLAN_SPAN_DAYS = 14;
 const WEEKDAY_INDEX: Record<string, number> = {
@@ -107,7 +105,7 @@ const resolveDateRange = (payload: {
   return { startDate, endDate };
 };
 
-plansRouter.post("/api/plans", async (request, response) => {
+plansRouter.post("/api/plans", requireAdminAuth, async (request, response) => {
   const { name, startDate, endDate, startWeekday, endWeekday, anchorDate } = request.body as {
     name?: unknown;
     startDate?: unknown;
@@ -185,7 +183,7 @@ plansRouter.post("/api/plans", async (request, response) => {
   }
 });
 
-plansRouter.get("/api/plans", async (_request, response) => {
+plansRouter.get("/api/plans", requireAuth, async (_request, response) => {
   const plans = await prisma.plan.findMany({
     orderBy: [{ startDate: "desc" }, { createdAt: "desc" }],
     select: {
@@ -214,7 +212,7 @@ plansRouter.get("/api/plans", async (_request, response) => {
   });
 });
 
-plansRouter.get("/api/plans/:planId", async (request, response) => {
+plansRouter.get("/api/plans/:planId", requireAuth, async (request, response) => {
   const planId = Number(request.params.planId);
 
   if (Number.isNaN(planId)) {
@@ -322,7 +320,7 @@ plansRouter.get("/api/plans/:planId", async (request, response) => {
   });
 });
 
-plansRouter.post("/api/plans/:planId/set-current", async (request, response) => {
+plansRouter.post("/api/plans/:planId/set-current", requireAdminAuth, async (request, response) => {
   const planId = Number(request.params.planId);
 
   if (Number.isNaN(planId)) {
@@ -363,7 +361,7 @@ plansRouter.post("/api/plans/:planId/set-current", async (request, response) => 
   });
 });
 
-plansRouter.put("/api/plans/:planId", async (request, response) => {
+plansRouter.put("/api/plans/:planId", requireAdminAuth, async (request, response) => {
   const planId = Number(request.params.planId);
 
   if (Number.isNaN(planId)) {
@@ -487,7 +485,7 @@ plansRouter.put("/api/plans/:planId", async (request, response) => {
   }
 });
 
-plansRouter.delete("/api/plans/:planId", async (request, response) => {
+plansRouter.delete("/api/plans/:planId", requireAdminAuth, async (request, response) => {
   const planId = Number(request.params.planId);
 
   if (Number.isNaN(planId)) {
