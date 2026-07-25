@@ -52,7 +52,7 @@ export default function AuthNav({ isAuthenticated, isAdmin }: AuthNavProps) {
 
   if (!isAuthenticated) {
     return (
-      <nav className="flex items-center">
+      <nav className="flex items-center justify-end">
         <Link
           className={cn(
             navLinkClassName,
