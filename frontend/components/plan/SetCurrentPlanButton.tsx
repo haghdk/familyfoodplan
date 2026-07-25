@@ -2,20 +2,24 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { CheckCircle2, Star } from "lucide-react";
 import { setPlanAsCurrent } from "../../lib/plans";
+import Button, { type ButtonSize } from "../ui/Button";
 
 type SetCurrentPlanButtonProps = {
   planId: number;
   isCurrent: boolean;
   idleLabel: string;
   loadingLabel?: string;
+  size?: ButtonSize;
 };
 
 export default function SetCurrentPlanButton({
   planId,
   isCurrent,
   idleLabel,
-  loadingLabel = "Setting as current..."
+  loadingLabel = "Setting as current...",
+  size = "md"
 }: SetCurrentPlanButtonProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -39,16 +43,23 @@ export default function SetCurrentPlanButton({
   };
 
   return (
-    <div className="space-y-2">
-      <button
-        className="rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:border-slate-400 disabled:cursor-not-allowed disabled:opacity-60"
+    <div className="space-y-1.5">
+      <Button
         disabled={isCurrent || isSubmitting}
         onClick={handleSetCurrent}
-        type="button"
+        size={size}
+        variant="secondary"
       >
+        {isCurrent ? (
+          <CheckCircle2 className="h-4 w-4" />
+        ) : (
+          <Star className="h-4 w-4" />
+        )}
         {isCurrent ? "Current plan" : isSubmitting ? loadingLabel : idleLabel}
-      </button>
-      {errorMessage ? <p className="text-sm text-rose-700">{errorMessage}</p> : null}
+      </Button>
+      {errorMessage ? (
+        <p className="text-xs font-medium text-danger">{errorMessage}</p>
+      ) : null}
     </div>
   );
 }

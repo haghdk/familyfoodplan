@@ -1,9 +1,12 @@
 "use client";
 
-import { Trash2 } from "lucide-react";
+import { Settings2, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { backendApiUrl } from "../../lib/auth";
+import Button from "../ui/Button";
+import { SectionCard } from "../ui/Card";
+import { TextField } from "../ui/Field";
 import ConfirmModal from "../ui/ConfirmModal";
 
 type PlanSettingsFormProps = {
@@ -107,69 +110,57 @@ export default function PlanSettingsForm({
 
   return (
     <>
-      <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-700">Plan settings</h2>
-          <button
+      <SectionCard
+        actions={
+          <Button
             aria-label="Delete plan"
-            className="rounded-full p-2 text-rose-600 transition hover:bg-rose-50 hover:text-rose-700 disabled:cursor-not-allowed disabled:text-rose-300"
             disabled={isDeleting}
             onClick={() => setIsDeleteModalOpen(true)}
-            type="button"
+            size="icon"
+            variant="danger"
           >
             <Trash2 className="h-4 w-4" />
-          </button>
+          </Button>
+        }
+        description="Rename the plan or move its date range. Days are added or removed to match."
+        icon={<Settings2 className="h-4 w-4" />}
+        title="Plan settings"
+      >
+        <div className="grid gap-4 md:grid-cols-3">
+          <TextField
+            label="Title"
+            onChange={(event) => setName(event.target.value)}
+            value={name}
+          />
+          <TextField
+            label="Start date"
+            onChange={(event) => setStartDate(event.target.value)}
+            type="date"
+            value={startDate}
+          />
+          <TextField
+            label="End date"
+            onChange={(event) => setEndDate(event.target.value)}
+            type="date"
+            value={endDate}
+          />
         </div>
 
-        <div className="mt-3 grid gap-3 md:grid-cols-3">
-          <label className="space-y-1 text-sm">
-            <span className="font-medium text-slate-700">Title</span>
-            <input
-              className="w-full rounded-lg border border-slate-300 px-3 py-2"
-              onChange={(event) => setName(event.target.value)}
-              value={name}
-            />
-          </label>
-          <label className="space-y-1 text-sm">
-            <span className="font-medium text-slate-700">Start date</span>
-            <input
-              className="w-full rounded-lg border border-slate-300 px-3 py-2"
-              onChange={(event) => setStartDate(event.target.value)}
-              type="date"
-              value={startDate}
-            />
-          </label>
-          <label className="space-y-1 text-sm">
-            <span className="font-medium text-slate-700">End date</span>
-            <input
-              className="w-full rounded-lg border border-slate-300 px-3 py-2"
-              onChange={(event) => setEndDate(event.target.value)}
-              type="date"
-              value={endDate}
-            />
-          </label>
-        </div>
-
-        <div className="mt-3 flex items-center gap-3">
-          <button
-            className="rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-emerald-300"
-            disabled={isSaving || isDeleting}
-            onClick={savePlanSettings}
-            type="button"
-          >
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <Button disabled={isSaving || isDeleting} onClick={savePlanSettings}>
             {isSaving ? "Saving..." : "Save settings"}
-          </button>
+          </Button>
           {feedback ? (
             <p
-              className={`text-sm ${
-                feedback.type === "success" ? "text-emerald-700" : "text-rose-700"
+              className={`text-sm font-medium ${
+                feedback.type === "success" ? "text-success" : "text-danger"
               }`}
             >
               {feedback.message}
             </p>
           ) : null}
         </div>
-      </section>
+      </SectionCard>
 
       <ConfirmModal
         cancelLabel="Cancel"

@@ -1,7 +1,14 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { Pencil, ShieldUser, Trash2, UserPlus } from "lucide-react";
 import { backendApiUrl } from "../../lib/auth";
+import Alert from "../ui/Alert";
+import Badge from "../ui/Badge";
+import Button from "../ui/Button";
+import Card, { SectionCard } from "../ui/Card";
+import EmptyState from "../ui/EmptyState";
+import { SelectField, TextField } from "../ui/Field";
 
 type UserRole = "ADMIN" | "VIEWER";
 
@@ -111,122 +118,142 @@ export default function UsersManager({ initialUsers }: UsersManagerProps) {
   };
 
   return (
-    <section className="space-y-6">
-      <form className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm" onSubmit={createUser}>
-        <h2 className="text-lg font-semibold text-slate-900">Add user</h2>
-        <div className="mt-4 grid gap-3 md:grid-cols-3">
-          <input
-            className="rounded-xl border border-slate-300 px-3 py-2"
-            onChange={(event) => setEmail(event.target.value)}
-            placeholder="Email"
-            required
-            type="email"
-            value={email}
-          />
-          <input
-            className="rounded-xl border border-slate-300 px-3 py-2"
-            minLength={6}
-            onChange={(event) => setPassword(event.target.value)}
-            placeholder="Password"
-            required
-            type="password"
-            value={password}
-          />
-          <select
-            className="rounded-xl border border-slate-300 px-3 py-2"
-            onChange={(event) => setRole(event.target.value as UserRole)}
-            value={role}
-          >
-            <option value="VIEWER">Regular user (viewer)</option>
-            <option value="ADMIN">Admin</option>
-          </select>
-        </div>
-        <button
-          className="mt-4 rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
-          type="submit"
-        >
-          Add user
-        </button>
-      </form>
+    <section className="space-y-5">
+      <SectionCard
+        description="Admins can edit everything. Viewers can only read plans and grocery lists."
+        icon={<UserPlus className="h-4 w-4" />}
+        title="Add user"
+      >
+        <form onSubmit={createUser}>
+          <div className="grid gap-3 md:grid-cols-3">
+            <TextField
+              autoComplete="off"
+              label="Email"
+              onChange={(event) => setEmail(event.target.value)}
+              placeholder="name@example.com"
+              required
+              type="email"
+              value={email}
+            />
+            <TextField
+              autoComplete="new-password"
+              hint="At least 6 characters."
+              label="Password"
+              minLength={6}
+              onChange={(event) => setPassword(event.target.value)}
+              placeholder="••••••••"
+              required
+              type="password"
+              value={password}
+            />
+            <SelectField
+              label="Role"
+              onChange={(event) => setRole(event.target.value as UserRole)}
+              value={role}
+            >
+              <option value="VIEWER">Regular user (viewer)</option>
+              <option value="ADMIN">Admin</option>
+            </SelectField>
+          </div>
 
-      {errorMessage ? (
-        <p className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
-          {errorMessage}
-        </p>
-      ) : null}
+          <Button className="mt-4" type="submit">
+            <UserPlus className="h-4 w-4" />
+            Add user
+          </Button>
+        </form>
+      </SectionCard>
 
-      <div className="space-y-3">
-        {users.map((user) => (
-          <article key={user.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-            {editingId === user.id ? (
-              <div className="space-y-3">
-                <div className="grid gap-3 md:grid-cols-3">
-                  <input
-                    className="rounded-xl border border-slate-300 px-3 py-2"
-                    onChange={(event) => setEditingEmail(event.target.value)}
-                    type="email"
-                    value={editingEmail}
-                  />
-                  <input
-                    className="rounded-xl border border-slate-300 px-3 py-2"
-                    onChange={(event) => setEditingPassword(event.target.value)}
-                    placeholder="Leave blank to keep current password"
-                    type="password"
-                    value={editingPassword}
-                  />
-                  <select
-                    className="rounded-xl border border-slate-300 px-3 py-2"
-                    onChange={(event) => setEditingRole(event.target.value as UserRole)}
-                    value={editingRole}
-                  >
-                    <option value="VIEWER">Regular user (viewer)</option>
-                    <option value="ADMIN">Admin</option>
-                  </select>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    className="rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
-                    onClick={() => updateUser(user.id)}
-                    type="button"
-                  >
-                    Save
-                  </button>
-                  <button
-                    className="rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700"
-                    onClick={() => setEditingId(null)}
-                    type="button"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <p className="font-semibold text-slate-900">{user.email}</p>
-                  <p className="text-sm text-slate-600">{user.role === "ADMIN" ? "Admin" : "Regular viewer"}</p>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    className="rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700"
-                    onClick={() => beginEdit(user)}
-                    type="button"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    className="rounded-full border border-rose-200 px-4 py-2 text-sm font-semibold text-rose-700"
-                    onClick={() => deleteUser(user.id)}
-                    type="button"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            )}
-          </article>
-        ))}
-      </div>
+      {errorMessage ? <Alert tone="error">{errorMessage}</Alert> : null}
+
+      {users.length === 0 ? (
+        <EmptyState
+          description="Create an account so other family members can sign in."
+          icon={<ShieldUser className="h-5 w-5" />}
+          title="No users yet"
+        />
+      ) : (
+        <ul className="space-y-3">
+          {users.map((user) => (
+            <li key={user.id}>
+              <Card className="p-4 sm:p-4">
+                {editingId === user.id ? (
+                  <div className="space-y-4">
+                    <div className="grid gap-3 md:grid-cols-3">
+                      <TextField
+                        label="Email"
+                        onChange={(event) => setEditingEmail(event.target.value)}
+                        type="email"
+                        value={editingEmail}
+                      />
+                      <TextField
+                        hint="Leave blank to keep the current password."
+                        label="New password"
+                        onChange={(event) => setEditingPassword(event.target.value)}
+                        placeholder="••••••••"
+                        type="password"
+                        value={editingPassword}
+                      />
+                      <SelectField
+                        label="Role"
+                        onChange={(event) => setEditingRole(event.target.value as UserRole)}
+                        value={editingRole}
+                      >
+                        <option value="VIEWER">Regular user (viewer)</option>
+                        <option value="ADMIN">Admin</option>
+                      </SelectField>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button onClick={() => updateUser(user.id)}>Save</Button>
+                      <Button onClick={() => setEditingId(null)} variant="secondary">
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <span
+                        className={
+                          user.role === "ADMIN"
+                            ? "flex h-10 w-10 items-center justify-center rounded-2xl bg-accent-soft text-accent"
+                            : "flex h-10 w-10 items-center justify-center rounded-2xl bg-surface-muted text-fg-subtle"
+                        }
+                      >
+                        <ShieldUser className="h-5 w-5" />
+                      </span>
+                      <div>
+                        <p className="font-semibold text-fg">{user.email}</p>
+                        <Badge tone={user.role === "ADMIN" ? "accent" : "neutral"}>
+                          {user.role === "ADMIN" ? "Admin" : "Regular viewer"}
+                        </Badge>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() => beginEdit(user)}
+                        size="sm"
+                        variant="secondary"
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                        Edit
+                      </Button>
+                      <Button
+                        onClick={() => deleteUser(user.id)}
+                        size="sm"
+                        variant="danger"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                        Delete
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </Card>
+            </li>
+          ))}
+        </ul>
+      )}
     </section>
   );
 }

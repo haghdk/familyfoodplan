@@ -2,7 +2,12 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import { Check, ShoppingBasket } from "lucide-react";
 import { backendApiUrl } from "../../../lib/auth";
+import { cn } from "../../../lib/cn";
+import Alert from "../../../components/ui/Alert";
+import Card from "../../../components/ui/Card";
+import EmptyState from "../../../components/ui/EmptyState";
 
 type GroceryItem = {
   id: number;
@@ -153,30 +158,131 @@ export default function SharedGroceryPage() {
   };
 
   if (isLoading) {
-    return <p className="text-sm text-slate-600">Loading shared grocery list...</p>;
+    return (
+      <div className="mx-auto max-w-2xl space-y-3">
+        <div className="h-24 animate-pulse rounded-3xl bg-surface-muted" />
+        <div className="h-72 animate-pulse rounded-3xl bg-surface-muted" />
+        <span className="sr-only">Loading shared grocery list...</span>
+      </div>
+    );
   }
 
+  const checkedCount = items.filter((item) => item.isChecked).length;
+  const progressPercentage =
+    items.length === 0 ? 0 : Math.round((checkedCount / items.length) * 100);
+
   return (
-    <section className="mx-auto max-w-2xl space-y-6">
-      <header>
-        <h1 className="text-2xl font-semibold text-slate-900">Shared grocery list</h1>
-        {planDate ? <p className="text-sm text-slate-500">Plan date: {new Date(planDate).toLocaleDateString()}</p> : null}
-        <p className="text-xs text-slate-400">Realtime: {isRealtimeConnected ? "connected" : "reconnecting..."}</p>
-      </header>
+    <section className="mx-auto max-w-2xl space-y-5">
+      <Card>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-brand">
+              <ShoppingBasket className="h-4 w-4" />
+              Shared list
+            </p>
+            <h1 className="mt-2 text-2xl font-semibold tracking-tight text-fg">
+              Grocery list
+            </h1>
+            {planDate ? (
+              <p className="mt-1 text-sm text-fg-muted">
+                Plan date: {new Date(planDate).toLocaleDateString()}
+              </p>
+            ) : null}
+          </div>
+          <span className="inline-flex shrink-0 items-center gap-2 rounded-full border border-border px-3 py-1.5 text-xs font-medium text-fg-muted">
+            <span
+              className={cn(
+                "h-2 w-2 rounded-full",
+                isRealtimeConnected ? "bg-success" : "bg-warning"
+              )}
+            />
+            {isRealtimeConnected ? "Live" : "Reconnecting"}
+          </span>
+        </div>
 
-      {errorMessage ? <p className="text-sm text-rose-700">{errorMessage}</p> : null}
+        {items.length > 0 ? (
+          <div className="mt-5">
+            <div className="flex items-baseline justify-between text-sm">
+              <span className="font-medium text-fg">
+                {checkedCount} of {items.length} picked up
+              </span>
+              <span className="text-fg-subtle">{progressPercentage}%</span>
+            </div>
+            <div
+              aria-label="Shopping progress"
+              aria-valuemax={100}
+              aria-valuemin={0}
+              aria-valuenow={progressPercentage}
+              className="mt-2 h-2 overflow-hidden rounded-full bg-surface-muted"
+              role="progressbar"
+            >
+              <div
+                className="h-full rounded-full bg-brand transition-[width] duration-300"
+                style={{ width: `${progressPercentage}%` }}
+              />
+            </div>
+          </div>
+        ) : null}
+      </Card>
 
-      <article className="space-y-2 rounded-2xl border border-slate-200 bg-white p-4">
-        {items.length === 0 ? <p className="text-sm text-slate-500">No grocery items on this list.</p> : null}
-        {items.map((item) => (
-          <label key={item.id} className="flex items-center gap-3 rounded border border-slate-200 p-3">
-            <input type="checkbox" checked={item.isChecked} onChange={() => void toggleItem(item)} />
-            <span className={item.isChecked ? "text-slate-400 line-through" : "text-slate-900"}>
-              {item.name} ({item.quantity} {item.unit ?? ""})
-            </span>
-          </label>
-        ))}
-      </article>
+      {errorMessage ? <Alert tone="error">{errorMessage}</Alert> : null}
+
+      {items.length === 0 ? (
+        <EmptyState
+          description="When the plan owner adds items they will appear here instantly."
+          icon={<ShoppingBasket className="h-5 w-5" />}
+          title="Nothing to shop for yet"
+        />
+      ) : (
+        <ul className="space-y-2">
+          {items.map((item) => (
+            <li key={item.id}>
+              <label
+                className={cn(
+                  "flex cursor-pointer items-center gap-3 rounded-2xl border bg-surface p-4 transition",
+                  item.isChecked
+                    ? "border-border bg-surface-muted/60"
+                    : "border-border hover:border-brand-border"
+                )}
+              >
+                <input
+                  checked={item.isChecked}
+                  className="peer sr-only"
+                  onChange={() => void toggleItem(item)}
+                  type="checkbox"
+                />
+                <span
+                  aria-hidden="true"
+                  className={cn(
+                    "flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border-2 transition peer-focus-visible:ring-2 peer-focus-visible:ring-brand/45",
+                    item.isChecked
+                      ? "border-brand bg-brand text-brand-fg"
+                      : "border-border-strong bg-surface text-transparent"
+                  )}
+                >
+                  <Check className="h-4 w-4" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span
+                    className={cn(
+                      "block font-medium",
+                      item.isChecked ? "text-fg-subtle line-through" : "text-fg"
+                    )}
+                  >
+                    {item.name}
+                  </span>
+                  <span className="mt-0.5 block text-xs text-fg-subtle">
+                    {item.quantity}
+                    {item.unit ? ` ${item.unit}` : ""}
+                    <span className="mx-1.5">•</span>
+                    {item.category === "GENERAL" ? "General" : "Ingredient"}
+                  </span>
+                </span>
+              </label>
+            </li>
+          ))}
+        </ul>
+      )}
     </section>
   );
 }

@@ -1,6 +1,8 @@
 import { cookies } from "next/headers";
+import { ShieldUser } from "lucide-react";
 import { adminSessionCookieName, backendApiUrl } from "../../lib/auth";
 import UsersManager from "../../components/users/users-manager";
+import PageHeader from "../../components/ui/PageHeader";
 
 type User = {
   id: number;
@@ -36,12 +38,12 @@ export default async function UsersPage() {
 
   return (
     <section className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-semibold text-slate-900">Users</h1>
-        <p className="mt-2 text-sm text-slate-600">
-          Manage admin and regular viewer accounts. Viewers can only read plans.
-        </p>
-      </div>
+      <PageHeader
+        description="Manage admin and regular viewer accounts. Viewers can only read plans."
+        eyebrow="Access"
+        eyebrowIcon={<ShieldUser className="h-3.5 w-3.5" />}
+        title="Users"
+      />
       <UsersManager initialUsers={users} />
     </section>
   );

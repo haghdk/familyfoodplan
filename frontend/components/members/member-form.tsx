@@ -1,6 +1,8 @@
 "use client";
 
 import { FormEvent, useMemo, useState } from "react";
+import Button from "../ui/Button";
+import { TextField } from "../ui/Field";
 
 type MemberFormProps = {
   initialName?: string;
@@ -58,42 +60,26 @@ export default function MemberForm({
   };
 
   return (
-    <form className="space-y-3" onSubmit={handleSubmit}>
-      <label className="block text-sm font-medium text-slate-700" htmlFor="member-name">
-        Name
-      </label>
-      <input
-        className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-emerald-500 focus:outline-none"
-        id="member-name"
+    <form className="flex flex-col gap-3 sm:flex-row sm:items-end" onSubmit={handleSubmit}>
+      <TextField
+        errorMessage={errorMessage}
+        fieldClassName="flex-1"
+        label="Name"
         maxLength={80}
         onChange={(event) => setName(event.target.value)}
         placeholder="Enter family member name"
         value={name}
       />
 
-      {errorMessage ? (
-        <p className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
-          {errorMessage}
-        </p>
-      ) : null}
-
       <div className="flex gap-2">
-        <button
-          className="rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
-          disabled={isSubmitting}
-          type="submit"
-        >
+        <Button disabled={isSubmitting} type="submit">
           {isSubmitting ? "Saving..." : submitLabel}
-        </button>
+        </Button>
 
         {onCancel ? (
-          <button
-            className="rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:border-slate-400"
-            onClick={onCancel}
-            type="button"
-          >
+          <Button onClick={onCancel} variant="secondary">
             Cancel
-          </button>
+          </Button>
         ) : null}
       </div>
     </form>

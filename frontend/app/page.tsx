@@ -1,8 +1,31 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
+import {
+  ArrowRight,
+  CalendarDays,
+  CalendarRange,
+  ChefHat,
+  ClipboardList,
+  PlusCircle,
+  ShoppingCart,
+  Sparkles,
+  UtensilsCrossed
+} from "lucide-react";
 import { adminSessionCookieName, backendApiUrl, userRoleCookieName } from "../lib/auth";
-import CurrentPlanTable from "../components/plan/CurrentPlanTable";
-import { ArrowRight, Calendar, ClipboardList, PlusCircle, ShoppingCart, Sparkles } from "lucide-react";
+import {
+  formatDateRange,
+  formatShortDate,
+  formatWeekday,
+  getTodayDayKey,
+  toDayKey
+} from "../lib/dates";
+import CurrentPlanTable, {
+  type CurrentPlanTableDayRow
+} from "../components/plan/CurrentPlanTable";
+import Badge from "../components/ui/Badge";
+import { buttonClassName } from "../components/ui/Button";
+import Card, { SectionCard } from "../components/ui/Card";
+import EmptyState from "../components/ui/EmptyState";
 
 type PlanListItem = {
   id: number;
@@ -13,62 +36,29 @@ type PlanListItem = {
   daysCount: number;
 };
 
+type PlanDay = {
+  id: number;
+  date: string;
+  dinnerDish: {
+    id: number;
+    name: string;
+  } | null;
+  breakfastDishes?: Array<{
+    id: number;
+    name: string;
+  }>;
+  lunchDishes: Array<{
+    id: number;
+    name: string;
+  }>;
+};
+
 type PlanDetailResponse = {
   plan: {
     id: number;
-    planDays?: Array<{
-      id: number;
-      date: string;
-      dinnerDish: {
-        id: number;
-        name: string;
-      } | null;
-      breakfastDishes?: Array<{
-        id: number;
-        name: string;
-      }>;
-      lunchDishes: Array<{
-        id: number;
-        name: string;
-      }>;
-    }>;
-    days?: Array<{
-      id: number;
-      date: string;
-      dinnerDish: {
-        id: number;
-        name: string;
-      } | null;
-      breakfastDishes?: Array<{
-        id: number;
-        name: string;
-      }>;
-      lunchDishes: Array<{
-        id: number;
-        name: string;
-      }>;
-    }>;
+    planDays?: PlanDay[];
+    days?: PlanDay[];
   };
-};
-
-type CurrentPlanTableRow = {
-  id: number;
-  date: string;
-  breakfasts: string[];
-  lunches: string[];
-  dinners: string[];
-};
-
-const formatDateRange = (startDate: string | null, endDate: string | null) => {
-  if (!startDate && !endDate) {
-    return "Dates not set";
-  }
-
-  if (startDate && endDate) {
-    return `${startDate} → ${endDate}`;
-  }
-
-  return startDate ?? endDate ?? "Dates not set";
 };
 
 const asDate = (value: string | null) => {
@@ -84,18 +74,6 @@ const normalizeDate = (date: Date) => {
   const normalizedDate = new Date(date);
   normalizedDate.setHours(0, 0, 0, 0);
   return normalizedDate;
-};
-
-const dayLabelFormatter = new Intl.DateTimeFormat("en-US", {
-  weekday: "long",
-  month: "short",
-  day: "numeric",
-  timeZone: "UTC"
-});
-
-const formatDayLabel = (dayKey: string) => {
-  const date = new Date(`${dayKey}T00:00:00.000Z`);
-  return dayLabelFormatter.format(date);
 };
 
 const findCurrentPlan = (plans: PlanListItem[], today: Date) => {
@@ -191,24 +169,33 @@ const getPlanById = async (planId: number): Promise<PlanDetailResponse["plan"] |
 };
 
 const buildCurrentPlanTableRows = (
-  planDays: Array<{
-    id: number;
-    date: string;
-    dinnerDish: { id: number; name: string } | null;
-    breakfastDishes?: Array<{ id: number; name: string }>;
-    lunchDishes: Array<{ id: number; name: string }>;
-  }>
-): CurrentPlanTableRow[] => {
+  planDays: PlanDay[],
+  todayDayKey: string
+): CurrentPlanTableDayRow[] => {
   return [...planDays]
     .sort((a, b) => a.date.localeCompare(b.date))
-    .map((planDay) => ({
-      id: planDay.id,
-      date: formatDayLabel(planDay.date),
-      breakfasts: (planDay.breakfastDishes ?? []).map((breakfastDish) => breakfastDish.name),
-      lunches: planDay.lunchDishes.map((lunchDish) => lunchDish.name),
-      dinners: planDay.dinnerDish ? [planDay.dinnerDish.name] : []
-    }));
+    .map((planDay) => {
+      const dayKey = toDayKey(planDay.date) ?? planDay.date;
+
+      return {
+        id: planDay.id,
+        dayKey,
+        weekdayLabel: formatWeekday(dayKey),
+        dateLabel: formatShortDate(dayKey),
+        isToday: dayKey === todayDayKey,
+        breakfasts: (planDay.breakfastDishes ?? []).map((dish) => dish.name),
+        lunches: planDay.lunchDishes.map((dish) => dish.name),
+        dinners: planDay.dinnerDish ? [planDay.dinnerDish.name] : []
+      };
+    });
 };
+
+const countPlannedMeals = (dayRows: CurrentPlanTableDayRow[]) =>
+  dayRows.reduce(
+    (total, row) =>
+      total + (row.breakfasts?.length ?? 0) + row.lunches.length + row.dinners.length,
+    0
+  );
 
 export default async function HomePage() {
   const plans = await getPlans();
@@ -217,176 +204,197 @@ export default async function HomePage() {
 
   if (!plans || plans.length === 0) {
     return (
-      <section className="space-y-8">
-        <div className="rounded-3xl bg-white p-10 shadow-sm ring-1 ring-slate-200">
-          <p className="inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-emerald-600">
-            <Sparkles className="h-4 w-4" />
-            Weekly planning made simple
-          </p>
-          <h1 className="mt-3 text-4xl font-semibold text-slate-900">
-            Build your next family meal plan.
-          </h1>
-          <p className="mt-4 text-lg text-slate-600">
-            We could not load plans right now, or you have not created one yet.
-            Start by creating your first weekly plan.
-          </p>
-          {isAdmin ? (
-          <div className="mt-6 flex flex-wrap gap-4">
-            <Link
-              className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-5 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
-              href="/plan/new"
-            >
-              <PlusCircle className="h-4 w-4" />
-              Create a plan
-            </Link>
+      <section>
+        <Card className="overflow-hidden p-0">
+          <div className="border-b border-border bg-brand-soft/60 px-6 py-10 sm:px-10 sm:py-14">
+            <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-brand">
+              <Sparkles className="h-4 w-4" />
+              Weekly planning made simple
+            </p>
+            <h1 className="mt-4 max-w-2xl text-4xl font-semibold tracking-tight text-fg sm:text-5xl">
+              Build your next family meal plan.
+            </h1>
+            <p className="mt-4 max-w-xl text-base text-fg-muted">
+              We could not load plans right now, or you have not created one yet.
+              Start by picking the days your week runs from and to.
+            </p>
+            {isAdmin ? (
+              <Link className={buttonClassName({ size: "lg", className: "mt-7" })} href="/plan/new">
+                <PlusCircle className="h-4 w-4" />
+                Create a plan
+              </Link>
+            ) : null}
           </div>
-          ) : null}
-        </div>
+          <div className="grid gap-4 px-6 py-6 sm:grid-cols-3 sm:px-10">
+            {[
+              {
+                icon: <CalendarRange className="h-4 w-4" />,
+                title: "Pick your week",
+                description: "Any start and end weekday — Sunday to Saturday, or your own rhythm."
+              },
+              {
+                icon: <UtensilsCrossed className="h-4 w-4" />,
+                title: "Fill in the meals",
+                description: "Breakfast, lunch and dinner per day, with per-member assignments."
+              },
+              {
+                icon: <ShoppingCart className="h-4 w-4" />,
+                title: "Share the shopping",
+                description: "Turn the plan into a grocery list anyone can tick off live."
+              }
+            ].map((feature) => (
+              <div className="flex gap-3" key={feature.title}>
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-brand-soft text-brand">
+                  {feature.icon}
+                </span>
+                <div>
+                  <p className="text-sm font-semibold text-fg">{feature.title}</p>
+                  <p className="mt-1 text-sm text-fg-muted">{feature.description}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
       </section>
     );
   }
 
+  const todayDayKey = getTodayDayKey();
   const today = normalizeDate(new Date());
   const currentPlan = findCurrentPlan(plans, today);
   const currentPlanDetails = currentPlan ? await getPlanById(currentPlan.id) : null;
   const currentPlanRows = currentPlanDetails
-    ? buildCurrentPlanTableRows(currentPlanDetails.days ?? currentPlanDetails.planDays ?? [])
+    ? buildCurrentPlanTableRows(
+        currentPlanDetails.days ?? currentPlanDetails.planDays ?? [],
+        todayDayKey
+      )
     : [];
   const recentPlans = selectRecentPlans(plans, today).filter(
     (plan) => plan.id !== currentPlan?.id
   );
+  const plannedMealsCount = countPlannedMeals(currentPlanRows);
 
   return (
-    <section className="space-y-8">
-      <div className="rounded-3xl bg-white p-8 shadow-sm ring-1 ring-slate-200">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <p className="inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-emerald-600">
-              <Calendar className="h-4 w-4" />
+    <section className="space-y-6">
+      <Card className="overflow-hidden p-0">
+        <div className="flex flex-col gap-5 border-b border-border bg-surface-muted/60 p-6 sm:flex-row sm:items-end sm:justify-between sm:p-8">
+          <div className="space-y-3">
+            <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-brand">
+              <CalendarDays className="h-4 w-4" />
               Current plan
             </p>
-            <h1 className="mt-2 text-3xl font-semibold text-slate-900">
+            <h1 className="text-3xl font-semibold tracking-tight text-fg sm:text-4xl">
               {currentPlan?.name ?? "No active plan"}
             </h1>
+            {currentPlan ? (
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge icon={<CalendarRange className="h-3.5 w-3.5" />} tone="brand">
+                  {formatDateRange(currentPlan.startDate, currentPlan.endDate)}
+                </Badge>
+                <Badge>{currentPlan.daysCount} days</Badge>
+                <Badge icon={<ChefHat className="h-3.5 w-3.5" />}>
+                  {plannedMealsCount} meals planned
+                </Badge>
+              </div>
+            ) : null}
           </div>
-          {isAdmin ? (
-          <Link
-            className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-5 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
-            href="/plan/new"
-          >
-            <PlusCircle className="h-4 w-4" />
-            Create new plan
-          </Link>
-          ) : null}
+
+          <div className="flex flex-wrap gap-2">
+            {currentPlan ? (
+              <>
+                <Link className={buttonClassName()} href={`/plan/${currentPlan.id}`}>
+                  Open plan
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+                <Link
+                  className={buttonClassName({ variant: "secondary" })}
+                  href={`/plan/${currentPlan.id}/grocery-list`}
+                >
+                  <ShoppingCart className="h-4 w-4" />
+                  Grocery list
+                </Link>
+              </>
+            ) : null}
+            {isAdmin ? (
+              <Link
+                className={buttonClassName({
+                  variant: currentPlan ? "secondary" : "primary"
+                })}
+                href="/plan/new"
+              >
+                <PlusCircle className="h-4 w-4" />
+                New plan
+              </Link>
+            ) : null}
+          </div>
         </div>
 
-        {currentPlan ? (
-          <CurrentPlanTable
-            dayRows={currentPlanRows}
-            planName={currentPlan.name}
-            dateRange={formatDateRange(currentPlan.startDate, currentPlan.endDate)}
-          />
-        ) : null}
-        {currentPlan ? (
-          <div className="mt-4 flex flex-wrap gap-2">
-            <Link
-              className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700"
-              href={`/plan/${currentPlan.id}`}
-            >
-              <ArrowRight className="h-3.5 w-3.5" />
-              Open plan
-            </Link>
-            <Link
-              className="inline-flex items-center gap-1.5 rounded-full border border-slate-300 px-4 py-1.5 text-xs font-semibold text-slate-700 hover:border-slate-400"
-              href={`/plan/${currentPlan.id}/grocery-list`}
-            >
-              <ShoppingCart className="h-3.5 w-3.5" />
-              Grocery list
-            </Link>
-          </div>
-        ) : null}
-      </div>
+        <div className="p-4 sm:p-6">
+          {currentPlan ? (
+            <CurrentPlanTable dayRows={currentPlanRows} />
+          ) : (
+            <EmptyState
+              description="Mark one of your plans as the current plan to see it here."
+              icon={<CalendarDays className="h-5 w-5" />}
+              title="No plan is set as current"
+            />
+          )}
+        </div>
+      </Card>
 
-      <div className="rounded-3xl bg-white p-8 shadow-sm ring-1 ring-slate-200">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <h2 className="inline-flex items-center gap-2 text-2xl font-semibold text-slate-900">
-              <ClipboardList className="h-6 w-6 text-emerald-600" />
-              Recent plans (last 4 weeks)
-            </h2>
-            <p className="mt-1 text-sm text-slate-600">
-              Quickly reopen recent weekly plans and grocery lists.
-            </p>
-          </div>
-          <Link
-            className="inline-flex items-center gap-2 rounded-full border border-slate-300 px-5 py-2 text-sm font-semibold text-slate-700 hover:border-slate-400"
-            href="/plan"
-          >
-            <Calendar className="h-4 w-4" />
+      <SectionCard
+        actions={
+          <Link className={buttonClassName({ variant: "secondary" })} href="/plan">
+            <CalendarDays className="h-4 w-4" />
             View all plans
           </Link>
-        </div>
-
+        }
+        description="Quickly reopen weekly plans from the last four weeks."
+        icon={<ClipboardList className="h-4 w-4" />}
+        title="Recent plans"
+      >
         {recentPlans.length === 0 ? (
-          <p className="mt-6 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-600">
-            No additional plans found in the last 4 weeks.
-          </p>
+          <EmptyState
+            description="Plans you create will show up here for four weeks."
+            icon={<ClipboardList className="h-5 w-5" />}
+            title="No other recent plans"
+          />
         ) : (
-          <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200">
-            <table className="min-w-full divide-y divide-slate-200 text-left text-sm">
-              <thead className="bg-slate-50 text-slate-700">
-                <tr>
-                  <th className="px-4 py-3 font-semibold">
-                  <span className="inline-flex items-center gap-2">
-                    <ClipboardList className="h-4 w-4" />
-                    Plan
-                  </span>
-                </th>
-                  <th className="px-4 py-3 font-semibold">
-                  <span className="inline-flex items-center gap-2">
-                    <Calendar className="h-4 w-4" />
-                    Date range
-                  </span>
-                </th>
-                  <th className="px-4 py-3 font-semibold">Days</th>
-                  <th className="px-4 py-3 font-semibold">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200 bg-white text-slate-600">
-                {recentPlans.map((plan) => (
-                  <tr key={plan.id}>
-                    <td className="px-4 py-3 font-medium text-slate-900">
-                      {plan.name}
-                    </td>
-                    <td className="px-4 py-3">
-                      {formatDateRange(plan.startDate, plan.endDate)}
-                    </td>
-                    <td className="px-4 py-3">{plan.daysCount}</td>
-                    <td className="px-4 py-3">
-                      <div className="flex flex-wrap gap-2">
-                        <Link
-                          className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700"
-                          href={`/plan/${plan.id}`}
-                        >
-                          <ArrowRight className="h-3.5 w-3.5" />
-                          Open plan
-                        </Link>
-                        <Link
-                          className="inline-flex items-center gap-1.5 rounded-full border border-slate-300 px-4 py-1.5 text-xs font-semibold text-slate-700 hover:border-slate-400"
-                          href={`/plan/${plan.id}/grocery-list`}
-                        >
-                          <ShoppingCart className="h-3.5 w-3.5" />
-                          Grocery list
-                        </Link>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <ul className="grid gap-3 sm:grid-cols-2">
+            {recentPlans.map((plan) => (
+              <li
+                className="flex flex-col gap-3 rounded-2xl border border-border bg-surface-muted/40 p-4 transition hover:border-brand-border"
+                key={plan.id}
+              >
+                <div>
+                  <p className="font-semibold text-fg">{plan.name}</p>
+                  <p className="mt-1 text-sm text-fg-muted">
+                    {formatDateRange(plan.startDate, plan.endDate)}
+                    <span className="mx-1.5 text-fg-subtle">•</span>
+                    {plan.daysCount} days
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Link
+                    className={buttonClassName({ size: "sm" })}
+                    href={`/plan/${plan.id}`}
+                  >
+                    Open plan
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </Link>
+                  <Link
+                    className={buttonClassName({ size: "sm", variant: "secondary" })}
+                    href={`/plan/${plan.id}/grocery-list`}
+                  >
+                    <ShoppingCart className="h-3.5 w-3.5" />
+                    Grocery list
+                  </Link>
+                </div>
+              </li>
+            ))}
+          </ul>
         )}
-      </div>
+      </SectionCard>
     </section>
   );
 }

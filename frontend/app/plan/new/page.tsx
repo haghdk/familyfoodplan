@@ -3,7 +3,13 @@
 import Link from "next/link";
 import { FormEvent, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { ArrowLeft, CalendarPlus, PlusCircle } from "lucide-react";
 import { backendApiUrl } from "../../../lib/auth";
+import Alert from "../../../components/ui/Alert";
+import Button, { buttonClassName } from "../../../components/ui/Button";
+import Card from "../../../components/ui/Card";
+import { TextField } from "../../../components/ui/Field";
+import PageHeader from "../../../components/ui/PageHeader";
 
 const toDayKey = (date: Date) => date.toISOString().slice(0, 10);
 
@@ -64,76 +70,66 @@ export default function NewPlanPage() {
   return (
     <section className="mx-auto max-w-2xl space-y-6">
       <div>
-        <h1 className="text-3xl font-semibold text-slate-900">Create a new plan</h1>
-        <p className="mt-2 text-sm text-slate-600">
-          Choose your start and end dates to create a plan you can fill with dinners and lunches.
-        </p>
+        <Link
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-fg-muted transition hover:text-brand"
+          href="/plan"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          All plans
+        </Link>
       </div>
 
-      <form
-        className="space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
-        onSubmit={handleSubmit}
-      >
-        <label className="block text-sm font-medium text-slate-700" htmlFor="name">
-          Plan name (optional)
-          <input
-            className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-slate-900 focus:border-emerald-500 focus:outline-none"
-            id="name"
+      <PageHeader
+        description="Choose the days your week runs from and to. A day card is created for every date in the range."
+        eyebrow="New plan"
+        eyebrowIcon={<CalendarPlus className="h-3.5 w-3.5" />}
+        title="Create a plan"
+      />
+
+      <Card>
+        <form className="space-y-5" onSubmit={handleSubmit}>
+          <TextField
+            hint="Leave blank to let the app name the plan from its date range."
+            label="Plan name (optional)"
             onChange={(event) => setName(event.target.value)}
             placeholder="Example: Sunday to Saturday"
             type="text"
             value={name}
           />
-        </label>
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <label className="block text-sm font-medium text-slate-700" htmlFor="startDate">
-            Start date
-            <input
-              className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-slate-900 focus:border-emerald-500 focus:outline-none"
-              id="startDate"
+          <div className="grid gap-4 sm:grid-cols-2">
+            <TextField
+              label="Start date"
               onChange={(event) => setStartDate(event.target.value)}
               required
               type="date"
               value={startDate}
             />
-          </label>
-
-          <label className="block text-sm font-medium text-slate-700" htmlFor="endDate">
-            End date
-            <input
-              className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-slate-900 focus:border-emerald-500 focus:outline-none"
-              id="endDate"
+            <TextField
+              label="End date"
               onChange={(event) => setEndDate(event.target.value)}
               required
               type="date"
               value={endDate}
             />
-          </label>
-        </div>
+          </div>
 
-        {errorMessage ? (
-          <p className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
-            {errorMessage}
-          </p>
-        ) : null}
+          {errorMessage ? <Alert tone="error">{errorMessage}</Alert> : null}
 
-        <div className="flex flex-wrap gap-3">
-          <button
-            className="rounded-full bg-emerald-600 px-5 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
-            disabled={isSubmitting}
-            type="submit"
-          >
-            {isSubmitting ? "Creating..." : "Create plan"}
-          </button>
-          <Link
-            className="rounded-full border border-slate-300 px-5 py-2 text-sm font-semibold text-slate-700 hover:border-slate-400"
-            href="/plan"
-          >
-            Cancel
-          </Link>
-        </div>
-      </form>
+          <div className="flex flex-wrap gap-3">
+            <Button disabled={isSubmitting} size="lg" type="submit">
+              <PlusCircle className="h-4 w-4" />
+              {isSubmitting ? "Creating..." : "Create plan"}
+            </Button>
+            <Link
+              className={buttonClassName({ size: "lg", variant: "secondary" })}
+              href="/plan"
+            >
+              Cancel
+            </Link>
+          </div>
+        </form>
+      </Card>
     </section>
   );
 }
