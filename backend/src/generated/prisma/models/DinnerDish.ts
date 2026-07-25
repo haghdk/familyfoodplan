@@ -203,7 +203,7 @@ export type DinnerDishGroupByOutputType = {
   _max: DinnerDishMaxAggregateOutputType | null
 }
 
-type GetDinnerDishGroupByPayload<T extends DinnerDishGroupByArgs> = Prisma.PrismaPromise<
+export type GetDinnerDishGroupByPayload<T extends DinnerDishGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<DinnerDishGroupByOutputType, T['by']> &
       {
@@ -1265,6 +1265,11 @@ export type DinnerDishFindManyArgs<ExtArgs extends runtime.Types.Extensions.Inte
    * Skip the first `n` DinnerDishes.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   * 
+   * Filter by unique combinations of DinnerDishes.
+   */
   distinct?: Prisma.DinnerDishScalarFieldEnum | Prisma.DinnerDishScalarFieldEnum[]
 }
 

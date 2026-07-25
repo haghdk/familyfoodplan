@@ -5,6 +5,7 @@ Family Food Planner is a weekly meal-planning app for families. Admins create pl
 ## Implemented Features
 
 - **Admin login**: secure admin authentication with session-based access to protected pages.
+- **Forgot password / password reset by email**: users can request a reset link from the sign-in screen. The backend emails a single-use link that expires after a configurable window (60 minutes by default), and the reset screen validates the link before showing the form. See [Password Reset Behavior Notes](#password-reset-behavior-notes).
 - **User management + roles**: admins can create, edit, delete users, change admin email/password, and assign `ADMIN` or `VIEWER` role.
 - **Read-only regular users**: viewer users can sign in and view plans, but cannot access any editing APIs or admin-only screens.
 - **Initial admin bootstrap**: Docker setup now seeds a default admin user automatically on first startup.
@@ -107,6 +108,9 @@ Use them through normal Tailwind utilities — `bg-surface`, `text-fg-muted`, `b
 - `POST /api/auth/login` — authenticate user (`ADMIN` or `VIEWER`) and return role-aware session payload.
 - `POST /api/auth/logout` — clear admin session.
 - `GET /api/auth/me` — fetch current authenticated user and role.
+- `POST /api/auth/forgot-password` — request a reset link for an email address. Always returns `200` with the same body whether or not the address has an account, and is rate limited to 5 requests per address/client every 15 minutes (`429` beyond that).
+- `GET /api/auth/reset-password/:token` — report whether a reset link is still usable (`{ "valid": boolean }`), so the reset screen can show an "expired link" state instead of a dead form.
+- `POST /api/auth/reset-password` — consume a reset token and set the new password. Returns `400` for an expired, reused, or unknown token, and for passwords shorter than 6 characters.
 
 ### Health / Build Diagnostics
 - `GET /health` — basic liveness check.
@@ -136,6 +140,23 @@ Use them through normal Tailwind utilities — `bg-surface`, `text-fg-muted`, `b
 - Admin grocery routes under `/api/plans/:id/grocery-list...` support create/update/delete and share-link management.
 - Shared shopper routes under `/api/grocery/:token...` allow token-scoped reads and checkoff updates without admin login.
 - SSE stream endpoint(s) provide realtime grocery state synchronization for both admin and shared-token clients.
+
+## Password Reset Behavior Notes
+
+- The sign-in screen links to `/forgot-password`. Submitting an address always shows the same confirmation, so the form cannot be used to discover which emails have accounts.
+- The emailed link points at `/reset-password?token=…`. That page is server-rendered and validates the token before rendering the form, so an expired or already-used link shows a "request a new link" state rather than a form that fails on submit.
+- Tokens are 32 random bytes. Only their SHA-256 hash is stored, so a leaked database cannot be replayed as a working reset link.
+- Each token is single-use and expires after `PASSWORD_RESET_TOKEN_TTL_MINUTES` (60 by default). Requesting a new link invalidates any earlier link for that account.
+- `POST /api/auth/forgot-password` is rate limited in memory to 5 requests per address/client every 15 minutes. A multi-instance deployment would need a shared store for this to hold across processes.
+- **Known limitation**: sessions are stateless JWTs, so a session issued before a reset stays valid until it expires. Resetting a password does not sign other devices out.
+
+### Email configuration
+
+Outgoing mail goes through SMTP (`nodemailer`), which works with any provider that offers SMTP credentials. Configure it with `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASSWORD` and `MAIL_FROM`.
+
+`APP_PUBLIC_URL` sets the origin used to build the link in the email. It must be the URL a browser can reach (in Docker Compose that is `http://localhost:3100`, not the internal `frontend` hostname); it falls back to `FRONTEND_ORIGIN`.
+
+When `SMTP_HOST` is empty — the default for local development — no mail is sent and the full reset link is written to the backend console instead, so the flow stays testable without a mail provider.
 
 ## Grocery Sharing Behavior Notes
 
@@ -171,6 +192,9 @@ cp backend/.env.example backend/.env
   - `FRONTEND_ORIGIN` (allowed browser origin for CORS, default `http://localhost:3000`)
   - `ADMIN_EMAIL`
   - `ADMIN_PASSWORD`
+- Optional password reset values in `backend/.env` (see [Email configuration](#email-configuration)):
+  - `APP_PUBLIC_URL`, `PASSWORD_RESET_TOKEN_TTL_MINUTES`
+  - `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASSWORD`, `MAIL_FROM`
 
 > Ensure Postgres is running and reachable by `DATABASE_URL`.
 

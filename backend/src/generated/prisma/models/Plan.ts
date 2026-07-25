@@ -206,7 +206,7 @@ export type PlanGroupByOutputType = {
   _max: PlanMaxAggregateOutputType | null
 }
 
-type GetPlanGroupByPayload<T extends PlanGroupByArgs> = Prisma.PrismaPromise<
+export type GetPlanGroupByPayload<T extends PlanGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<PlanGroupByOutputType, T['by']> &
       {
@@ -400,10 +400,6 @@ export type PlanSumOrderByAggregateInput = {
 export type PlanScalarRelationFilter = {
   is?: Prisma.PlanWhereInput
   isNot?: Prisma.PlanWhereInput
-}
-
-export type NullableDateTimeFieldUpdateOperationsInput = {
-  set?: Date | string | null
 }
 
 export type PlanCreateNestedOneWithoutDaysInput = {
@@ -1195,6 +1191,11 @@ export type PlanFindManyArgs<ExtArgs extends runtime.Types.Extensions.InternalAr
    * Skip the first `n` Plans.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   * 
+   * Filter by unique combinations of Plans.
+   */
   distinct?: Prisma.PlanScalarFieldEnum | Prisma.PlanScalarFieldEnum[]
 }
 

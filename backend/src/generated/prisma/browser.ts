@@ -23,6 +23,12 @@ export * from './enums';
  */
 export type AdminUser = Prisma.AdminUserModel
 /**
+ * Model PasswordResetToken
+ * Password reset links. Only the SHA-256 hash of the token is stored, so a
+ * database leak cannot be replayed as a reset link.
+ */
+export type PasswordResetToken = Prisma.PasswordResetTokenModel
+/**
  * Model FamilyMember
  * 
  */
