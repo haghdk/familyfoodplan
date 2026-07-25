@@ -1,7 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import type { ReactNode } from "react";
+import { Croissant, Plus, Sandwich, Trash2, UtensilsCrossed } from "lucide-react";
 import { backendApiUrl } from "../../lib/auth";
+import { cn } from "../../lib/cn";
+import Alert from "../ui/Alert";
+import Badge from "../ui/Badge";
+import Button from "../ui/Button";
+import { SelectField, TextAreaField, TextField } from "../ui/Field";
 
 type Member = {
   id: number;
@@ -39,10 +46,13 @@ type MealRow = {
   errorMessage: string;
 };
 
+type MealType = "breakfast" | "lunch";
+
 type PlanDayCardProps = {
   planId: number;
   dayLabel: string;
   dayKey: string;
+  isToday?: boolean;
   initialDinner?: DinnerDish | null;
   initialBreakfastes?: BreakfastDish[];
   initialLunches?: LunchDish[];
@@ -58,10 +68,58 @@ const createLocalMealRow = (meal?: BreakfastDish | LunchDish): MealRow => ({
   errorMessage: ""
 });
 
+type MealSectionProps = {
+  title: string;
+  icon: ReactNode;
+  iconClassName: string;
+  addLabel: string;
+  emptyText: string;
+  children: ReactNode;
+  onAdd?: () => void;
+};
+
+function MealSection({
+  title,
+  icon,
+  iconClassName,
+  addLabel,
+  emptyText,
+  children,
+  onAdd
+}: MealSectionProps) {
+  return (
+    <section className="space-y-3">
+      <div className="flex items-center justify-between gap-3">
+        <h4 className="inline-flex items-center gap-2 text-sm font-semibold text-fg">
+          <span
+            className={cn(
+              "flex h-7 w-7 items-center justify-center rounded-xl",
+              iconClassName
+            )}
+          >
+            {icon}
+          </span>
+          {title}
+        </h4>
+        {onAdd ? (
+          <Button onClick={onAdd} size="sm" variant="ghost">
+            <Plus className="h-3.5 w-3.5" />
+            {addLabel}
+          </Button>
+        ) : null}
+      </div>
+      {children ?? (
+        <p className="text-sm text-fg-subtle">{emptyText}</p>
+      )}
+    </section>
+  );
+}
+
 export default function PlanDayCard({
   planId,
   dayLabel,
   dayKey,
+  isToday = false,
   initialDinner,
   initialBreakfastes = [],
   initialLunches = []
@@ -148,28 +206,21 @@ export default function PlanDayCard({
     updates: Partial<MealRow>
   ) => rows.map((row) => (row.localId === localId ? { ...row, ...updates, errorMessage: "" } : row));
 
-  const saveMealRow = async (
-    row: MealRow,
-    mealType: "breakfast" | "lunch"
-  ) => {
+  const saveMealRow = async (row: MealRow, mealType: MealType) => {
     const normalizedName = row.name.trim();
+    const mealLabel = mealType === "breakfast" ? "Breakfast" : "Lunch";
+    const setter = mealType === "breakfast" ? setBreakfastRows : setLunchRows;
 
     if (!normalizedName) {
-      const message = `${mealType === "breakfast" ? "Breakfast" : "Lunch"} name is required.`;
-      if (mealType === "breakfast") {
-        setBreakfastRows((currentRows) => updateMealRow(currentRows, row.localId, { errorMessage: message }));
-      } else {
-        setLunchRows((currentRows) => updateMealRow(currentRows, row.localId, { errorMessage: message }));
-      }
+      setter((currentRows) =>
+        updateMealRow(currentRows, row.localId, {
+          errorMessage: `${mealLabel} name is required.`
+        })
+      );
       return;
     }
 
-    if (mealType === "breakfast") {
-      setBreakfastRows((currentRows) => updateMealRow(currentRows, row.localId, { isSaving: true }));
-    } else {
-      setLunchRows((currentRows) => updateMealRow(currentRows, row.localId, { isSaving: true }));
-    }
-
+    setter((currentRows) => updateMealRow(currentRows, row.localId, { isSaving: true }));
     setFeedback(null);
 
     const mealPath = mealType === "breakfast" ? "breakfasts" : "lunches";
@@ -204,15 +255,13 @@ export default function PlanDayCard({
         throw new Error(`Missing ${mealType} payload.`);
       }
 
-      const setter = mealType === "breakfast" ? setBreakfastRows : setLunchRows;
       setter((currentRows) =>
         currentRows.map((currentRow) =>
           currentRow.localId === row.localId ? createLocalMealRow(savedMeal) : currentRow
         )
       );
-      setFeedback({ type: "success", message: `${mealType === "breakfast" ? "Breakfast" : "Lunch"} saved.` });
+      setFeedback({ type: "success", message: `${mealLabel} saved.` });
     } catch (_error) {
-      const setter = mealType === "breakfast" ? setBreakfastRows : setLunchRows;
       setter((currentRows) =>
         updateMealRow(currentRows, row.localId, {
           errorMessage: `Could not save this ${mealType} right now.`,
@@ -226,12 +275,12 @@ export default function PlanDayCard({
       return;
     }
 
-    const setter = mealType === "breakfast" ? setBreakfastRows : setLunchRows;
     setter((currentRows) => updateMealRow(currentRows, row.localId, { isSaving: false }));
   };
 
-  const deleteMealRow = async (row: MealRow, mealType: "breakfast" | "lunch") => {
+  const deleteMealRow = async (row: MealRow, mealType: MealType) => {
     setFeedback(null);
+    const mealLabel = mealType === "breakfast" ? "Breakfast" : "Lunch";
     const setter = mealType === "breakfast" ? setBreakfastRows : setLunchRows;
 
     if (!row.id) {
@@ -255,7 +304,7 @@ export default function PlanDayCard({
       }
 
       setter((currentRows) => currentRows.filter((currentRow) => currentRow.localId !== row.localId));
-      setFeedback({ type: "success", message: `${mealType === "breakfast" ? "Breakfast" : "Lunch"} deleted.` });
+      setFeedback({ type: "success", message: `${mealLabel} deleted.` });
     } catch (_error) {
       setter((currentRows) =>
         updateMealRow(currentRows, row.localId, {
@@ -267,91 +316,173 @@ export default function PlanDayCard({
     }
   };
 
+  const renderMealRows = (rows: MealRow[], mealType: MealType) => {
+    if (rows.length === 0) {
+      return null;
+    }
+
+    const setter = mealType === "breakfast" ? setBreakfastRows : setLunchRows;
+    const placeholder = mealType === "breakfast" ? "Breakfast dish" : "Lunch dish";
+
+    return (
+      <ul className="space-y-3">
+        {rows.map((row) => (
+          <li
+            className="space-y-3 rounded-2xl border border-border bg-surface-muted/50 p-3"
+            key={row.localId}
+          >
+            <div className="grid gap-2 sm:grid-cols-2">
+              <TextField
+                aria-label={placeholder}
+                fieldClassName="sm:col-span-2"
+                onChange={(event) =>
+                  setter((currentRows) =>
+                    updateMealRow(currentRows, row.localId, { name: event.target.value })
+                  )
+                }
+                placeholder={placeholder}
+                type="text"
+                value={row.name}
+              />
+              <SelectField
+                aria-label="Assign to family member"
+                onChange={(event) =>
+                  setter((currentRows) =>
+                    updateMealRow(currentRows, row.localId, {
+                      familyMemberId: event.target.value ? Number(event.target.value) : null
+                    })
+                  )
+                }
+                value={row.familyMemberId ?? ""}
+              >
+                {memberOptions.map((member) => (
+                  <option key={member.id ?? "none"} value={member.id ?? ""}>
+                    {member.name}
+                  </option>
+                ))}
+              </SelectField>
+              <TextField
+                aria-label="Notes"
+                onChange={(event) =>
+                  setter((currentRows) =>
+                    updateMealRow(currentRows, row.localId, { notes: event.target.value })
+                  )
+                }
+                placeholder="Notes (optional)"
+                type="text"
+                value={row.notes}
+              />
+            </div>
+
+            {row.errorMessage ? (
+              <p className="text-xs font-medium text-danger">{row.errorMessage}</p>
+            ) : null}
+
+            <div className="flex items-center gap-2">
+              <Button
+                disabled={row.isSaving}
+                onClick={() => saveMealRow(row, mealType)}
+                size="sm"
+              >
+                {row.isSaving ? "Saving..." : "Save"}
+              </Button>
+              <Button
+                aria-label={`Delete ${mealType}`}
+                disabled={row.isSaving}
+                onClick={() => deleteMealRow(row, mealType)}
+                size="sm"
+                variant="danger"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                Delete
+              </Button>
+            </div>
+          </li>
+        ))}
+      </ul>
+    );
+  };
+
   return (
-    <article className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-      <header>
-        <h3 className="text-lg font-semibold text-slate-900">{dayLabel}</h3>
-        <p className="text-sm text-slate-500">{dayKey}</p>
+    <article
+      className={cn(
+        "overflow-hidden rounded-3xl border bg-surface shadow-card",
+        isToday ? "border-brand-border ring-1 ring-brand/20" : "border-border"
+      )}
+    >
+      <header className="flex items-center justify-between gap-3 border-b border-border bg-surface-muted/60 px-5 py-4">
+        <div>
+          <h3 className="text-base font-semibold text-fg">{dayLabel}</h3>
+          <p className="text-xs text-fg-subtle">{dayKey}</p>
+        </div>
+        {isToday ? <Badge tone="brand">Today</Badge> : null}
       </header>
 
-      {feedback ? (
-        <p
-          className={`rounded-lg border px-3 py-2 text-sm ${
-            feedback.type === "success"
-              ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-              : "border-rose-200 bg-rose-50 text-rose-700"
-          }`}
+      <div className="space-y-6 p-5">
+        {feedback ? (
+          <Alert tone={feedback.type === "success" ? "success" : "error"}>
+            {feedback.message}
+          </Alert>
+        ) : null}
+
+        {membersErrorMessage ? (
+          <Alert tone="warning">{membersErrorMessage}</Alert>
+        ) : null}
+
+        <MealSection
+          addLabel="Add row"
+          emptyText="No breakfasts added yet."
+          icon={<Croissant className="h-4 w-4" />}
+          iconClassName="bg-breakfast-soft text-breakfast"
+          onAdd={() => setBreakfastRows((rows) => [...rows, createLocalMealRow()])}
+          title="Breakfast"
         >
-          {feedback.message}
-        </p>
-      ) : null}
+          {renderMealRows(breakfastRows, "breakfast")}
+        </MealSection>
 
-      <section className="space-y-3 rounded-xl border border-slate-200 p-4">
-        <h4 className="font-semibold text-slate-900">Dinner</h4>
-        <input className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" onChange={(event) => setDinnerName(event.target.value)} placeholder="Dinner dish" type="text" value={dinnerName} />
-        <textarea className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" onChange={(event) => setDinnerNotes(event.target.value)} placeholder="Notes (optional)" rows={2} value={dinnerNotes} />
-        <button className="rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60" disabled={isSavingDinner} onClick={saveDinner} type="button">
-          {isSavingDinner ? "Saving..." : "Save dinner"}
-        </button>
-      </section>
+        <div className="h-px bg-border" />
 
-      <section className="space-y-3 rounded-xl border border-slate-200 p-4">
-        <div className="flex items-center justify-between">
-          <h4 className="font-semibold text-slate-900">Breakfasts</h4>
-          <button className="rounded-full border border-slate-300 px-3 py-1 text-sm font-semibold text-slate-700 hover:border-slate-400" onClick={() => setBreakfastRows((rows) => [...rows, createLocalMealRow()])} type="button">
-            Add breakfast row
-          </button>
-        </div>
+        <MealSection
+          addLabel="Add row"
+          emptyText="No lunches added yet."
+          icon={<Sandwich className="h-4 w-4" />}
+          iconClassName="bg-lunch-soft text-lunch"
+          onAdd={() => setLunchRows((rows) => [...rows, createLocalMealRow()])}
+          title="Lunch"
+        >
+          {renderMealRows(lunchRows, "lunch")}
+        </MealSection>
 
-        {membersErrorMessage ? <p className="text-sm text-rose-700">{membersErrorMessage}</p> : null}
-        {breakfastRows.length === 0 ? <p className="text-sm text-slate-500">No breakfasts added yet.</p> : null}
+        <div className="h-px bg-border" />
 
-        {breakfastRows.map((row) => (
-          <div key={row.localId} className="space-y-2 rounded-lg border border-slate-200 p-3">
-            <input className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" onChange={(event) => setBreakfastRows((currentRows) => updateMealRow(currentRows, row.localId, { name: event.target.value }))} placeholder="Breakfast dish" type="text" value={row.name} />
-            <select className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" onChange={(event) => setBreakfastRows((currentRows) => updateMealRow(currentRows, row.localId, { familyMemberId: event.target.value ? Number(event.target.value) : null }))} value={row.familyMemberId ?? ""}>
-              {memberOptions.map((member) => (
-                <option key={member.id ?? "none"} value={member.id ?? ""}>{member.name}</option>
-              ))}
-            </select>
-            <input className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" onChange={(event) => setBreakfastRows((currentRows) => updateMealRow(currentRows, row.localId, { notes: event.target.value }))} placeholder="Notes (optional)" type="text" value={row.notes} />
-            {row.errorMessage ? <p className="text-sm text-rose-700">{row.errorMessage}</p> : null}
-            <div className="flex gap-2">
-              <button className="rounded-full bg-emerald-600 px-4 py-1.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60" disabled={row.isSaving} onClick={() => saveMealRow(row, "breakfast")} type="button">{row.isSaving ? "Saving..." : "Save"}</button>
-              <button className="rounded-full border border-rose-200 px-4 py-1.5 text-sm font-semibold text-rose-700 hover:border-rose-300 disabled:opacity-60" disabled={row.isSaving} onClick={() => deleteMealRow(row, "breakfast")} type="button">Delete</button>
-            </div>
+        <MealSection
+          addLabel=""
+          emptyText=""
+          icon={<UtensilsCrossed className="h-4 w-4" />}
+          iconClassName="bg-dinner-soft text-dinner"
+          title="Dinner"
+        >
+          <div className="space-y-3">
+            <TextField
+              aria-label="Dinner dish"
+              onChange={(event) => setDinnerName(event.target.value)}
+              placeholder="Dinner dish"
+              type="text"
+              value={dinnerName}
+            />
+            <TextAreaField
+              aria-label="Dinner notes"
+              onChange={(event) => setDinnerNotes(event.target.value)}
+              placeholder="Notes (optional)"
+              rows={2}
+              value={dinnerNotes}
+            />
+            <Button disabled={isSavingDinner} onClick={saveDinner} size="sm">
+              {isSavingDinner ? "Saving..." : "Save dinner"}
+            </Button>
           </div>
-        ))}
-      </section>
-
-      <section className="space-y-3 rounded-xl border border-slate-200 p-4">
-        <div className="flex items-center justify-between">
-          <h4 className="font-semibold text-slate-900">Lunches</h4>
-          <button className="rounded-full border border-slate-300 px-3 py-1 text-sm font-semibold text-slate-700 hover:border-slate-400" onClick={() => setLunchRows((rows) => [...rows, createLocalMealRow()])} type="button">
-            Add lunch row
-          </button>
-        </div>
-
-        {membersErrorMessage ? <p className="text-sm text-rose-700">{membersErrorMessage}</p> : null}
-        {lunchRows.length === 0 ? <p className="text-sm text-slate-500">No lunches added yet.</p> : null}
-
-        {lunchRows.map((row) => (
-          <div key={row.localId} className="space-y-2 rounded-lg border border-slate-200 p-3">
-            <input className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" onChange={(event) => setLunchRows((currentRows) => updateMealRow(currentRows, row.localId, { name: event.target.value }))} placeholder="Lunch dish" type="text" value={row.name} />
-            <select className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" onChange={(event) => setLunchRows((currentRows) => updateMealRow(currentRows, row.localId, { familyMemberId: event.target.value ? Number(event.target.value) : null }))} value={row.familyMemberId ?? ""}>
-              {memberOptions.map((member) => (
-                <option key={member.id ?? "none"} value={member.id ?? ""}>{member.name}</option>
-              ))}
-            </select>
-            <input className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" onChange={(event) => setLunchRows((currentRows) => updateMealRow(currentRows, row.localId, { notes: event.target.value }))} placeholder="Notes (optional)" type="text" value={row.notes} />
-            {row.errorMessage ? <p className="text-sm text-rose-700">{row.errorMessage}</p> : null}
-            <div className="flex gap-2">
-              <button className="rounded-full bg-emerald-600 px-4 py-1.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60" disabled={row.isSaving} onClick={() => saveMealRow(row, "lunch")} type="button">{row.isSaving ? "Saving..." : "Save"}</button>
-              <button className="rounded-full border border-rose-200 px-4 py-1.5 text-sm font-semibold text-rose-700 hover:border-rose-300 disabled:opacity-60" disabled={row.isSaving} onClick={() => deleteMealRow(row, "lunch")} type="button">Delete</button>
-            </div>
-          </div>
-        ))}
-      </section>
+        </MealSection>
+      </div>
     </article>
   );
 }

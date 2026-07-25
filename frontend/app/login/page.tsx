@@ -2,7 +2,12 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import { CookingPot, LogIn } from "lucide-react";
 import { adminSessionCookieName, backendApiUrl, userRoleCookieName } from "../../lib/auth";
+import Alert from "../../components/ui/Alert";
+import Button from "../../components/ui/Button";
+import Card from "../../components/ui/Card";
+import { TextField } from "../../components/ui/Field";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -44,54 +49,52 @@ export default function LoginPage() {
   };
 
   return (
-    <section className="mx-auto max-w-lg rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-      <h1 className="text-2xl font-semibold text-slate-900">Login</h1>
-      <p className="mt-2 text-sm text-slate-600">
-        Sign in to view your family meal plans.
+    <section className="mx-auto flex max-w-md flex-col items-center py-6">
+      <span className="flex h-14 w-14 items-center justify-center rounded-3xl bg-brand text-brand-fg shadow-card">
+        <CookingPot className="h-7 w-7" />
+      </span>
+      <h1 className="mt-5 text-3xl font-semibold tracking-tight text-fg">
+        Welcome back
+      </h1>
+      <p className="mt-2 text-center text-sm text-fg-muted">
+        Sign in to view and manage your family meal plans.
       </p>
 
-      <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
-        <label className="block text-sm font-medium text-slate-700" htmlFor="email">
-          Email
-          <input
-            className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-slate-900 focus:border-emerald-500 focus:outline-none"
-            id="email"
+      <Card className="mt-7 w-full">
+        <form className="space-y-4" onSubmit={handleSubmit}>
+          <TextField
+            autoComplete="email"
+            label="Email"
             onChange={(event) => setEmail(event.target.value)}
+            placeholder="you@example.com"
             required
             type="email"
             value={email}
           />
-        </label>
 
-        <label
-          className="block text-sm font-medium text-slate-700"
-          htmlFor="password"
-        >
-          Password
-          <input
-            className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-slate-900 focus:border-emerald-500 focus:outline-none"
-            id="password"
+          <TextField
+            autoComplete="current-password"
+            label="Password"
             onChange={(event) => setPassword(event.target.value)}
+            placeholder="••••••••"
             required
             type="password"
             value={password}
           />
-        </label>
 
-        {errorMessage ? (
-          <p className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
-            {errorMessage}
-          </p>
-        ) : null}
+          {errorMessage ? <Alert tone="error">{errorMessage}</Alert> : null}
 
-        <button
-          className="w-full rounded-full bg-emerald-600 px-4 py-2 font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
-          disabled={isSubmitting}
-          type="submit"
-        >
-          {isSubmitting ? "Signing in..." : "Sign in"}
-        </button>
-      </form>
+          <Button
+            className="w-full"
+            disabled={isSubmitting}
+            size="lg"
+            type="submit"
+          >
+            <LogIn className="h-4 w-4" />
+            {isSubmitting ? "Signing in..." : "Sign in"}
+          </Button>
+        </form>
+      </Card>
     </section>
   );
 }

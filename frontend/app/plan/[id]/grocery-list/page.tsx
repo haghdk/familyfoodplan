@@ -1,8 +1,31 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useParams } from "next/navigation";
+import {
+  ArrowLeft,
+  Carrot,
+  Check,
+  Copy,
+  Link2,
+  ListChecks,
+  Package,
+  Pencil,
+  Plus,
+  RefreshCw,
+  ShoppingBasket,
+  Trash2
+} from "lucide-react";
 import { backendApiUrl } from "../../../../lib/auth";
+import { cn } from "../../../../lib/cn";
+import Alert from "../../../../components/ui/Alert";
+import Badge from "../../../../components/ui/Badge";
+import Button from "../../../../components/ui/Button";
+import { SectionCard } from "../../../../components/ui/Card";
+import EmptyState from "../../../../components/ui/EmptyState";
+import { SelectField, TextField, controlClassName } from "../../../../components/ui/Field";
+import PageHeader from "../../../../components/ui/PageHeader";
 
 type MealRef = {
   id: number;
@@ -63,6 +86,25 @@ type GroceryRealtimeEvent = {
   token: string | null;
   item: GroceryItem | null;
   deletedItemId: number | null;
+};
+
+const formatQuantity = (quantity: number, unit: string | null) =>
+  `${quantity}${unit ? ` ${unit}` : ""}`;
+
+const describeItemSource = (item: GroceryItem) => {
+  if (item.dinnerDish) {
+    return `Dinner · ${item.dinnerDish.name}`;
+  }
+
+  if (item.breakfastDish) {
+    return `Breakfast · ${item.breakfastDish.name}`;
+  }
+
+  if (item.lunchDish) {
+    return `Lunch · ${item.lunchDish.name}`;
+  }
+
+  return "General item";
 };
 
 export default function GroceryListPage() {
@@ -329,7 +371,6 @@ export default function GroceryListPage() {
     await loadShareLink({ showSuccessFeedback: true });
   };
 
-
   const rotateShareLink = async () => {
     const response = await fetch(`${backendApiUrl}/api/plans/${planId}/share-link/rotate`, {
       method: "POST",
@@ -442,6 +483,14 @@ export default function GroceryListPage() {
     }));
   };
 
+  const cancelEditing = (itemId: number) => {
+    setEditingRows((currentRows) => {
+      const nextRows = { ...currentRows };
+      delete nextRows[itemId];
+      return nextRows;
+    });
+  };
+
   const saveItem = async (itemId: number) => {
     const row = editingRows[itemId];
 
@@ -467,11 +516,7 @@ export default function GroceryListPage() {
     }
 
     setFeedback("Grocery item updated.");
-    setEditingRows((currentRows) => {
-      const nextRows = { ...currentRows };
-      delete nextRows[itemId];
-      return nextRows;
-    });
+    cancelEditing(itemId);
     await loadItems();
   };
 
@@ -491,113 +536,364 @@ export default function GroceryListPage() {
   };
 
   if (isLoading) {
-    return <p className="text-sm text-slate-600">Loading grocery list...</p>;
+    return (
+      <div className="space-y-4">
+        <div className="h-9 w-56 animate-pulse rounded-full bg-surface-muted" />
+        <div className="h-40 animate-pulse rounded-3xl bg-surface-muted" />
+        <div className="h-64 animate-pulse rounded-3xl bg-surface-muted" />
+        <span className="sr-only">Loading grocery list...</span>
+      </div>
+    );
   }
+
+  const checkedItemsCount = groceryItems.filter((item) => item.isChecked).length;
 
   return (
     <section className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-semibold text-slate-900">Grocery list</h1>
-        <p className="text-sm text-slate-500">Plan #{params.id}</p>
-        <p className="text-xs text-slate-400">Realtime: {isRealtimeConnected ? "connected" : "reconnecting..."}</p>
-      </header>
+      <div>
+        <Link
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-fg-muted transition hover:text-brand"
+          href={`/plan/${params.id}`}
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to plan
+        </Link>
+      </div>
 
-      {errorMessage ? <p className="text-sm text-rose-700">{errorMessage}</p> : null}
-      {feedback ? <p className="text-sm text-emerald-700">{feedback}</p> : null}
-
-      <article className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4">
-        <h2 className="font-semibold text-slate-900">Share grocery list</h2>
-        <p className="text-sm text-slate-500">Load the existing share link or create one if none exists. Rotate only when you need to invalidate old links.</p>
-        <div className="flex flex-wrap gap-2">
-          <button className="rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white" type="button" onClick={createShareLink}>Load / create link</button>
-          <button className="rounded-full border border-amber-300 px-4 py-2 text-sm font-semibold text-amber-800" type="button" onClick={rotateShareLink}>Rotate link</button>
-          <button className="rounded-full border px-4 py-2 text-sm font-semibold" type="button" onClick={copyShareLink}>Copy link</button>
-        </div>
-        {shareLink ? <p className="break-all text-sm text-slate-700">{shareLink}</p> : null}
-        {shareFeedback ? <p className="text-sm text-slate-600">{shareFeedback}</p> : null}
-      </article>
-
-      <article className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4">
-        <h2 className="font-semibold text-slate-900">Add general item</h2>
-        <div className="grid gap-2 md:grid-cols-3">
-          <input className="rounded border px-3 py-2" placeholder="Name" value={generalName} onChange={(event) => setGeneralName(event.target.value)} />
-          <input className="rounded border px-3 py-2" placeholder="Quantity" type="number" min="0.1" step="0.1" value={generalQuantity} onChange={(event) => setGeneralQuantity(event.target.value)} />
-          <input className="rounded border px-3 py-2" placeholder="Unit (optional)" value={generalUnit} onChange={(event) => setGeneralUnit(event.target.value)} />
-        </div>
-        <button className="rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white" type="button" onClick={createGeneralItem}>Add general item</button>
-      </article>
-
-      <article className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4">
-        <h2 className="font-semibold text-slate-900">Add ingredient for meal</h2>
-        <div className="grid gap-2 md:grid-cols-2">
-          <select className="rounded border px-3 py-2" value={selectedMealType} onChange={(event) => setSelectedMealType(event.target.value as "dinner" | "breakfast" | "lunch")}>
-            <option value="dinner">Dinner</option>
-            <option value="breakfast">Breakfast</option>
-            <option value="lunch">Lunch</option>
-          </select>
-          <select className="rounded border px-3 py-2" value={selectedMealId} onChange={(event) => setSelectedMealId(event.target.value)} disabled={!mealAvailability.hasAnyMeals}>
-            <option value="">Select meal</option>
-            {mealOptions.map((meal) => (
-              <option key={meal.id} value={meal.id}>{meal.label}</option>
-            ))}
-          </select>
-          <input className="rounded border px-3 py-2" placeholder="Ingredient name" value={ingredientName} onChange={(event) => setIngredientName(event.target.value)} />
-          <input className="rounded border px-3 py-2" placeholder="Quantity" type="number" min="0.1" step="0.1" value={ingredientQuantity} onChange={(event) => setIngredientQuantity(event.target.value)} />
-          <input className="rounded border px-3 py-2 md:col-span-2" placeholder="Unit (optional)" value={ingredientUnit} onChange={(event) => setIngredientUnit(event.target.value)} />
-        </div>
-        {!mealAvailability.hasAnyMeals ? <p className="text-sm text-amber-700">Add at least one breakfast, lunch, or dinner dish in this plan before creating ingredient items.</p> : null}
-        <button className="rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white" type="button" onClick={createIngredientItem}>Add ingredient item</button>
-      </article>
-
-      <article className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4">
-        <h2 className="font-semibold text-slate-900">Merged grocery list</h2>
-        {mergedItems.length === 0 ? <p className="text-sm text-slate-500">No grocery items yet.</p> : null}
-        {mergedItems.map((item) => (
-          <div key={item.key} className="rounded border border-slate-200 p-3">
-            <p className="font-medium text-slate-900">{item.name} — {item.quantity} {item.unit ?? ""}</p>
-            <p className="text-xs text-slate-500">{item.category} · {item.sourceLabels.join(", ")}</p>
-          </div>
-        ))}
-      </article>
-
-      <article className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4">
-        <h2 className="font-semibold text-slate-900">Edit or remove items</h2>
-        {groceryItems.length === 0 ? <p className="text-sm text-slate-500">No items available.</p> : null}
-        {groceryItems.map((item) => {
-          const editingRow = editingRows[item.id];
-
-          return (
-            <div key={item.id} className="space-y-2 rounded border border-slate-200 p-3">
-              {!editingRow ? (
-                <>
-                  <p className={item.isChecked ? "text-sm font-medium text-slate-400 line-through" : "text-sm font-medium text-slate-900"}>{item.name} ({item.quantity} {item.unit ?? ""})</p>
-                  <p className="text-xs text-slate-500">{item.category} {item.dinnerDish ? `· Dinner: ${item.dinnerDish.name}` : ""} {item.breakfastDish ? `· Breakfast: ${item.breakfastDish.name}` : ""} {item.lunchDish ? `· Lunch: ${item.lunchDish.name}` : ""}</p>
-                  <div className="flex gap-2">
-                    <button className="rounded-full border px-3 py-1 text-sm" type="button" onClick={() => startEditing(item)}>Edit</button>
-                    <button className="rounded-full border border-rose-300 px-3 py-1 text-sm text-rose-700" type="button" onClick={() => removeItem(item.id)}>Remove</button>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="grid gap-2 md:grid-cols-3">
-                    <input className="rounded border px-3 py-2" value={editingRow.name} onChange={(event) => setEditingRows((currentRows) => ({ ...currentRows, [item.id]: { ...editingRow, name: event.target.value } }))} />
-                    <input className="rounded border px-3 py-2" type="number" min="0.1" step="0.1" value={editingRow.quantity} onChange={(event) => setEditingRows((currentRows) => ({ ...currentRows, [item.id]: { ...editingRow, quantity: event.target.value } }))} />
-                    <input className="rounded border px-3 py-2" value={editingRow.unit} onChange={(event) => setEditingRows((currentRows) => ({ ...currentRows, [item.id]: { ...editingRow, unit: event.target.value } }))} />
-                  </div>
-                  <div className="flex gap-2">
-                    <button className="rounded-full bg-emerald-600 px-3 py-1 text-sm text-white" type="button" onClick={() => saveItem(item.id)}>Save</button>
-                    <button className="rounded-full border px-3 py-1 text-sm" type="button" onClick={() => setEditingRows((currentRows) => {
-                      const nextRows = { ...currentRows };
-                      delete nextRows[item.id];
-                      return nextRows;
-                    })}>Cancel</button>
-                  </div>
-                </>
+      <PageHeader
+        actions={
+          <span className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1.5 text-xs font-medium text-fg-muted">
+            <span
+              className={cn(
+                "h-2 w-2 rounded-full",
+                isRealtimeConnected ? "bg-success" : "bg-warning"
               )}
-            </div>
-          );
-        })}
-      </article>
+            />
+            {isRealtimeConnected ? "Live updates on" : "Reconnecting..."}
+          </span>
+        }
+        description="Everything you need to buy for this plan, synced live with anyone holding the share link."
+        eyebrow="Grocery list"
+        eyebrowIcon={<ShoppingBasket className="h-3.5 w-3.5" />}
+        title={`Shopping for plan #${params.id}`}
+      />
+
+      {errorMessage ? <Alert tone="error">{errorMessage}</Alert> : null}
+      {feedback ? <Alert tone="success">{feedback}</Alert> : null}
+
+      <SectionCard
+        description="Share this link so anyone can tick items off while shopping. Rotate it only when you need to invalidate old links."
+        icon={<Link2 className="h-4 w-4" />}
+        title="Share the list"
+      >
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <input
+            aria-label="Share link"
+            className={cn(controlClassName, "font-mono text-xs sm:text-sm")}
+            placeholder="No share link yet"
+            readOnly
+            value={shareLink}
+          />
+          <div className="flex flex-wrap gap-2">
+            <Button onClick={copyShareLink}>
+              <Copy className="h-4 w-4" />
+              Copy
+            </Button>
+            <Button onClick={createShareLink} variant="secondary">
+              <Link2 className="h-4 w-4" />
+              Load / create
+            </Button>
+            <Button onClick={rotateShareLink} variant="secondary">
+              <RefreshCw className="h-4 w-4" />
+              Rotate
+            </Button>
+          </div>
+        </div>
+        {shareFeedback ? (
+          <p className="mt-3 text-sm text-fg-muted">{shareFeedback}</p>
+        ) : null}
+      </SectionCard>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <SectionCard
+          description="Household staples that are not tied to a specific meal."
+          icon={<Package className="h-4 w-4" />}
+          title="Add general item"
+        >
+          <div className="grid gap-3 sm:grid-cols-4">
+            <TextField
+              fieldClassName="sm:col-span-2"
+              label="Name"
+              onChange={(event) => setGeneralName(event.target.value)}
+              placeholder="Coffee"
+              value={generalName}
+            />
+            <TextField
+              label="Quantity"
+              min="0.1"
+              onChange={(event) => setGeneralQuantity(event.target.value)}
+              step="0.1"
+              type="number"
+              value={generalQuantity}
+            />
+            <TextField
+              label="Unit"
+              onChange={(event) => setGeneralUnit(event.target.value)}
+              placeholder="kg"
+              value={generalUnit}
+            />
+          </div>
+          <Button className="mt-4" onClick={createGeneralItem}>
+            <Plus className="h-4 w-4" />
+            Add general item
+          </Button>
+        </SectionCard>
+
+        <SectionCard
+          description="Ingredients linked to a meal in this plan, so you know what they are for."
+          icon={<Carrot className="h-4 w-4" />}
+          title="Add ingredient for a meal"
+        >
+          <div className="grid gap-3 sm:grid-cols-4">
+            <SelectField
+              fieldClassName="sm:col-span-2"
+              label="Meal type"
+              onChange={(event) =>
+                setSelectedMealType(event.target.value as "dinner" | "breakfast" | "lunch")
+              }
+              value={selectedMealType}
+            >
+              <option value="dinner">Dinner</option>
+              <option value="breakfast">Breakfast</option>
+              <option value="lunch">Lunch</option>
+            </SelectField>
+            <SelectField
+              disabled={!mealAvailability.hasAnyMeals}
+              fieldClassName="sm:col-span-2"
+              label="Meal"
+              onChange={(event) => setSelectedMealId(event.target.value)}
+              value={selectedMealId}
+            >
+              <option value="">Select meal</option>
+              {mealOptions.map((meal) => (
+                <option key={meal.id} value={meal.id}>
+                  {meal.label}
+                </option>
+              ))}
+            </SelectField>
+            <TextField
+              fieldClassName="sm:col-span-2"
+              label="Ingredient"
+              onChange={(event) => setIngredientName(event.target.value)}
+              placeholder="Tomatoes"
+              value={ingredientName}
+            />
+            <TextField
+              label="Quantity"
+              min="0.1"
+              onChange={(event) => setIngredientQuantity(event.target.value)}
+              step="0.1"
+              type="number"
+              value={ingredientQuantity}
+            />
+            <TextField
+              label="Unit"
+              onChange={(event) => setIngredientUnit(event.target.value)}
+              placeholder="g"
+              value={ingredientUnit}
+            />
+          </div>
+
+          {!mealAvailability.hasAnyMeals ? (
+            <Alert className="mt-3" tone="warning">
+              Add at least one breakfast, lunch, or dinner dish in this plan before creating
+              ingredient items.
+            </Alert>
+          ) : null}
+
+          <Button className="mt-4" onClick={createIngredientItem}>
+            <Plus className="h-4 w-4" />
+            Add ingredient item
+          </Button>
+        </SectionCard>
+      </div>
+
+      <SectionCard
+        actions={
+          mergedItems.length > 0 ? (
+            <Badge tone="brand">{mergedItems.length} lines</Badge>
+          ) : null
+        }
+        description="Duplicate ingredients across meals are combined into a single shopping line."
+        icon={<ListChecks className="h-4 w-4" />}
+        title="Merged shopping list"
+      >
+        {mergedItems.length === 0 ? (
+          <EmptyState
+            description="Add a general item or a meal ingredient to start your list."
+            icon={<ShoppingBasket className="h-5 w-5" />}
+            title="No grocery items yet"
+          />
+        ) : (
+          <ul className="divide-y divide-border overflow-hidden rounded-2xl border border-border">
+            {mergedItems.map((item) => (
+              <li
+                className="flex flex-wrap items-center justify-between gap-3 bg-surface px-4 py-3"
+                key={item.key}
+              >
+                <div className="min-w-0">
+                  <p className="font-medium text-fg">{item.name}</p>
+                  <p className="mt-0.5 truncate text-xs text-fg-subtle">
+                    {item.sourceLabels.join(" · ")}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge tone={item.category === "GENERAL" ? "neutral" : "accent"}>
+                    {item.category === "GENERAL" ? "General" : "Ingredient"}
+                  </Badge>
+                  <span className="rounded-full bg-surface-muted px-3 py-1 text-sm font-semibold text-fg">
+                    {formatQuantity(item.quantity, item.unit)}
+                  </span>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </SectionCard>
+
+      <SectionCard
+        actions={
+          groceryItems.length > 0 ? (
+            <Badge>
+              {checkedItemsCount} of {groceryItems.length} checked off
+            </Badge>
+          ) : null
+        }
+        description="Every individual entry, including the meal it came from."
+        icon={<Pencil className="h-4 w-4" />}
+        title="Edit or remove items"
+      >
+        {groceryItems.length === 0 ? (
+          <EmptyState
+            description="Items you add above will show up here."
+            icon={<Package className="h-5 w-5" />}
+            title="No items available"
+          />
+        ) : (
+          <ul className="space-y-2">
+            {groceryItems.map((item) => {
+              const editingRow = editingRows[item.id];
+
+              if (!editingRow) {
+                return (
+                  <li
+                    className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-surface-muted/40 px-4 py-3"
+                    key={item.id}
+                  >
+                    <div className="min-w-0">
+                      <p
+                        className={cn(
+                          "font-medium",
+                          item.isChecked ? "text-fg-subtle line-through" : "text-fg"
+                        )}
+                      >
+                        {item.name}
+                        <span className="ml-2 text-sm font-normal text-fg-muted">
+                          {formatQuantity(item.quantity, item.unit)}
+                        </span>
+                      </p>
+                      <p className="mt-0.5 truncate text-xs text-fg-subtle">
+                        {describeItemSource(item)}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {item.isChecked ? (
+                        <Badge icon={<Check className="h-3.5 w-3.5" />} tone="brand">
+                          Bought
+                        </Badge>
+                      ) : null}
+                      <Button
+                        aria-label={`Edit ${item.name}`}
+                        onClick={() => startEditing(item)}
+                        size="sm"
+                        variant="secondary"
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                        Edit
+                      </Button>
+                      <Button
+                        aria-label={`Remove ${item.name}`}
+                        onClick={() => removeItem(item.id)}
+                        size="sm"
+                        variant="danger"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                        Remove
+                      </Button>
+                    </div>
+                  </li>
+                );
+              }
+
+              return (
+                <li
+                  className="space-y-3 rounded-2xl border border-brand-border bg-surface px-4 py-3"
+                  key={item.id}
+                >
+                  <div className="grid gap-3 sm:grid-cols-4">
+                    <TextField
+                      fieldClassName="sm:col-span-2"
+                      label="Name"
+                      onChange={(event) =>
+                        setEditingRows((currentRows) => ({
+                          ...currentRows,
+                          [item.id]: { ...editingRow, name: event.target.value }
+                        }))
+                      }
+                      value={editingRow.name}
+                    />
+                    <TextField
+                      label="Quantity"
+                      min="0.1"
+                      onChange={(event) =>
+                        setEditingRows((currentRows) => ({
+                          ...currentRows,
+                          [item.id]: { ...editingRow, quantity: event.target.value }
+                        }))
+                      }
+                      step="0.1"
+                      type="number"
+                      value={editingRow.quantity}
+                    />
+                    <TextField
+                      label="Unit"
+                      onChange={(event) =>
+                        setEditingRows((currentRows) => ({
+                          ...currentRows,
+                          [item.id]: { ...editingRow, unit: event.target.value }
+                        }))
+                      }
+                      value={editingRow.unit}
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button onClick={() => saveItem(item.id)} size="sm">
+                      Save
+                    </Button>
+                    <Button
+                      onClick={() => cancelEditing(item.id)}
+                      size="sm"
+                      variant="secondary"
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </SectionCard>
     </section>
   );
 }

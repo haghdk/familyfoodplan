@@ -1,15 +1,152 @@
 @import "tailwindcss";
 
+/*
+ * Family Food Planner design tokens.
+ * Every token is semantic (surface / fg / brand / meal) so components never
+ * hardcode a palette value and the light and dark themes stay in sync.
+ */
+@theme {
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+
+  /* Structure */
+  --color-canvas: #f6f4ef;
+  --color-canvas-tint: #eae5d9;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f4f1ea;
+  --color-border: #e7e2d7;
+  --color-border-strong: #d3ccbd;
+
+  /* Text */
+  --color-fg: #1b1a16;
+  --color-fg-muted: #56524a;
+  --color-fg-subtle: #8a8477;
+
+  /* Brand (herb green) */
+  --color-brand: #2c7a5b;
+  --color-brand-strong: #226349;
+  --color-brand-soft: #e3f0e9;
+  --color-brand-border: #b8dbc9;
+  --color-brand-fg: #ffffff;
+
+  /* Accent (terracotta) */
+  --color-accent: #c2562f;
+  --color-accent-soft: #fbe8dd;
+  --color-accent-border: #f0c9b4;
+
+  /* Status */
+  --color-danger: #b4402a;
+  --color-danger-soft: #fbe7e2;
+  --color-danger-border: #efc4b9;
+  --color-warning: #a06712;
+  --color-warning-soft: #fbf0d9;
+  --color-warning-border: #ecd7a8;
+  --color-success: #2c7a5b;
+  --color-success-soft: #e3f0e9;
+  --color-success-border: #b8dbc9;
+
+  /* Meal accents */
+  --color-breakfast: #a56f11;
+  --color-breakfast-soft: #fbf1dc;
+  --color-lunch: #147379;
+  --color-lunch-soft: #ddeff0;
+  --color-dinner: #c2562f;
+  --color-dinner-soft: #fbe8dd;
+
+  /* Elevation */
+  --shadow-card: 0 1px 2px rgb(27 26 22 / 0.04), 0 8px 24px -16px rgb(27 26 22 / 0.28);
+  --shadow-lifted: 0 2px 4px rgb(27 26 22 / 0.05), 0 24px 48px -24px rgb(27 26 22 / 0.35);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-canvas: #131310;
+    --color-canvas-tint: #201d18;
+    --color-surface: #1c1a16;
+    --color-surface-muted: #24221c;
+    --color-border: #332f28;
+    --color-border-strong: #47423a;
+
+    --color-fg: #f3f0e9;
+    --color-fg-muted: #b2ab9f;
+    --color-fg-subtle: #877f72;
+
+    --color-brand: #5cbb92;
+    --color-brand-strong: #7bcfa9;
+    --color-brand-soft: #17301f;
+    --color-brand-border: #2c5340;
+    --color-brand-fg: #08180f;
+
+    --color-accent: #e58256;
+    --color-accent-soft: #34211a;
+    --color-accent-border: #5a3626;
+
+    --color-danger: #ef8b74;
+    --color-danger-soft: #331c17;
+    --color-danger-border: #593026;
+    --color-warning: #ddab53;
+    --color-warning-soft: #2e2617;
+    --color-warning-border: #544326;
+    --color-success: #5cbb92;
+    --color-success-soft: #17301f;
+    --color-success-border: #2c5340;
+
+    --color-breakfast: #ddab53;
+    --color-breakfast-soft: #2e2617;
+    --color-lunch: #5ab9be;
+    --color-lunch-soft: #16292b;
+    --color-dinner: #e58256;
+    --color-dinner-soft: #34211a;
+
+    --shadow-card: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px -16px rgb(0 0 0 / 0.7);
+    --shadow-lifted: 0 2px 4px rgb(0 0 0 / 0.4), 0 24px 48px -24px rgb(0 0 0 / 0.8);
+  }
+}
+
 :root {
-  color-scheme: light;
+  color-scheme: light dark;
 }
 
 body {
   min-height: 100vh;
-  background: #f8fafc;
-  color: #0f172a;
+  background-color: var(--color-canvas);
+  color: var(--color-fg);
+  font-family: var(--font-sans);
 }
 
 button {
   cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+/* Native controls should follow the active theme. */
+input,
+select,
+textarea {
+  color-scheme: inherit;
+}
+
+::selection {
+  background-color: var(--color-brand-soft);
+  color: var(--color-fg);
+}
+
+/* Warm ambient wash behind the whole app shell. */
+.app-shell {
+  background-image:
+    radial-gradient(
+      60rem 30rem at 12% -8rem,
+      color-mix(in oklab, var(--color-brand) 12%, transparent),
+      transparent
+    ),
+    radial-gradient(
+      50rem 26rem at 92% -6rem,
+      color-mix(in oklab, var(--color-accent) 12%, transparent),
+      transparent
+    );
+  background-repeat: no-repeat;
 }

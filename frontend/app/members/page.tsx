@@ -1,5 +1,7 @@
+import { Users } from "lucide-react";
 import { adminSessionCookieName, backendApiUrl } from "../../lib/auth";
 import MembersManager from "../../components/members/members-manager";
+import PageHeader from "../../components/ui/PageHeader";
 import { cookies } from "next/headers";
 
 type Member = {
@@ -36,12 +38,12 @@ export default async function MembersPage() {
 
   return (
     <section className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-semibold text-slate-900">Family members</h1>
-        <p className="mt-2 text-sm text-slate-600">
-          Manage who is included in your family meal planning.
-        </p>
-      </div>
+      <PageHeader
+        description="Manage who is included in your family meal planning. Members can be assigned to breakfast and lunch dishes."
+        eyebrow="Household"
+        eyebrowIcon={<Users className="h-3.5 w-3.5" />}
+        title="Family members"
+      />
       <MembersManager initialMembers={members} />
     </section>
   );

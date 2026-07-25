@@ -26,6 +26,7 @@ Family Food Planner is a weekly meal-planning app for families. Admins create pl
 - **Breakfast planning support**: each plan day now supports repeatable breakfast rows with optional member assignment, matching lunch behavior in APIs/UI and allowing breakfast-linked grocery ingredients.
 - **Grocery sharing**: generate tokenized public grocery links so non-admin shoppers can check off items.
 - **Realtime grocery updates**: grocery item check/uncheck and edits are synchronized live across admin and shared views.
+- **UI redesign + design system**: the whole frontend was restyled around a warm, food-themed token set with automatic light/dark theming, a shared component library (`Button`, `Card`/`SectionCard`, `Field`, `Badge`, `Alert`, `EmptyState`, `PageHeader`, `ConfirmModal`), a sticky app header with active-route navigation, meal-coded colours (breakfast / lunch / dinner), "today" highlighting across plan views, and a redesigned shared shopping list with checkbox rows and a progress bar. See [Design System](#design-system) below.
 
 ## Architecture Summary
 
@@ -62,6 +63,41 @@ Family Food Planner is a weekly meal-planning app for families. Admins create pl
   - Grocery list management UI
   - Shared grocery page for tokenized links
   - Realtime checkoff UX updates
+
+## Design System
+
+The frontend styling is token-driven. Components never hardcode palette values, which keeps light and dark themes in sync automatically.
+
+### Tokens (`frontend/app/globals.css`)
+
+Semantic CSS custom properties are declared in Tailwind's `@theme` block and re-declared under `@media (prefers-color-scheme: dark)`:
+
+- **Structure**: `canvas`, `canvas-tint`, `surface`, `surface-muted`, `border`, `border-strong`
+- **Text**: `fg`, `fg-muted`, `fg-subtle`
+- **Brand / accent**: `brand`, `brand-strong`, `brand-soft`, `brand-border`, `brand-fg`, `accent`, `accent-soft`, `accent-border`
+- **Status**: `success`, `warning`, `danger` (each with `-soft` / `-border` variants)
+- **Meals**: `breakfast`, `lunch`, `dinner` (each with a `-soft` background variant)
+- **Elevation**: `shadow-card`, `shadow-lifted`
+
+Use them through normal Tailwind utilities — `bg-surface`, `text-fg-muted`, `border-brand-border`, `shadow-card`.
+
+### Shared components (`frontend/components/ui/`)
+
+| Component | Purpose |
+| --- | --- |
+| `Button` | Variants `primary`, `secondary`, `ghost`, `soft`, `danger`, `dangerSolid`; sizes `sm`, `md`, `lg`, `icon`. `buttonClassName()` is exported so `next/link` anchors can share the same styling. |
+| `Card` / `SectionCard` | Base surface card, plus a titled variant with icon, description and action slots. |
+| `Field` | `TextField`, `SelectField`, `TextAreaField` with labels, hints and inline error text; `controlClassName` is exported for ad-hoc inputs. |
+| `Badge` | Pill labels with `neutral`, `brand`, `accent`, `warning`, `danger` and per-meal tones. |
+| `Alert` | Inline `info` / `success` / `warning` / `error` messaging with icons. |
+| `EmptyState` | Consistent empty/zero-data presentation. |
+| `PageHeader` | Page title with optional eyebrow, description and action slot. |
+| `ConfirmModal` | Accessible confirmation dialog (Escape to close, initial focus, danger variant). |
+
+### Shared helpers (`frontend/lib/`)
+
+- `cn.ts` — small class-name joiner.
+- `dates.ts` — day-key parsing plus `formatWeekday`, `formatShortDate`, `formatDayLabel`, `formatDateRange` and `getTodayDayKey` (used for the "Today" highlight across plan views).
 
 ## API Route Summary
 
