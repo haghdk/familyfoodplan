@@ -26,7 +26,9 @@ export * from "./enums"
  * Type-safe database client for TypeScript
  * @example
  * ```
- * const prisma = new PrismaClient()
+ * const prisma = new PrismaClient({
+ *   adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL })
+ * })
  * // Fetch zero or more AdminUsers
  * const adminUsers = await prisma.adminUser.findMany()
  * ```
@@ -42,6 +44,12 @@ export { Prisma }
  * 
  */
 export type AdminUser = Prisma.AdminUserModel
+/**
+ * Model PasswordResetToken
+ * Password reset links. Only the SHA-256 hash of the token is stored, so a
+ * database leak cannot be replayed as a reset link.
+ */
+export type PasswordResetToken = Prisma.PasswordResetTokenModel
 /**
  * Model FamilyMember
  * 

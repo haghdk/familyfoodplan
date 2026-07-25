@@ -196,7 +196,7 @@ export type PlanDayGroupByOutputType = {
   _max: PlanDayMaxAggregateOutputType | null
 }
 
-type GetPlanDayGroupByPayload<T extends PlanDayGroupByArgs> = Prisma.PrismaPromise<
+export type GetPlanDayGroupByPayload<T extends PlanDayGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<PlanDayGroupByOutputType, T['by']> &
       {
@@ -1682,6 +1682,11 @@ export type PlanDayFindManyArgs<ExtArgs extends runtime.Types.Extensions.Interna
    * Skip the first `n` PlanDays.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   * 
+   * Filter by unique combinations of PlanDays.
+   */
   distinct?: Prisma.PlanDayScalarFieldEnum | Prisma.PlanDayScalarFieldEnum[]
 }
 

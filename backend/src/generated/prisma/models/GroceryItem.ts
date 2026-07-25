@@ -261,7 +261,7 @@ export type GroceryItemGroupByOutputType = {
   _max: GroceryItemMaxAggregateOutputType | null
 }
 
-type GetGroceryItemGroupByPayload<T extends GroceryItemGroupByArgs> = Prisma.PrismaPromise<
+export type GetGroceryItemGroupByPayload<T extends GroceryItemGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<GroceryItemGroupByOutputType, T['by']> &
       {
@@ -1928,6 +1928,11 @@ export type GroceryItemFindManyArgs<ExtArgs extends runtime.Types.Extensions.Int
    * Skip the first `n` GroceryItems.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   * 
+   * Filter by unique combinations of GroceryItems.
+   */
   distinct?: Prisma.GroceryItemScalarFieldEnum | Prisma.GroceryItemScalarFieldEnum[]
 }
 

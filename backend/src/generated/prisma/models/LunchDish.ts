@@ -214,7 +214,7 @@ export type LunchDishGroupByOutputType = {
   _max: LunchDishMaxAggregateOutputType | null
 }
 
-type GetLunchDishGroupByPayload<T extends LunchDishGroupByArgs> = Prisma.PrismaPromise<
+export type GetLunchDishGroupByPayload<T extends LunchDishGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<LunchDishGroupByOutputType, T['by']> &
       {
@@ -1506,6 +1506,11 @@ export type LunchDishFindManyArgs<ExtArgs extends runtime.Types.Extensions.Inter
    * Skip the first `n` LunchDishes.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   * 
+   * Filter by unique combinations of LunchDishes.
+   */
   distinct?: Prisma.LunchDishScalarFieldEnum | Prisma.LunchDishScalarFieldEnum[]
 }
 

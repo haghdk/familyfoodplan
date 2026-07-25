@@ -29,6 +29,14 @@ services:
       FRONTEND_ORIGIN: http://localhost:3100
       ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@example.com}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-change-me-strong-password}
+      APP_PUBLIC_URL: ${APP_PUBLIC_URL:-http://localhost:3100}
+      PASSWORD_RESET_TOKEN_TTL_MINUTES: ${PASSWORD_RESET_TOKEN_TTL_MINUTES:-60}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_SECURE: ${SMTP_SECURE:-false}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      MAIL_FROM: ${MAIL_FROM:-Family Food Planner <no-reply@example.com>}
       COMMIT_SHA: "dee5d8bb7a9056afe555169cbf271240c7b00755"
     ports:
       - "4100:4000"

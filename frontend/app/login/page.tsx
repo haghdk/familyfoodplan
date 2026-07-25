@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CookingPot, LogIn } from "lucide-react";
@@ -72,15 +73,25 @@ export default function LoginPage() {
             value={email}
           />
 
-          <TextField
-            autoComplete="current-password"
-            label="Password"
-            onChange={(event) => setPassword(event.target.value)}
-            placeholder="••••••••"
-            required
-            type="password"
-            value={password}
-          />
+          <div>
+            <TextField
+              autoComplete="current-password"
+              label="Password"
+              onChange={(event) => setPassword(event.target.value)}
+              placeholder="••••••••"
+              required
+              type="password"
+              value={password}
+            />
+            <p className="mt-2 text-right">
+              <Link
+                className="text-sm font-medium text-fg-muted transition hover:text-brand"
+                href="/forgot-password"
+              >
+                Forgot your password?
+              </Link>
+            </p>
+          </div>
 
           {errorMessage ? <Alert tone="error">{errorMessage}</Alert> : null}
 
