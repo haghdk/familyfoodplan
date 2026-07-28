@@ -45,8 +45,8 @@ services:
 
       DATABASE_URL: postgresql://familyfoodplan:familyfoodplan@database:5432/familyfoodplan
 
-      BACKEND_URL: http://backend:4000
-      FRONTEND_URL: http://frontend:3000
+      BACKEND_URL: http://backend:4100
+      FRONTEND_URL: http://frontend:3100
       FRONTEND_ORIGIN: http://localhost:3100
 
       ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@example.com}
@@ -67,7 +67,7 @@ services:
       COMMIT_SHA: "dee5d8bb7a9056afe555169cbf271240c7b00755"
 
     ports:
-      - "4100:4000"
+      - "4100:4100"
 
     volumes:
       - ./backend:/app
@@ -92,7 +92,7 @@ services:
     command: >
       sh -c "
         npm install &&
-        npm run dev -- --hostname 0.0.0.0 --port 3000
+        npm run dev -- --hostname 0.0.0.0 --port 3100
       "
 
     environment:
@@ -101,14 +101,14 @@ services:
 
       DATABASE_URL: postgresql://familyfoodplan:familyfoodplan@database:5432/familyfoodplan
 
-      BACKEND_URL: http://backend:4000
-      FRONTEND_URL: http://frontend:3000
+      BACKEND_URL: http://backend:4100
+      FRONTEND_URL: http://frontend:3100
       FRONTEND_ORIGIN: http://localhost:3100
 
       NEXT_PUBLIC_BACKEND_API_URL: http://localhost:4100
 
     ports:
-      - "3100:3000"
+      - "3100:3100"
 
     volumes:
       - ./frontend:/app
