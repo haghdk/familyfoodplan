@@ -3,66 +3,132 @@ services:
     image: postgres:16-alpine
     container_name: familyfoodplan-database
     restart: unless-stopped
+
     environment:
       POSTGRES_DB: familyfoodplan
       POSTGRES_USER: familyfoodplan
       POSTGRES_PASSWORD: familyfoodplan
+
     ports:
       - "55432:5432"
+
     volumes:
       - postgres_data:/var/lib/postgresql/data
+
+    networks:
+      - app
+
 
   backend:
     image: node:22-alpine
     container_name: familyfoodplan-backend
     restart: unless-stopped
+
     depends_on:
       - database
+
     working_dir: /app
-    command: sh -c "apk add --no-cache openssl >/dev/null && npm install && npx prisma generate && npx prisma migrate deploy && npx prisma db seed && npm run dev"
+
+    command: >
+      sh -c "
+        apk add --no-cache openssl >/dev/null &&
+        npm install &&
+        npx prisma generate &&
+        npx prisma migrate deploy &&
+        npx prisma db seed &&
+        npm run dev
+      "
+
     environment:
       NODE_ENV: development
       PORT: 4000
+
       DATABASE_URL: postgresql://familyfoodplan:familyfoodplan@database:5432/familyfoodplan
+
       BACKEND_URL: http://backend:4000
       FRONTEND_URL: http://frontend:3000
       FRONTEND_ORIGIN: http://localhost:3100
+
       ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@example.com}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-change-me-strong-password}
+
       APP_PUBLIC_URL: ${APP_PUBLIC_URL:-http://localhost:3100}
+
       PASSWORD_RESET_TOKEN_TTL_MINUTES: ${PASSWORD_RESET_TOKEN_TTL_MINUTES:-60}
+
       SMTP_HOST: ${SMTP_HOST:-}
       SMTP_PORT: ${SMTP_PORT:-587}
       SMTP_SECURE: ${SMTP_SECURE:-false}
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+
       MAIL_FROM: ${MAIL_FROM:-Family Food Planner <no-reply@example.com>}
+
       COMMIT_SHA: "dee5d8bb7a9056afe555169cbf271240c7b00755"
+
     ports:
       - "4100:4000"
+
     volumes:
       - ./backend:/app
+
+    networks:
+      app:
+      proxy:
+        aliases:
+          - familyfoodplan-backend
+
 
   frontend:
     image: node:22-alpine
     container_name: familyfoodplan-frontend
     restart: unless-stopped
+
     depends_on:
       - backend
+
     working_dir: /app
-    command: sh -c "npm install && npm run dev -- --hostname 0.0.0.0 --port 3000"
+
+    command: >
+      sh -c "
+        npm install &&
+        npm run dev -- --hostname 0.0.0.0 --port 3000
+      "
+
     environment:
       NODE_ENV: development
       PORT: 3000
+
       DATABASE_URL: postgresql://familyfoodplan:familyfoodplan@database:5432/familyfoodplan
+
       BACKEND_URL: http://backend:4000
       FRONTEND_URL: http://frontend:3000
       FRONTEND_ORIGIN: http://localhost:3100
+
       NEXT_PUBLIC_BACKEND_API_URL: http://localhost:4100
+
     ports:
       - "3100:3000"
+
     volumes:
       - ./frontend:/app
 
+    networks:
+      app:
+      proxy:
+        aliases:
+          - familyfoodplan-frontend
+
+
 volumes:
   postgres_data:
+    name: familyfoodplan-postgres-data
+
+
+networks:
+  app:
+    name: familyfoodplan-app
+
+  proxy:
+    external: true
+    name: proxy
