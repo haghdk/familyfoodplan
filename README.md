@@ -28,6 +28,7 @@ Family Food Planner is a weekly meal-planning app for families. Admins create pl
 - **Grocery sharing**: generate tokenized public grocery links so non-admin shoppers can check off items.
 - **Realtime grocery updates**: grocery item check/uncheck and edits are synchronized live across admin and shared views.
 - **UI redesign + design system**: the whole frontend was restyled around a warm, food-themed token set with automatic light/dark theming, a shared component library (`Button`, `Card`/`SectionCard`, `Field`, `Badge`, `Alert`, `EmptyState`, `PageHeader`, `ConfirmModal`), a sticky app header with active-route navigation, meal-coded colours (breakfast / lunch / dinner), "today" highlighting across plan views, and a redesigned shared shopping list with checkbox rows and a progress bar. See [Design System](#design-system) below.
+- **App icon + home screen install**: the app ships a branded cooking-pot icon (favicon, Apple touch icon, and Android/Chrome manifest icons) plus a web app manifest, so saving the site to a phone home screen shows the app icon and name instead of a generic screenshot, and launches it standalone without browser chrome. See [App icon and home screen install](#app-icon-and-home-screen-install).
 
 ## Architecture Summary
 
@@ -99,6 +100,28 @@ Use them through normal Tailwind utilities — `bg-surface`, `text-fg-muted`, `b
 
 - `cn.ts` — small class-name joiner.
 - `dates.ts` — day-key parsing plus `formatWeekday`, `formatShortDate`, `formatDayLabel`, `formatDateRange` and `getTodayDayKey` (used for the "Today" highlight across plan views).
+
+### App icon and home screen install
+
+The app icon is the same Lucide `cooking-pot` mark used in the site header, drawn in white on the brand green (`#2c7a5b` → `#226349`) background.
+
+| File | Used for |
+| --- | --- |
+| `frontend/app/icon.svg` | Scalable favicon (`<link rel="icon">`, served at `/icon.svg`). |
+| `frontend/app/favicon.ico` | Legacy 16/32/48 favicon for desktop browsers and bookmarks. |
+| `frontend/app/apple-icon.png` | 180×180 Apple touch icon — the tile iOS/iPadOS shows for "Add to Home Screen". Full-bleed square because Safari applies its own rounding. |
+| `frontend/public/icons/icon-192.png`, `icon-512.png` | Android/Chrome manifest icons (`purpose: any`). |
+| `frontend/public/icons/icon-maskable-512.png` | Android maskable icon; the glyph stays inside the 80% safe zone so it survives circular/squircle cropping. |
+| `frontend/app/manifest.ts` | Web app manifest served at `/manifest.webmanifest`: app name (`Family Food Planner`), home screen label (`Food Planner`), `display: standalone`, `start_url: /`, theme and background colours. |
+
+`frontend/app/layout.tsx` links the manifest, sets the `theme-color` meta tag and enables `appleWebApp` metadata, so an installed app launches full screen without browser chrome. `frontend/middleware.ts` excludes the icon and manifest paths from the auth redirect, so phones can fetch them even without a session.
+
+Regenerating the raster icons (only needed if the mark or brand colours change):
+
+```bash
+pip install cairosvg pillow
+python3 frontend/scripts/generate-icons.py
+```
 
 ## API Route Summary
 

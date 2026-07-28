@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { cookies } from "next/headers";
 import Link from "next/link";
 import { CookingPot } from "lucide-react";
@@ -9,6 +9,17 @@ import { adminSessionCookieName, userRoleCookieName } from "../lib/auth";
 export const metadata: Metadata = {
   title: "Family Food Planner",
   description: "Plan weekly meals for your family with confidence.",
+  applicationName: "Family Food Planner",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    title: "Food Planner",
+    statusBarStyle: "default",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#2c7a5b",
 };
 
 export default async function RootLayout({

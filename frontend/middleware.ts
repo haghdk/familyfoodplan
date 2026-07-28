@@ -27,5 +27,9 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"]
+  matcher: [
+    // Icons and the web app manifest must stay reachable without a session so
+    // phones can fetch them when the app is saved to the home screen.
+    "/((?!api|_next/static|_next/image|favicon.ico|icon.svg|apple-icon.png|icons/|manifest.webmanifest).*)"
+  ]
 };
