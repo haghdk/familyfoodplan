@@ -45,14 +45,16 @@ services:
 
       DATABASE_URL: postgresql://familyfoodplan:familyfoodplan@database:5432/familyfoodplan
 
-      BACKEND_URL: http://backend:4100
-      FRONTEND_URL: http://frontend:3100
-      FRONTEND_ORIGIN: http://localhost:3100
+      # Internal Docker addresses
+      BACKEND_URL: http://backend:4000
+      FRONTEND_URL: http://frontend:3000
+
+      # Public browser-facing addresses
+      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-https://familyfoodplan.hagh.dk}
+      APP_PUBLIC_URL: ${APP_PUBLIC_URL:-https://familyfoodplan.hagh.dk}
 
       ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@example.com}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-change-me-strong-password}
-
-      APP_PUBLIC_URL: ${APP_PUBLIC_URL:-http://localhost:3100}
 
       PASSWORD_RESET_TOKEN_TTL_MINUTES: ${PASSWORD_RESET_TOKEN_TTL_MINUTES:-60}
 
@@ -67,13 +69,15 @@ services:
       COMMIT_SHA: "dee5d8bb7a9056afe555169cbf271240c7b00755"
 
     ports:
-      - "4100:4100"
+      - "4100:4000"
 
     volumes:
       - ./backend:/app
 
     networks:
       app:
+        aliases:
+          - backend
       proxy:
         aliases:
           - familyfoodplan-backend
@@ -92,7 +96,7 @@ services:
     command: >
       sh -c "
         npm install &&
-        npm run dev -- --hostname 0.0.0.0 --port 3100
+        npm run dev -- --hostname 0.0.0.0 --port 3000
       "
 
     environment:
@@ -101,20 +105,24 @@ services:
 
       DATABASE_URL: postgresql://familyfoodplan:familyfoodplan@database:5432/familyfoodplan
 
-      BACKEND_URL: http://backend:4100
-      FRONTEND_URL: http://frontend:3100
-      FRONTEND_ORIGIN: http://localhost:3100
+      # Internal Docker addresses
+      BACKEND_URL: http://backend:4000
+      FRONTEND_URL: http://frontend:3000
 
-      NEXT_PUBLIC_BACKEND_API_URL: http://backend:4100
+      # Public browser-facing addresses
+      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-https://familyfoodplan.hagh.dk}
+      NEXT_PUBLIC_BACKEND_API_URL: ${NEXT_PUBLIC_BACKEND_API_URL:-https://api.familyfoodplan.hagh.dk}
 
     ports:
-      - "3100:3100"
+      - "3100:3000"
 
     volumes:
       - ./frontend:/app
 
     networks:
       app:
+        aliases:
+          - frontend
       proxy:
         aliases:
           - familyfoodplan-frontend
