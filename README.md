@@ -26,6 +26,7 @@ Family Food Planner is a weekly meal-planning app for families. Admins create pl
 - **Plan-scoped day editing routes**: dinner, breakfast, and lunch write endpoints now require both `planId` and `dayKey` (`/api/plans/:planId/days/:dayKey/...`) so updates are validated against the selected plan before persisting.
 - **Breakfast planning support**: each plan day now supports repeatable breakfast rows with optional member assignment, matching lunch behavior in APIs/UI and allowing breakfast-linked grocery ingredients.
 - **Grocery sharing**: generate tokenized public grocery links so non-admin shoppers can check off items.
+- **Drag-to-reorder grocery list**: items are still added as they come to mind (each new item lands at the bottom), and the merged shopping list can then be dragged into the order you walk the store — vegetables, bread, meat, cheeses, eggs, milk, hygiene. The manual order is stored per plan and used by the detailed item list and the shared shopper link as well. See [Grocery List Ordering](#grocery-list-ordering).
 - **Realtime grocery updates**: grocery item check/uncheck and edits are synchronized live across admin and shared views.
 - **UI redesign + design system**: the whole frontend was restyled around a warm, food-themed token set with automatic light/dark theming, a shared component library (`Button`, `Card`/`SectionCard`, `Field`, `Badge`, `Alert`, `EmptyState`, `PageHeader`, `ConfirmModal`), a sticky app header with active-route navigation, meal-coded colours (breakfast / lunch / dinner), "today" highlighting across plan views, and a redesigned shared shopping list with checkbox rows and a progress bar. See [Design System](#design-system) below.
 - **App icon + home screen install**: the app ships a branded cooking-pot icon (favicon, Apple touch icon, and Android/Chrome manifest icons) plus a web app manifest, so saving the site to a phone home screen shows the app icon and name instead of a generic screenshot, and launches it standalone without browser chrome. See [App icon and home screen install](#app-icon-and-home-screen-install).
@@ -161,8 +162,20 @@ python3 frontend/scripts/generate-icons.py
 
 ### Grocery Lists
 - Admin grocery routes under `/api/plans/:id/grocery-list...` support create/update/delete and share-link management.
+- `PUT /api/plans/:planId/grocery-items/order` — store the manual shopping order for a plan; the body is `{ "itemIds": [12, 7, 3, …] }`, listing the item ids in the order they should appear (admin only).
 - Shared shopper routes under `/api/grocery/:token...` allow token-scoped reads and checkoff updates without admin login.
 - SSE stream endpoint(s) provide realtime grocery state synchronization for both admin and shared-token clients.
+
+## Grocery List Ordering
+
+The store you shop in has its own layout, so the list is ordered by hand rather than alphabetically.
+
+- Every `GroceryItem` carries a `sortOrder`, numbered across the whole plan so items belonging to different plan days share one sequence. All grocery reads (admin list, merged list, shared list) return items in that order.
+- Adding an item is unchanged: it is appended after the current last item, which keeps "write it down as it comes to mind" working.
+- On the plan's grocery page, each line of the **merged shopping list** has a grip handle. Dragging a line moves it, and because a merged line can cover the same ingredient from several meals, all of the items behind that line move with it.
+- Dragging works with mouse, touch, and pen (it is built on pointer events, so there is no separate mobile path), and the handle also responds to <kbd>↑</kbd>/<kbd>↓</kbd> when focused, so the list can be reordered from a keyboard. Holding a row against the top or bottom of the screen scrolls a list that is longer than the viewport.
+- The new order is saved with `PUT /api/plans/:planId/grocery-items/order` and broadcast as a `grocery_items_reordered` realtime event, so open shared shopper links re-sort immediately without a refresh.
+- Item ids left out of a reorder request keep their relative order and stay at the end of the list, so an item added by someone else mid-drag is never dropped.
 
 ## Password Reset Behavior Notes
 

@@ -1,4 +1,8 @@
-export type GroceryEventType = "grocery_item_created" | "grocery_item_updated" | "grocery_item_deleted";
+export type GroceryEventType =
+  | "grocery_item_created"
+  | "grocery_item_updated"
+  | "grocery_item_deleted"
+  | "grocery_items_reordered";
 
 export type GroceryEventPayload = {
   eventType: GroceryEventType;
@@ -15,6 +19,9 @@ export type GroceryEventPayload = {
     lunchDish: { id: number; name: string } | null;
   } | null;
   deletedItemId: number | null;
+  // Set on `grocery_items_reordered` events: the full plan-wide item order
+  // listeners should apply to the rows they already hold.
+  orderedItemIds: number[] | null;
 };
 
 export type RealtimeListener = (payload: GroceryEventPayload) => void;

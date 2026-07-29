@@ -1320,6 +1320,7 @@ export const GroceryItemScalarFieldEnum = {
   unit: 'unit',
   category: 'category',
   isChecked: 'isChecked',
+  sortOrder: 'sortOrder',
   planDayId: 'planDayId',
   dinnerDishId: 'dinnerDishId',
   breakfastDishId: 'breakfastDishId',

@@ -31,11 +31,28 @@ type UpdateGroceryItemResponse = {
 };
 
 type GroceryRealtimeEvent = {
-  eventType: "grocery_item_created" | "grocery_item_updated" | "grocery_item_deleted";
+  eventType:
+    | "grocery_item_created"
+    | "grocery_item_updated"
+    | "grocery_item_deleted"
+    | "grocery_items_reordered";
   planId: number;
   token: string | null;
   item: GroceryItem | null;
   deletedItemId: number | null;
+  orderedItemIds: number[] | null;
+};
+
+// Keeps the shopping list in the manual order the plan owner arranged, so the
+// list follows the route through the store.
+const sortItemsByIdOrder = (items: GroceryItem[], orderedItemIds: number[]) => {
+  const positionByItemId = new Map(orderedItemIds.map((itemId, position) => [itemId, position]));
+
+  return [...items].sort(
+    (firstItem, secondItem) =>
+      (positionByItemId.get(firstItem.id) ?? Number.MAX_SAFE_INTEGER) -
+      (positionByItemId.get(secondItem.id) ?? Number.MAX_SAFE_INTEGER)
+  );
 };
 
 export default function SharedGroceryPage() {
@@ -97,6 +114,10 @@ export default function SharedGroceryPage() {
       const payload = JSON.parse(event.data) as GroceryRealtimeEvent;
 
       setItems((currentItems) => {
+        if (payload.eventType === "grocery_items_reordered" && payload.orderedItemIds) {
+          return sortItemsByIdOrder(currentItems, payload.orderedItemIds);
+        }
+
         if (payload.eventType === "grocery_item_deleted" && payload.deletedItemId) {
           return currentItems.filter((item) => item.id !== payload.deletedItemId);
         }
@@ -107,8 +128,10 @@ export default function SharedGroceryPage() {
 
         const existingItemIndex = currentItems.findIndex((item) => item.id === payload.item?.id);
 
+        // New items are appended, matching the plan-wide manual order where the
+        // newest item sits last until someone drags it into place.
         if (existingItemIndex === -1) {
-          return [...currentItems, payload.item].sort((a, b) => a.name.localeCompare(b.name));
+          return [...currentItems, payload.item];
         }
 
         return currentItems.map((item) => (item.id === payload.item?.id ? payload.item : item));
@@ -118,6 +141,7 @@ export default function SharedGroceryPage() {
     eventSource.addEventListener("grocery_item_created", handleRealtimeEvent);
     eventSource.addEventListener("grocery_item_updated", handleRealtimeEvent);
     eventSource.addEventListener("grocery_item_deleted", handleRealtimeEvent);
+    eventSource.addEventListener("grocery_items_reordered", handleRealtimeEvent);
 
     eventSource.onerror = () => {
       if (!isMounted) {
