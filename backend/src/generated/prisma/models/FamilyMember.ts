@@ -192,7 +192,7 @@ export type FamilyMemberGroupByOutputType = {
   _max: FamilyMemberMaxAggregateOutputType | null
 }
 
-export type GetFamilyMemberGroupByPayload<T extends FamilyMemberGroupByArgs> = Prisma.PrismaPromise<
+type GetFamilyMemberGroupByPayload<T extends FamilyMemberGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<FamilyMemberGroupByOutputType, T['by']> &
       {
@@ -1223,11 +1223,6 @@ export type FamilyMemberFindManyArgs<ExtArgs extends runtime.Types.Extensions.In
    * Skip the first `n` FamilyMembers.
    */
   skip?: number
-  /**
-   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
-   * 
-   * Filter by unique combinations of FamilyMembers.
-   */
   distinct?: Prisma.FamilyMemberScalarFieldEnum | Prisma.FamilyMemberScalarFieldEnum[]
 }
 

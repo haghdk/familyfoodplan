@@ -196,7 +196,7 @@ export type GroceryShareTokenGroupByOutputType = {
   _max: GroceryShareTokenMaxAggregateOutputType | null
 }
 
-export type GetGroceryShareTokenGroupByPayload<T extends GroceryShareTokenGroupByArgs> = Prisma.PrismaPromise<
+type GetGroceryShareTokenGroupByPayload<T extends GroceryShareTokenGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<GroceryShareTokenGroupByOutputType, T['by']> &
       {
@@ -1117,11 +1117,6 @@ export type GroceryShareTokenFindManyArgs<ExtArgs extends runtime.Types.Extensio
    * Skip the first `n` GroceryShareTokens.
    */
   skip?: number
-  /**
-   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
-   * 
-   * Filter by unique combinations of GroceryShareTokens.
-   */
   distinct?: Prisma.GroceryShareTokenScalarFieldEnum | Prisma.GroceryShareTokenScalarFieldEnum[]
 }
 
