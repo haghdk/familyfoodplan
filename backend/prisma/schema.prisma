@@ -139,6 +139,9 @@ model GroceryItem {
   unit         String?
   category     GroceryCategory @default(GENERAL)
   isChecked    Boolean         @default(false)
+  /// Manual shopping order, maintained by drag-to-reorder on the grocery list.
+  /// Numbered across the whole plan so items from different days share one order.
+  sortOrder    Int             @default(0)
   planDayId    Int
   dinnerDishId Int?
   breakfastDishId Int?
@@ -151,6 +154,7 @@ model GroceryItem {
   updatedAt    DateTime        @updatedAt
 
   @@index([planDayId])
+  @@index([planDayId, sortOrder])
   @@index([dinnerDishId])
   @@index([breakfastDishId])
   @@index([lunchDishId])

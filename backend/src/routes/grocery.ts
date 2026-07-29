@@ -3,7 +3,12 @@ import crypto from "node:crypto";
 import { Router } from "express";
 import { prisma } from "../lib/prisma";
 import { requireAdminAuth } from "../middleware/auth";
-import { getMergedGroceryItemsByPlanDays } from "../services/grocery";
+import {
+  getMergedGroceryItemsByPlanDays,
+  getNextGrocerySortOrder,
+  groceryItemOrderBy,
+  reorderGroceryItems
+} from "../services/grocery";
 import { GroceryEventType, realtimeBus } from "../realtime/events";
 
 const groceryRouter = Router();
@@ -94,6 +99,7 @@ const emitGroceryEvent = async (
       lunchDish: { id: number; name: string } | null;
     } | null;
     deletedItemId: number | null;
+    orderedItemIds?: number[] | null;
   }
 ) => {
   const token = await getShareTokenByPlanId(planId);
@@ -108,7 +114,8 @@ const emitGroceryEvent = async (
           category: payload.item.category
         }
       : null,
-    deletedItemId: payload.deletedItemId
+    deletedItemId: payload.deletedItemId,
+    orderedItemIds: payload.orderedItemIds ?? null
   });
 };
 
@@ -146,7 +153,7 @@ groceryRouter.get("/api/plans/:planId/grocery-items", requireAdminAuth, async (r
       breakfastDish: { select: { id: true, name: true } },
       lunchDish: { select: { id: true, name: true } }
     },
-    orderBy: [{ category: "asc" }, { name: "asc" }, { createdAt: "asc" }]
+    orderBy: groceryItemOrderBy
   });
 
   const mergedItems = await getMergedGroceryItemsByPlanDays(planScope.planDayIds);
@@ -301,12 +308,15 @@ groceryRouter.post("/api/plans/:planId/grocery-items", requireAdminAuth, async (
     itemPlanDayId = lunchDish.planDayId;
   }
 
+  const nextSortOrder = await getNextGrocerySortOrder(planScope.planDayIds);
+
   const groceryItem = await prisma.groceryItem.create({
     data: {
       name: normalizedName,
       quantity: normalizeQuantity(quantity),
       unit: typeof unit === "string" ? unit.trim() || null : null,
       category: parseCategory(category),
+      sortOrder: nextSortOrder,
       planDayId: itemPlanDayId,
       dinnerDishId: typeof dinnerDishId === "number" ? dinnerDishId : null,
       breakfastDishId: typeof breakfastDishId === "number" ? breakfastDishId : null,
@@ -326,6 +336,54 @@ groceryRouter.post("/api/plans/:planId/grocery-items", requireAdminAuth, async (
 
   response.status(201).json({ groceryItem });
 });
+
+// Registered before the ":itemId" route so "order" is not parsed as an item id.
+groceryRouter.put(
+  "/api/plans/:planId/grocery-items/order",
+  requireAdminAuth,
+  async (request, response) => {
+    const planOrPlanDayId = parsePlanId(request.params.planId);
+
+    if (!planOrPlanDayId) {
+      response.status(400).json({ message: "Invalid plan id." });
+      return;
+    }
+
+    const { itemIds } = request.body as { itemIds?: unknown };
+
+    if (
+      !Array.isArray(itemIds) ||
+      itemIds.some((itemId) => typeof itemId !== "number" || !Number.isInteger(itemId))
+    ) {
+      response.status(400).json({ message: "itemIds must be an array of grocery item ids." });
+      return;
+    }
+
+    const planScope = await resolvePlanScope(planOrPlanDayId);
+
+    if (!planScope) {
+      response.status(404).json({ message: "Plan not found." });
+      return;
+    }
+
+    const reorderResult = await reorderGroceryItems(planScope.planDayIds, itemIds as number[]);
+
+    if (reorderResult.status === "unknown_items") {
+      response
+        .status(400)
+        .json({ message: "Some grocery items do not belong to this plan.", ...reorderResult });
+      return;
+    }
+
+    await emitGroceryEvent(planScope.defaultPlanDayId, "grocery_items_reordered", {
+      item: null,
+      deletedItemId: null,
+      orderedItemIds: reorderResult.orderedItemIds
+    });
+
+    response.status(200).json({ orderedItemIds: reorderResult.orderedItemIds });
+  }
+);
 
 groceryRouter.put("/api/plans/:planId/grocery-items/:itemId", requireAdminAuth, async (request, response) => {
   const planOrPlanDayId = parsePlanId(request.params.planId);
@@ -448,7 +506,7 @@ groceryRouter.get("/api/grocery/shared/:token", async (request, response) => {
               dinnerDish: { select: { id: true, name: true } },
               lunchDish: { select: { id: true, name: true } }
             },
-            orderBy: [{ category: "asc" }, { name: "asc" }, { createdAt: "asc" }]
+            orderBy: groceryItemOrderBy
           }
         }
       }

@@ -8,6 +8,7 @@ import {
   Carrot,
   Check,
   Copy,
+  GripVertical,
   Link2,
   ListChecks,
   Package,
@@ -26,6 +27,7 @@ import { SectionCard } from "../../../../components/ui/Card";
 import EmptyState from "../../../../components/ui/EmptyState";
 import { SelectField, TextField, controlClassName } from "../../../../components/ui/Field";
 import PageHeader from "../../../../components/ui/PageHeader";
+import SortableList from "../../../../components/ui/SortableList";
 
 type MealRef = {
   id: number;
@@ -81,15 +83,32 @@ type EditableRow = {
 };
 
 type GroceryRealtimeEvent = {
-  eventType: "grocery_item_created" | "grocery_item_updated" | "grocery_item_deleted";
+  eventType:
+    | "grocery_item_created"
+    | "grocery_item_updated"
+    | "grocery_item_deleted"
+    | "grocery_items_reordered";
   planId: number;
   token: string | null;
   item: GroceryItem | null;
   deletedItemId: number | null;
+  orderedItemIds: number[] | null;
 };
 
 const formatQuantity = (quantity: number, unit: string | null) =>
   `${quantity}${unit ? ` ${unit}` : ""}`;
+
+// Applies a plan-wide item order to the rows currently held in state, so the
+// detailed list follows the manual order set on the merged shopping list.
+const sortItemsByIdOrder = (items: GroceryItem[], orderedItemIds: number[]) => {
+  const positionByItemId = new Map(orderedItemIds.map((itemId, position) => [itemId, position]));
+
+  return [...items].sort(
+    (firstItem, secondItem) =>
+      (positionByItemId.get(firstItem.id) ?? Number.MAX_SAFE_INTEGER) -
+      (positionByItemId.get(secondItem.id) ?? Number.MAX_SAFE_INTEGER)
+  );
+};
 
 const describeItemSource = (item: GroceryItem) => {
   if (item.dinnerDish) {
@@ -133,29 +152,35 @@ export default function GroceryListPage() {
 
   const [editingRows, setEditingRows] = useState<Record<number, EditableRow>>({});
 
-  const loadItems = useCallback(async () => {
-    setIsLoading(true);
-    setErrorMessage("");
-
-    try {
-      const response = await fetch(`${backendApiUrl}/api/plans/${planId}/grocery-items`, {
-        credentials: "include"
-      });
-
-      if (!response.ok) {
-        throw new Error("Unable to load grocery list.");
+  const loadItems = useCallback(
+    async ({ showLoadingState = true }: { showLoadingState?: boolean } = {}) => {
+      if (showLoadingState) {
+        setIsLoading(true);
       }
 
-      const data = (await response.json()) as GroceryResponse;
-      setPlanDays(data.planDays);
-      setGroceryItems(data.groceryItems);
-      setMergedItems(data.mergedItems);
-    } catch (_error) {
-      setErrorMessage("Could not load grocery list for this plan.");
-    } finally {
-      setIsLoading(false);
-    }
-  }, [planId]);
+      setErrorMessage("");
+
+      try {
+        const response = await fetch(`${backendApiUrl}/api/plans/${planId}/grocery-items`, {
+          credentials: "include"
+        });
+
+        if (!response.ok) {
+          throw new Error("Unable to load grocery list.");
+        }
+
+        const data = (await response.json()) as GroceryResponse;
+        setPlanDays(data.planDays);
+        setGroceryItems(data.groceryItems);
+        setMergedItems(data.mergedItems);
+      } catch (_error) {
+        setErrorMessage("Could not load grocery list for this plan.");
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [planId]
+  );
 
   useEffect(() => {
     if (Number.isNaN(planId)) {
@@ -198,6 +223,10 @@ export default function GroceryListPage() {
       const payload = JSON.parse(event.data) as GroceryRealtimeEvent;
 
       setGroceryItems((currentItems) => {
+        if (payload.eventType === "grocery_items_reordered" && payload.orderedItemIds) {
+          return sortItemsByIdOrder(currentItems, payload.orderedItemIds);
+        }
+
         if (payload.eventType === "grocery_item_deleted" && payload.deletedItemId) {
           return currentItems.filter((item) => item.id !== payload.deletedItemId);
         }
@@ -215,12 +244,13 @@ export default function GroceryListPage() {
         return currentItems.map((item) => (item.id === payload.item?.id ? payload.item : item));
       });
 
-      void loadItems();
+      void loadItems({ showLoadingState: false });
     };
 
     eventSource.addEventListener("grocery_item_created", handleRealtimeEvent);
     eventSource.addEventListener("grocery_item_updated", handleRealtimeEvent);
     eventSource.addEventListener("grocery_item_deleted", handleRealtimeEvent);
+    eventSource.addEventListener("grocery_items_reordered", handleRealtimeEvent);
 
     eventSource.onerror = () => {
       if (!isMounted) {
@@ -470,6 +500,38 @@ export default function GroceryListPage() {
     setFeedback("Ingredient item added.");
     await loadItems();
   };
+
+  // Persists the manual shopping order after a drag. The merged lines are the
+  // unit the user drags, so every underlying item of a line moves with it.
+  const reorderMergedItems = useCallback(
+    async (reorderedItems: MergedGroceryItem[]) => {
+      const previousMergedItems = mergedItems;
+      const orderedItemIds = reorderedItems.flatMap((mergedItem) => mergedItem.itemIds);
+
+      setMergedItems(reorderedItems);
+      setGroceryItems((currentItems) => sortItemsByIdOrder(currentItems, orderedItemIds));
+      setFeedback("");
+
+      const response = await fetch(`${backendApiUrl}/api/plans/${planId}/grocery-items/order`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ itemIds: orderedItemIds })
+      });
+
+      if (!response.ok) {
+        setMergedItems(previousMergedItems);
+        setFeedback("");
+        setErrorMessage("Could not save the new shopping order.");
+        await loadItems({ showLoadingState: false });
+        return;
+      }
+
+      setErrorMessage("");
+      setFeedback("Shopping order saved.");
+    },
+    [loadItems, mergedItems, planId]
+  );
 
   const startEditing = (item: GroceryItem) => {
     setEditingRows((currentRows) => ({
@@ -724,7 +786,7 @@ export default function GroceryListPage() {
             <Badge tone="brand">{mergedItems.length} lines</Badge>
           ) : null
         }
-        description="Duplicate ingredients across meals are combined into a single shopping line."
+        description="Duplicate ingredients across meals are combined into a single shopping line. Drag a line by its handle to arrange the list in the order you walk the store."
         icon={<ListChecks className="h-4 w-4" />}
         title="Merged shopping list"
       >
@@ -735,29 +797,37 @@ export default function GroceryListPage() {
             title="No grocery items yet"
           />
         ) : (
-          <ul className="divide-y divide-border overflow-hidden rounded-2xl border border-border">
-            {mergedItems.map((item) => (
-              <li
-                className="flex flex-wrap items-center justify-between gap-3 bg-surface px-4 py-3"
-                key={item.key}
-              >
-                <div className="min-w-0">
-                  <p className="font-medium text-fg">{item.name}</p>
-                  <p className="mt-0.5 truncate text-xs text-fg-subtle">
-                    {item.sourceLabels.join(" · ")}
-                  </p>
+          <>
+            <p className="mb-3 flex items-start gap-1.5 text-xs text-fg-subtle">
+              <GripVertical className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+              Drag the handle to reorder, or focus it and use the arrow keys. The order is shared
+              with everyone using the link.
+            </p>
+            <SortableList
+              getItemKey={(item) => item.key}
+              getItemLabel={(item) => item.name}
+              items={mergedItems}
+              onReorder={reorderMergedItems}
+              renderItem={(item) => (
+                <div className="flex flex-wrap items-center justify-between gap-3 py-3 pr-4">
+                  <div className="min-w-0">
+                    <p className="font-medium text-fg">{item.name}</p>
+                    <p className="mt-0.5 truncate text-xs text-fg-subtle">
+                      {item.sourceLabels.join(" · ")}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge tone={item.category === "GENERAL" ? "neutral" : "accent"}>
+                      {item.category === "GENERAL" ? "General" : "Ingredient"}
+                    </Badge>
+                    <span className="rounded-full bg-surface-muted px-3 py-1 text-sm font-semibold text-fg">
+                      {formatQuantity(item.quantity, item.unit)}
+                    </span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Badge tone={item.category === "GENERAL" ? "neutral" : "accent"}>
-                    {item.category === "GENERAL" ? "General" : "Ingredient"}
-                  </Badge>
-                  <span className="rounded-full bg-surface-muted px-3 py-1 text-sm font-semibold text-fg">
-                    {formatQuantity(item.quantity, item.unit)}
-                  </span>
-                </div>
-              </li>
-            ))}
-          </ul>
+              )}
+            />
+          </>
         )}
       </SectionCard>
 
@@ -769,7 +839,7 @@ export default function GroceryListPage() {
             </Badge>
           ) : null
         }
-        description="Every individual entry, including the meal it came from."
+        description="Every individual entry, including the meal it came from, listed in the shopping order set above."
         icon={<Pencil className="h-4 w-4" />}
         title="Edit or remove items"
       >
