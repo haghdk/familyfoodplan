@@ -201,6 +201,7 @@ When `SMTP_HOST` is empty — the default for local development — no mail is s
 - The token is stored on the plan's first day, but the shared list is **plan-wide**: it returns every grocery item belonging to the plan, on any day. Ingredients are stored on the day of the meal they were added for, so scoping the shared list to the token's own day used to hide every ingredient attached to a breakfast, lunch, or dinner that was not on the plan's first day, leaving only the general items visible.
 - `POST /api/plans/:id/share-link` now returns the existing token when one already exists, or creates one only if missing.
 - The public URL pattern is `/grocery/[token]` in the frontend.
+- The plan's grocery page has an **Open** button beside **Copy** that opens the shared list in a new tab, so an admin can check what the shoppers see without leaving the page they are editing. It is disabled until a share link exists.
 - Anyone with the token link can open that list and toggle checkboxes, including ingredients from any day of the plan. Each row shows the meal it came from (`Dinner · Lasagne`) or `General`, and the header shows the plan's date range.
 - Checkoff actions are applied server-side and broadcast in realtime so all open sessions (admin + shared shoppers) stay in sync.
 - Token rotation is an explicit action via `POST /api/plans/:id/share-link/rotate`; rotating invalidates old links and limits continued access.
