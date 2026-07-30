@@ -16,6 +16,7 @@ export type GroceryEventPayload = {
     category: "GENERAL" | "INGREDIENT";
     isChecked: boolean;
     dinnerDish: { id: number; name: string } | null;
+    breakfastDish: { id: number; name: string } | null;
     lunchDish: { id: number; name: string } | null;
   } | null;
   deletedItemId: number | null;
