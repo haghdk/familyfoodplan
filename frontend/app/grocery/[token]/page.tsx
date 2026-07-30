@@ -99,30 +99,42 @@ export default function SharedGroceryPage() {
   const [planPeriod, setPlanPeriod] = useState("");
   const [items, setItems] = useState<GroceryItem[]>([]);
 
-  const loadSharedList = useCallback(async () => {
-    setIsLoading(true);
-    setErrorMessage("");
+  const loadSharedList = useCallback(
+    async ({ showLoadingState = true }: { showLoadingState?: boolean } = {}) => {
+      if (showLoadingState) {
+        setIsLoading(true);
+      }
 
-    const response = await fetch(`${backendApiUrl}/api/grocery/shared/${token}`, {
-      credentials: "include"
-    });
+      setErrorMessage("");
 
-    if (!response.ok) {
-      setErrorMessage("Shared list not found or no longer available.");
-      setIsLoading(false);
-      return;
-    }
+      // Shopping happens on a phone, in a shop, on a connection that comes and
+      // goes, so a failed load has to leave a page that can recover instead of
+      // an endless skeleton: the poll below retries until the list arrives.
+      try {
+        const response = await fetch(`${backendApiUrl}/api/grocery/shared/${token}`);
 
-    const data = (await response.json()) as SharedResponse;
-    const startLabel = formatDate(data.plan.startDate ?? data.plan.date);
-    const endLabel = data.plan.endDate ? formatDate(data.plan.endDate) : "";
+        if (!response.ok) {
+          setErrorMessage("Shared list not found or no longer available.");
+          setIsLoading(false);
+          return;
+        }
 
-    setPlanPeriod(
-      endLabel && endLabel !== startLabel ? `${startLabel} – ${endLabel}` : startLabel
-    );
-    setItems(data.groceryItems);
-    setIsLoading(false);
-  }, [token]);
+        const data = (await response.json()) as SharedResponse;
+        const startLabel = formatDate(data.plan.startDate ?? data.plan.date);
+        const endLabel = data.plan.endDate ? formatDate(data.plan.endDate) : "";
+
+        setPlanPeriod(
+          endLabel && endLabel !== startLabel ? `${startLabel} – ${endLabel}` : startLabel
+        );
+        setItems(data.groceryItems);
+      } catch (_error) {
+        setErrorMessage("Could not reach the grocery list. Retrying...");
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [token]
+  );
 
   useEffect(() => {
     void loadSharedList();
@@ -130,25 +142,10 @@ export default function SharedGroceryPage() {
 
   useEffect(() => {
     let isMounted = true;
+    let eventSource: EventSource | null = null;
+    let reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
     let reconnectAttempts = 0;
-
-    const eventSource = new EventSource(`${backendApiUrl}/api/realtime/grocery/shared/${token}`, {
-      withCredentials: true
-    });
-
-    eventSource.onopen = () => {
-      if (!isMounted) {
-        return;
-      }
-
-      setIsRealtimeConnected(true);
-
-      if (reconnectAttempts > 0) {
-        void loadSharedList();
-      }
-
-      reconnectAttempts += 1;
-    };
+    let hasConnectedBefore = false;
 
     const handleRealtimeEvent = (event: MessageEvent<string>) => {
       const payload = JSON.parse(event.data) as GroceryRealtimeEvent;
@@ -178,37 +175,101 @@ export default function SharedGroceryPage() {
       });
     };
 
-    eventSource.addEventListener("grocery_item_created", handleRealtimeEvent);
-    eventSource.addEventListener("grocery_item_updated", handleRealtimeEvent);
-    eventSource.addEventListener("grocery_item_deleted", handleRealtimeEvent);
-    eventSource.addEventListener("grocery_items_reordered", handleRealtimeEvent);
+    const connect = () => {
+      // The share token is the only credential this page has, so the stream is
+      // opened without cookies: it keeps the request a plain cross-origin GET.
+      eventSource = new EventSource(`${backendApiUrl}/api/realtime/grocery/shared/${token}`);
 
-    eventSource.onerror = () => {
-      if (!isMounted) {
-        return;
-      }
+      eventSource.onopen = () => {
+        if (!isMounted) {
+          return;
+        }
 
-      setIsRealtimeConnected(false);
+        setIsRealtimeConnected(true);
+        reconnectAttempts = 0;
+
+        // Anything that changed while the stream was down is only visible after
+        // a refetch, so reconnecting always resyncs the whole list.
+        if (hasConnectedBefore) {
+          void loadSharedList({ showLoadingState: false });
+        }
+
+        hasConnectedBefore = true;
+      };
+
+      eventSource.addEventListener("grocery_item_created", handleRealtimeEvent);
+      eventSource.addEventListener("grocery_item_updated", handleRealtimeEvent);
+      eventSource.addEventListener("grocery_item_deleted", handleRealtimeEvent);
+      eventSource.addEventListener("grocery_items_reordered", handleRealtimeEvent);
+
+      eventSource.onerror = () => {
+        if (!isMounted) {
+          return;
+        }
+
+        setIsRealtimeConnected(false);
+
+        // A stream that merely dropped is retried by the browser itself. One
+        // that was closed — refused by a proxy, or answered with an error
+        // status — stays closed forever unless we open a new one.
+        if (eventSource?.readyState !== EventSource.CLOSED) {
+          return;
+        }
+
+        eventSource.close();
+        reconnectTimeout = setTimeout(connect, Math.min(30000, 2 ** reconnectAttempts * 1000));
+        reconnectAttempts += 1;
+      };
     };
+
+    connect();
 
     return () => {
       isMounted = false;
-      eventSource.close();
+
+      if (reconnectTimeout) {
+        clearTimeout(reconnectTimeout);
+      }
+
+      eventSource?.close();
     };
   }, [loadSharedList, token]);
 
+  // Live updates are the fast path, not the only path: a proxy that blocks
+  // server-sent events, or a phone that lost the stream mid-shop, would
+  // otherwise leave two people in the same store looking at different lists.
+  useEffect(() => {
+    if (isRealtimeConnected) {
+      return;
+    }
+
+    const pollInterval = setInterval(() => {
+      void loadSharedList({ showLoadingState: false });
+    }, 15000);
+
+    return () => clearInterval(pollInterval);
+  }, [isRealtimeConnected, loadSharedList]);
+
   const toggleItem = async (item: GroceryItem) => {
-    const response = await fetch(`${backendApiUrl}/api/grocery/shared/${token}/items/${item.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ isChecked: !item.isChecked })
-    });
+    let response: Response;
+
+    try {
+      response = await fetch(`${backendApiUrl}/api/grocery/shared/${token}/items/${item.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isChecked: !item.isChecked })
+      });
+    } catch (_error) {
+      setErrorMessage("Could not reach the grocery list. That tick was not saved.");
+      return;
+    }
 
     if (!response.ok) {
       setErrorMessage("Could not update item state.");
       return;
     }
+
+    setErrorMessage("");
 
     const data = (await response.json()) as UpdateGroceryItemResponse;
 
