@@ -198,26 +198,10 @@ export default function GroceryListPage() {
     }
 
     let isMounted = true;
+    let eventSource: EventSource | null = null;
+    let reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
     let reconnectAttempts = 0;
-
-    const eventSource = new EventSource(
-      `${backendApiUrl}/api/realtime/grocery/admin?planId=${planId}`,
-      { withCredentials: true }
-    );
-
-    eventSource.onopen = () => {
-      if (!isMounted) {
-        return;
-      }
-
-      setIsRealtimeConnected(true);
-
-      if (reconnectAttempts > 0) {
-        void loadItems();
-      }
-
-      reconnectAttempts += 1;
-    };
+    let hasConnectedBefore = false;
 
     const handleRealtimeEvent = (event: MessageEvent<string>) => {
       const payload = JSON.parse(event.data) as GroceryRealtimeEvent;
@@ -247,24 +231,78 @@ export default function GroceryListPage() {
       void loadItems({ showLoadingState: false });
     };
 
-    eventSource.addEventListener("grocery_item_created", handleRealtimeEvent);
-    eventSource.addEventListener("grocery_item_updated", handleRealtimeEvent);
-    eventSource.addEventListener("grocery_item_deleted", handleRealtimeEvent);
-    eventSource.addEventListener("grocery_items_reordered", handleRealtimeEvent);
+    const connect = () => {
+      eventSource = new EventSource(
+        `${backendApiUrl}/api/realtime/grocery/admin?planId=${planId}`,
+        { withCredentials: true }
+      );
 
-    eventSource.onerror = () => {
-      if (!isMounted) {
-        return;
-      }
+      eventSource.onopen = () => {
+        if (!isMounted) {
+          return;
+        }
 
-      setIsRealtimeConnected(false);
+        setIsRealtimeConnected(true);
+        reconnectAttempts = 0;
+
+        if (hasConnectedBefore) {
+          void loadItems({ showLoadingState: false });
+        }
+
+        hasConnectedBefore = true;
+      };
+
+      eventSource.addEventListener("grocery_item_created", handleRealtimeEvent);
+      eventSource.addEventListener("grocery_item_updated", handleRealtimeEvent);
+      eventSource.addEventListener("grocery_item_deleted", handleRealtimeEvent);
+      eventSource.addEventListener("grocery_items_reordered", handleRealtimeEvent);
+
+      eventSource.onerror = () => {
+        if (!isMounted) {
+          return;
+        }
+
+        setIsRealtimeConnected(false);
+
+        // The browser retries a dropped stream on its own, but a closed one —
+        // refused by a proxy, or answered with an error status — needs a new
+        // EventSource or the page silently stops receiving updates.
+        if (eventSource?.readyState !== EventSource.CLOSED) {
+          return;
+        }
+
+        eventSource.close();
+        reconnectTimeout = setTimeout(connect, Math.min(30000, 2 ** reconnectAttempts * 1000));
+        reconnectAttempts += 1;
+      };
     };
+
+    connect();
 
     return () => {
       isMounted = false;
-      eventSource.close();
+
+      if (reconnectTimeout) {
+        clearTimeout(reconnectTimeout);
+      }
+
+      eventSource?.close();
     };
   }, [loadItems, planId]);
+
+  // Keeps the list moving when the live stream cannot be established at all,
+  // so an admin editing the list still sees what the shoppers tick off.
+  useEffect(() => {
+    if (isRealtimeConnected || Number.isNaN(planId)) {
+      return;
+    }
+
+    const pollInterval = setInterval(() => {
+      void loadItems({ showLoadingState: false });
+    }, 15000);
+
+    return () => clearInterval(pollInterval);
+  }, [isRealtimeConnected, loadItems, planId]);
 
   const mealOptions = useMemo(() => {
     const formatDayLabel = (dateValue: string) => {

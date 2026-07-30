@@ -27,7 +27,7 @@ Family Food Planner is a weekly meal-planning app for families. Admins create pl
 - **Breakfast planning support**: each plan day now supports repeatable breakfast rows with optional member assignment, matching lunch behavior in APIs/UI and allowing breakfast-linked grocery ingredients.
 - **Grocery sharing**: generate tokenized public grocery links so non-admin shoppers can check off items.
 - **Drag-to-reorder grocery list**: items are still added as they come to mind (each new item lands at the bottom), and the merged shopping list can then be dragged into the order you walk the store — vegetables, bread, meat, cheeses, eggs, milk, hygiene. The manual order is stored per plan and used by the detailed item list and the shared shopper link as well. See [Grocery List Ordering](#grocery-list-ordering).
-- **Realtime grocery updates**: grocery item check/uncheck and edits are synchronized live across admin and shared views.
+- **Realtime grocery updates**: grocery item check/uncheck and edits are synchronized live across admin and shared views, with automatic stream reconnection and a polling fallback so the list still syncs where server-sent events cannot get through. See [Realtime Updates (SSE)](#realtime-updates-sse).
 - **Plan-wide shared grocery list**: the shared shopper link covers every day of the plan, so ingredients added for a specific breakfast, lunch, or dinner appear alongside the general items instead of only the items stored on the plan's first day. Each line also names the meal it was added for. See [Grocery Sharing Behavior Notes](#grocery-sharing-behavior-notes).
 - **UI redesign + design system**: the whole frontend was restyled around a warm, food-themed token set with automatic light/dark theming, a shared component library (`Button`, `Card`/`SectionCard`, `Field`, `Badge`, `Alert`, `EmptyState`, `PageHeader`, `ConfirmModal`), a sticky app header with active-route navigation, meal-coded colours (breakfast / lunch / dinner), "today" highlighting across plan views, and a redesigned shared shopping list with checkbox rows and a progress bar. See [Design System](#design-system) below.
 - **App icon + home screen install**: the app ships a branded cooking-pot icon (favicon, Apple touch icon, and Android/Chrome manifest icons) plus a web app manifest, so saving the site to a phone home screen shows the app icon and name instead of a generic screenshot, and launches it standalone without browser chrome. See [App icon and home screen install](#app-icon-and-home-screen-install).
@@ -204,6 +204,15 @@ When `SMTP_HOST` is empty — the default for local development — no mail is s
 - Anyone with the token link can open that list and toggle checkboxes, including ingredients from any day of the plan. Each row shows the meal it came from (`Dinner · Lasagne`) or `General`, and the header shows the plan's date range.
 - Checkoff actions are applied server-side and broadcast in realtime so all open sessions (admin + shared shoppers) stay in sync.
 - Token rotation is an explicit action via `POST /api/plans/:id/share-link/rotate`; rotating invalidates old links and limits continued access.
+
+## Realtime Updates (SSE)
+
+Both the admin grocery page and the shared shopper link stream changes over server-sent events (`/api/realtime/grocery/...`). The badge in the page header shows `Live` while the stream is connected and `Reconnecting` while it is not.
+
+- **The stream must not be buffered in transit.** Reverse proxies in the nginx family buffer proxied responses by default, which holds the stream back and leaves the page stuck on `Reconnecting` even though the backend is healthy and the list itself loads fine. The backend sends `X-Accel-Buffering: no` so nginx opts out; a proxy that ignores that header needs streaming enabled for the backend host (for nginx: `proxy_buffering off` and `proxy_read_timeout` comfortably above the 15 second keepalive).
+- **A keepalive comment is sent every 15 seconds**, so idle proxy timeouts (commonly 30-60 seconds) do not drop the stream.
+- **Reconnects are automatic.** A browser retries a stream that merely dropped, but not one that was closed by an error status or refused by a proxy, so the pages open a new stream themselves with exponential backoff (1s up to 30s). Every successful reconnect refetches the whole list, since anything that changed while the stream was down was never delivered.
+- **Live updates are the fast path, not the only path.** While a page has no stream it refetches every 15 seconds, so two people shopping from the same link still converge even where server-sent events cannot get through at all. Checkoffs are always written to the server, independent of the stream.
 
 ## Prisma Client generation
 

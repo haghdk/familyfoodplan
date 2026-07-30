@@ -49,6 +49,28 @@ const writeSseEvent = (response: Response, payload: GroceryEventPayload) => {
   response.write(`data: ${JSON.stringify(payload)}\n\n`);
 };
 
+// Server-sent events only work if nothing between here and the browser holds
+// the response back. Reverse proxies in the nginx family buffer proxied
+// responses by default, which stalls the stream until the buffer fills, so the
+// browser never sees an open connection; `X-Accel-Buffering: no` opts out.
+// Idle connections are the other way a proxy kills a stream, so the keepalive
+// comment is sent well inside the usual 30-60 second idle timeouts.
+const sseKeepAliveIntervalMs = 15000;
+
+const startSseStream = (response: Response) => {
+  response.setHeader("Content-Type", "text/event-stream");
+  response.setHeader("Cache-Control", "no-cache");
+  response.setHeader("Connection", "keep-alive");
+  response.setHeader("X-Accel-Buffering", "no");
+  response.flushHeaders();
+
+  response.write(": connected\n\n");
+
+  return setInterval(() => {
+    response.write(": ping\n\n");
+  }, sseKeepAliveIntervalMs);
+};
+
 realtimeRouter.get("/api/realtime/grocery/admin", requireAdminAuth, async (request, response) => {
   const planId = parsePlanId(request.query.planId as string | undefined);
 
@@ -64,12 +86,7 @@ realtimeRouter.get("/api/realtime/grocery/admin", requireAdminAuth, async (reque
     return;
   }
 
-  response.setHeader("Content-Type", "text/event-stream");
-  response.setHeader("Cache-Control", "no-cache");
-  response.setHeader("Connection", "keep-alive");
-  response.flushHeaders();
-
-  response.write(": connected\n\n");
+  const pingInterval = startSseStream(response);
 
   const unsubscribe = realtimeBus.subscribe((payload) => {
     if (!planDayIds.includes(payload.planId)) {
@@ -78,10 +95,6 @@ realtimeRouter.get("/api/realtime/grocery/admin", requireAdminAuth, async (reque
 
     writeSseEvent(response, payload);
   });
-
-  const pingInterval = setInterval(() => {
-    response.write(": ping\n\n");
-  }, 30000);
 
   request.on("close", () => {
     clearInterval(pingInterval);
@@ -108,12 +121,7 @@ realtimeRouter.get("/api/realtime/grocery/shared/:token", async (request, respon
     return;
   }
 
-  response.setHeader("Content-Type", "text/event-stream");
-  response.setHeader("Cache-Control", "no-cache");
-  response.setHeader("Connection", "keep-alive");
-  response.flushHeaders();
-
-  response.write(": connected\n\n");
+  const pingInterval = startSseStream(response);
 
   const unsubscribe = realtimeBus.subscribe((payload) => {
     if (payload.token !== token) {
@@ -122,10 +130,6 @@ realtimeRouter.get("/api/realtime/grocery/shared/:token", async (request, respon
 
     writeSseEvent(response, payload);
   });
-
-  const pingInterval = setInterval(() => {
-    response.write(": ping\n\n");
-  }, 30000);
 
   request.on("close", () => {
     clearInterval(pingInterval);
