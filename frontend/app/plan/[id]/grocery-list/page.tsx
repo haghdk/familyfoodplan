@@ -8,6 +8,7 @@ import {
   Carrot,
   Check,
   Copy,
+  ExternalLink,
   GripVertical,
   Link2,
   ListChecks,
@@ -22,7 +23,7 @@ import { backendApiUrl } from "../../../../lib/auth";
 import { cn } from "../../../../lib/cn";
 import Alert from "../../../../components/ui/Alert";
 import Badge from "../../../../components/ui/Badge";
-import Button from "../../../../components/ui/Button";
+import Button, { buttonClassName } from "../../../../components/ui/Button";
 import { SectionCard } from "../../../../components/ui/Card";
 import EmptyState from "../../../../components/ui/EmptyState";
 import { SelectField, TextField, controlClassName } from "../../../../components/ui/Field";
@@ -682,7 +683,7 @@ export default function GroceryListPage() {
       {feedback ? <Alert tone="success">{feedback}</Alert> : null}
 
       <SectionCard
-        description="Share this link so anyone can tick items off while shopping. Rotate it only when you need to invalidate old links."
+        description="Share this link so anyone can tick items off while shopping, or open it yourself in a new tab. Rotate it only when you need to invalidate old links."
         icon={<Link2 className="h-4 w-4" />}
         title="Share the list"
       >
@@ -699,6 +700,22 @@ export default function GroceryListPage() {
               <Copy className="h-4 w-4" />
               Copy
             </Button>
+            {shareLink ? (
+              <a
+                className={buttonClassName({ variant: "secondary" })}
+                href={shareLink}
+                rel="noopener noreferrer"
+                target="_blank"
+              >
+                <ExternalLink className="h-4 w-4" />
+                Open
+              </a>
+            ) : (
+              <Button disabled title="Create a share link first" variant="secondary">
+                <ExternalLink className="h-4 w-4" />
+                Open
+              </Button>
+            )}
             <Button onClick={createShareLink} variant="secondary">
               <Link2 className="h-4 w-4" />
               Load / create
