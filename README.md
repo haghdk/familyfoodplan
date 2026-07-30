@@ -205,6 +205,13 @@ When `SMTP_HOST` is empty — the default for local development — no mail is s
 - Checkoff actions are applied server-side and broadcast in realtime so all open sessions (admin + shared shoppers) stay in sync.
 - Token rotation is an explicit action via `POST /api/plans/:id/share-link/rotate`; rotating invalidates old links and limits continued access.
 
+## Prisma Client generation
+
+- The Prisma Client is generated into `backend/src/generated/prisma`. It is **generated output, not source**, and is gitignored.
+- `prisma generate` runs automatically from the backend's `postinstall` script, so every environment gets a client built for the Prisma version it actually installed — whether it installs with `pnpm` (as local development does) or with `npm` (as the Docker `backend` service does). A committed client cannot satisfy both, and the mismatch is not a type error but a hard crash on the first query (`TypeError: Cannot read properties of undefined (reading 'graph')`), because the generated code and the client runtime share an internal format that changes between versions.
+- `backend/prisma.config.ts` reads `DATABASE_URL` lazily so `postinstall` succeeds on a fresh checkout that has no `.env` yet. Commands that really need a database (`prisma migrate`, `prisma db seed`) still fail with a clear `Connection url is empty` error when it is unset.
+- After changing `backend/prisma/schema.prisma`, run `pnpm --dir backend prisma:generate` to refresh the client.
+
 ## Local Development
 
 ## Option A: Run locally with pnpm (without Docker)
@@ -214,6 +221,8 @@ When `SMTP_HOST` is empty — the default for local development — no mail is s
 ```bash
 pnpm install
 ```
+
+The backend's `postinstall` script runs `prisma generate`, so the Prisma Client in `backend/src/generated/prisma` is always built for the Prisma version that was just installed. That directory is generated output and is not committed — see [Prisma Client generation](#prisma-client-generation).
 
 ### 2) Configure environment files
 
