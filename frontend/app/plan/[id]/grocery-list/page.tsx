@@ -692,9 +692,9 @@ export default function GroceryListPage() {
             />
             <TextField
               label="Quantity"
-              min="0.1"
+              min="1"
               onChange={(event) => setGeneralQuantity(event.target.value)}
-              step="0.1"
+              step="1"
               type="number"
               value={generalQuantity}
             />
@@ -752,9 +752,9 @@ export default function GroceryListPage() {
             />
             <TextField
               label="Quantity"
-              min="0.1"
+              min="1"
               onChange={(event) => setIngredientQuantity(event.target.value)}
-              step="0.1"
+              step="1"
               type="number"
               value={ingredientQuantity}
             />
@@ -924,14 +924,14 @@ export default function GroceryListPage() {
                     />
                     <TextField
                       label="Quantity"
-                      min="0.1"
+                      min="1"
                       onChange={(event) =>
                         setEditingRows((currentRows) => ({
                           ...currentRows,
                           [item.id]: { ...editingRow, quantity: event.target.value }
                         }))
                       }
-                      step="0.1"
+                      step="1"
                       type="number"
                       value={editingRow.quantity}
                     />
