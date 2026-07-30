@@ -4,14 +4,14 @@
   "private": true,
   "type": "commonjs",
   "scripts": {
-    "postinstall": "prisma generate",
+    "postinstall": "node scripts/generate-prisma-client.mjs",
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
     "lint": "pnpm run typecheck",
     "test": "pnpm run typecheck",
     "prisma:migrate": "prisma migrate dev",
-    "prisma:generate": "prisma generate",
+    "prisma:generate": "node scripts/generate-prisma-client.mjs",
     "prisma:seed": "prisma db seed",
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.scripts.json"
   },

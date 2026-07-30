@@ -33,7 +33,7 @@ services:
       sh -c "
         apk add --no-cache openssl >/dev/null &&
         npm install &&
-        (npx prisma generate || (rm -rf src/generated/prisma && npx prisma generate)) &&
+        npm run prisma:generate &&
         npx prisma migrate deploy &&
         npx prisma db seed &&
         npm run dev
