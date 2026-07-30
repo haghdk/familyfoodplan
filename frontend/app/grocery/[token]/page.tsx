@@ -9,6 +9,11 @@ import Alert from "../../../components/ui/Alert";
 import Card from "../../../components/ui/Card";
 import EmptyState from "../../../components/ui/EmptyState";
 
+type MealRef = {
+  id: number;
+  name: string;
+};
+
 type GroceryItem = {
   id: number;
   name: string;
@@ -16,12 +21,18 @@ type GroceryItem = {
   unit: string | null;
   category: "GENERAL" | "INGREDIENT";
   isChecked: boolean;
+  dinnerDish: MealRef | null;
+  breakfastDish: MealRef | null;
+  lunchDish: MealRef | null;
 };
 
 type SharedResponse = {
   plan: {
     id: number;
     date: string;
+    name?: string;
+    startDate?: string | null;
+    endDate?: string | null;
   };
   groceryItems: GroceryItem[];
 };
@@ -55,13 +66,37 @@ const sortItemsByIdOrder = (items: GroceryItem[], orderedItemIds: number[]) => {
   );
 };
 
+// Tells the shopper what an ingredient is for, so a line they do not recognise
+// can still be traced back to the meal it was added for.
+const describeItemSource = (item: GroceryItem) => {
+  if (item.dinnerDish) {
+    return `Dinner · ${item.dinnerDish.name}`;
+  }
+
+  if (item.breakfastDish) {
+    return `Breakfast · ${item.breakfastDish.name}`;
+  }
+
+  if (item.lunchDish) {
+    return `Lunch · ${item.lunchDish.name}`;
+  }
+
+  return "General";
+};
+
+const formatDate = (dateValue: string) => {
+  const parsedDate = new Date(dateValue);
+
+  return Number.isNaN(parsedDate.valueOf()) ? "" : parsedDate.toLocaleDateString();
+};
+
 export default function SharedGroceryPage() {
   const params = useParams<{ token: string }>();
   const token = params.token;
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [isRealtimeConnected, setIsRealtimeConnected] = useState(false);
-  const [planDate, setPlanDate] = useState("");
+  const [planPeriod, setPlanPeriod] = useState("");
   const [items, setItems] = useState<GroceryItem[]>([]);
 
   const loadSharedList = useCallback(async () => {
@@ -79,7 +114,12 @@ export default function SharedGroceryPage() {
     }
 
     const data = (await response.json()) as SharedResponse;
-    setPlanDate(data.plan.date);
+    const startLabel = formatDate(data.plan.startDate ?? data.plan.date);
+    const endLabel = data.plan.endDate ? formatDate(data.plan.endDate) : "";
+
+    setPlanPeriod(
+      endLabel && endLabel !== startLabel ? `${startLabel} – ${endLabel}` : startLabel
+    );
     setItems(data.groceryItems);
     setIsLoading(false);
   }, [token]);
@@ -207,10 +247,8 @@ export default function SharedGroceryPage() {
             <h1 className="mt-2 text-2xl font-semibold tracking-tight text-fg">
               Grocery list
             </h1>
-            {planDate ? (
-              <p className="mt-1 text-sm text-fg-muted">
-                Plan date: {new Date(planDate).toLocaleDateString()}
-              </p>
+            {planPeriod ? (
+              <p className="mt-1 text-sm text-fg-muted">Plan period: {planPeriod}</p>
             ) : null}
           </div>
           <span className="inline-flex shrink-0 items-center gap-2 rounded-full border border-border px-3 py-1.5 text-xs font-medium text-fg-muted">
@@ -299,7 +337,7 @@ export default function SharedGroceryPage() {
                     {item.quantity}
                     {item.unit ? ` ${item.unit}` : ""}
                     <span className="mx-1.5">•</span>
-                    {item.category === "GENERAL" ? "General" : "Ingredient"}
+                    {describeItemSource(item)}
                   </span>
                 </span>
               </label>

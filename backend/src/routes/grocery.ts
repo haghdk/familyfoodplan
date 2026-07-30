@@ -75,17 +75,72 @@ const resolvePlanScope = async (planOrPlanDayId: number) => {
   return null;
 };
 
-const getShareTokenByPlanId = async (planId: number) => {
-  const shareToken = await prisma.groceryShareToken.findUnique({
-    where: { planDayId: planId },
+// A plan has a single share token, stored on its first day, while grocery items
+// live on the day of the meal they belong to. Resolving the token through the
+// plan means an item added on any day still reaches the shared list viewers.
+const getShareTokenByPlanDayId = async (planDayId: number) => {
+  const planDay = await prisma.planDay.findUnique({
+    where: { id: planDayId },
+    select: { planId: true }
+  });
+
+  if (!planDay) {
+    return null;
+  }
+
+  const shareToken = await prisma.groceryShareToken.findFirst({
+    where: { planDay: { planId: planDay.planId } },
+    // The share link endpoints always hand out the token on the plan's first
+    // day, so pick the same one when broadcasting.
+    orderBy: { planDay: { date: "asc" } },
     select: { token: true }
   });
 
   return shareToken?.token ?? null;
 };
 
+// Every grocery item that belongs to the same plan as this share token, no
+// matter which day of the plan its meal sits on.
+const resolveSharedPlanScope = async (token: string) => {
+  const shareToken = await prisma.groceryShareToken.findUnique({
+    where: { token },
+    select: {
+      planDay: {
+        select: {
+          id: true,
+          date: true,
+          plan: {
+            select: {
+              id: true,
+              name: true,
+              startDate: true,
+              endDate: true,
+              days: { select: { id: true, date: true }, orderBy: { date: "asc" } }
+            }
+          }
+        }
+      }
+    }
+  });
+
+  if (!shareToken) {
+    return null;
+  }
+
+  const { plan } = shareToken.planDay;
+  const planDays = plan.days;
+
+  return {
+    plan,
+    planDayIds: planDays.map((planDay) => planDay.id),
+    startDate: plan.startDate ?? planDays[0]?.date ?? shareToken.planDay.date,
+    endDate: plan.endDate ?? planDays[planDays.length - 1]?.date ?? shareToken.planDay.date,
+    tokenPlanDay: { id: shareToken.planDay.id, date: shareToken.planDay.date }
+  };
+};
+
 const emitGroceryEvent = async (
-  planId: number,
+  planDayId: number,
   eventType: GroceryEventType,
   payload: {
     item: {
@@ -96,17 +151,18 @@ const emitGroceryEvent = async (
       category: GroceryCategory;
       isChecked: boolean;
       dinnerDish: { id: number; name: string } | null;
+      breakfastDish: { id: number; name: string } | null;
       lunchDish: { id: number; name: string } | null;
     } | null;
     deletedItemId: number | null;
     orderedItemIds?: number[] | null;
   }
 ) => {
-  const token = await getShareTokenByPlanId(planId);
+  const token = await getShareTokenByPlanDayId(planDayId);
 
   realtimeBus.emit({
     eventType,
-    planId,
+    planId: planDayId,
     token,
     item: payload.item
       ? {
@@ -494,38 +550,34 @@ groceryRouter.get("/api/grocery/shared/:token", async (request, response) => {
     return;
   }
 
-  const sharedPlan = await prisma.groceryShareToken.findUnique({
-    where: { token: shareToken },
-    include: {
-      planDay: {
-        select: {
-          id: true,
-          date: true,
-          groceryItems: {
-            include: {
-              dinnerDish: { select: { id: true, name: true } },
-              lunchDish: { select: { id: true, name: true } }
-            },
-            orderBy: groceryItemOrderBy
-          }
-        }
-      }
-    }
-  });
+  const sharedScope = await resolveSharedPlanScope(shareToken);
 
-  if (!sharedPlan) {
+  if (!sharedScope) {
     response.status(404).json({ message: "Shared grocery list not found." });
     return;
   }
 
-  const mergedItems = await getMergedGroceryItemsByPlanDays([sharedPlan.planDay.id]);
+  const groceryItems = await prisma.groceryItem.findMany({
+    where: { planDayId: { in: sharedScope.planDayIds } },
+    include: {
+      dinnerDish: { select: { id: true, name: true } },
+      breakfastDish: { select: { id: true, name: true } },
+      lunchDish: { select: { id: true, name: true } }
+    },
+    orderBy: groceryItemOrderBy
+  });
+
+  const mergedItems = await getMergedGroceryItemsByPlanDays(sharedScope.planDayIds);
 
   response.status(200).json({
     plan: {
-      id: sharedPlan.planDay.id,
-      date: sharedPlan.planDay.date
+      id: sharedScope.tokenPlanDay.id,
+      date: sharedScope.tokenPlanDay.date,
+      name: sharedScope.plan.name,
+      startDate: sharedScope.startDate,
+      endDate: sharedScope.endDate
     },
-    groceryItems: sharedPlan.planDay.groceryItems,
+    groceryItems,
     mergedItems
   });
 });
@@ -546,19 +598,16 @@ groceryRouter.patch("/api/grocery/shared/:token/items/:itemId", async (request, 
     return;
   }
 
-  const sharedPlan = await prisma.groceryShareToken.findUnique({
-    where: { token: shareToken },
-    select: { planDayId: true }
-  });
+  const sharedScope = await resolveSharedPlanScope(shareToken);
 
-  if (!sharedPlan) {
+  if (!sharedScope) {
     response.status(404).json({ message: "Shared grocery list not found." });
     return;
   }
 
   const existingItem = await prisma.groceryItem.findFirst({
-    where: { id: itemId, planDayId: sharedPlan.planDayId },
-    select: { id: true }
+    where: { id: itemId, planDayId: { in: sharedScope.planDayIds } },
+    select: { id: true, planDayId: true }
   });
 
   if (!existingItem) {
@@ -576,7 +625,7 @@ groceryRouter.patch("/api/grocery/shared/:token/items/:itemId", async (request, 
     }
   });
 
-  await emitGroceryEvent(sharedPlan.planDayId, "grocery_item_updated", {
+  await emitGroceryEvent(existingItem.planDayId, "grocery_item_updated", {
     item: groceryItem,
     deletedItemId: null
   });
