@@ -29,7 +29,9 @@ export function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     // Icons and the web app manifest must stay reachable without a session so
-    // phones can fetch them when the app is saved to the home screen.
-    "/((?!api|_next/static|_next/image|favicon.ico|icon.svg|apple-icon.png|icons/|manifest.webmanifest).*)"
+    // phones can fetch them when the app is saved to the home screen. The push
+    // service worker must never be redirected either: the browser refuses to
+    // register a worker that answers with anything but the script itself.
+    "/((?!api|_next/static|_next/image|favicon.ico|icon.svg|apple-icon.png|icons/|manifest.webmanifest|sw.js).*)"
   ]
 };
