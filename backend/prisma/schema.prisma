@@ -13,8 +13,48 @@ model AdminUser {
   passwordHash        String
   role                UserRole             @default(ADMIN)
   passwordResetTokens PasswordResetToken[]
+  pushSubscriptions   PushSubscription[]
+  settings            UserSettings?
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
+}
+
+/// Per-user preferences shown on the settings screen. Kept in its own table so
+/// future settings can be added without widening the user row.
+model UserSettings {
+  id                    Int       @id @default(autoincrement())
+  userId                Int       @unique
+  user                  AdminUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Whether this user wants the daily "today's dinner" push notification.
+  /// Off until the user turns it on, since it needs browser permission anyway.
+  dinnerReminderEnabled Boolean   @default(false)
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+}
+
+/// One row per browser/device that has granted push permission. The endpoint and
+/// keys come straight from the browser's PushSubscription.
+model PushSubscription {
+  id        Int       @id @default(autoincrement())
+  endpoint  String    @unique
+  p256dhKey String
+  authKey   String
+  userAgent String?
+  userId    Int
+  user      AdminUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([userId])
+}
+
+/// Claim marker for the daily dinner reminder. The unique `dayKey` is what stops
+/// a restart — or a second backend instance — from sending the same day twice.
+model DinnerReminderLog {
+  id             Int      @id @default(autoincrement())
+  dayKey         String   @unique
+  recipientCount Int      @default(0)
+  sentAt         DateTime @default(now())
 }
 
 /// Password reset links. Only the SHA-256 hash of the token is stored, so a

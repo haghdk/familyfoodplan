@@ -6,6 +6,7 @@ import {
   CalendarDays,
   LogIn,
   LogOut,
+  Settings,
   ShieldUser,
   Users,
   type LucideIcon,
@@ -75,6 +76,7 @@ export default function AuthNav({ isAuthenticated, isAdmin }: AuthNavProps) {
           { href: "/users", label: "Users", icon: ShieldUser },
         ]
       : []),
+    { href: "/settings", label: "Settings", icon: Settings },
   ];
 
   return (

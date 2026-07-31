@@ -7,7 +7,9 @@ import plansRouter from "./routes/plans";
 import planDaysRouter from "./routes/planDays";
 import usersRouter from "./routes/users";
 import groceryRouter from "./routes/grocery";
+import settingsRouter from "./routes/settings";
 import realtimeRouter from "./realtime/router";
+import { startDinnerReminderScheduler } from "./scheduler/dinnerReminderScheduler";
 
 const app = express();
 const port = Number(process.env.PORT) || 3001;
@@ -34,6 +36,7 @@ app.use(groceryRouter);
 app.use(realtimeRouter);
 app.use(membersRouter);
 app.use(usersRouter);
+app.use(settingsRouter);
 app.use(plansRouter);
 app.use(planDaysRouter);
 
@@ -43,4 +46,6 @@ const buildTime = process.env.BUILD_TIME || new Date().toISOString();
 app.listen(port, () => {
   console.log(`Backend server listening on port ${port}`);
   console.log(`Build metadata: commit=${commitSha} buildTime=${buildTime}`);
+
+  startDinnerReminderScheduler();
 });

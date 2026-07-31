@@ -30,6 +30,8 @@ Family Food Planner is a weekly meal-planning app for families. Admins create pl
 - **Realtime grocery updates**: grocery item check/uncheck and edits are synchronized live across admin and shared views, with automatic stream reconnection and a polling fallback so the list still syncs where server-sent events cannot get through. See [Realtime Updates (SSE)](#realtime-updates-sse).
 - **Plan-wide shared grocery list**: the shared shopper link covers every day of the plan, so ingredients added for a specific breakfast, lunch, or dinner appear alongside the general items instead of only the items stored on the plan's first day. Each line also names the meal it was added for. See [Grocery Sharing Behavior Notes](#grocery-sharing-behavior-notes).
 - **UI redesign + design system**: the whole frontend was restyled around a warm, food-themed token set with automatic light/dark theming, a shared component library (`Button`, `Card`/`SectionCard`, `Field`, `Badge`, `Alert`, `EmptyState`, `PageHeader`, `ConfirmModal`), a sticky app header with active-route navigation, meal-coded colours (breakfast / lunch / dinner), "today" highlighting across plan views, and a redesigned shared shopping list with checkbox rows and a progress bar. See [Design System](#design-system) below.
+- **Daily dinner push notification**: every day at 10:00 the backend sends a push notification telling everyone what is planned for dinner that day, or that no dinner has been set yet. See [Daily Dinner Reminder](#daily-dinner-reminder).
+- **Settings section**: a per-account `/settings` screen where a signed-in user turns the daily dinner reminder on or off, sees how many of their devices are registered, and can fire a test notification. The screen is built to hold future preferences alongside notifications. See [Settings](#settings).
 - **App icon + home screen install**: the app ships a branded cooking-pot icon (favicon, Apple touch icon, and Android/Chrome manifest icons) plus a web app manifest, so saving the site to a phone home screen shows the app icon and name instead of a generic screenshot, and launches it standalone without browser chrome. See [App icon and home screen install](#app-icon-and-home-screen-install).
 
 ## Architecture Summary
@@ -54,6 +56,8 @@ Family Food Planner is a weekly meal-planning app for families. Admins create pl
   - Weekly plan and meal management
   - Grocery list APIs (admin + shared token access)
   - Realtime grocery streaming (SSE)
+  - Per-user settings and Web Push device registrations
+  - The daily dinner reminder scheduler
 
 ### `frontend/`
 
@@ -67,6 +71,7 @@ Family Food Planner is a weekly meal-planning app for families. Admins create pl
   - Grocery list management UI
   - Shared grocery page for tokenized links
   - Realtime checkoff UX updates
+  - Settings screen and the push notification service worker
 
 ## Design System
 
@@ -97,6 +102,7 @@ Use them through normal Tailwind utilities — `bg-surface`, `text-fg-muted`, `b
 | `EmptyState` | Consistent empty/zero-data presentation. |
 | `PageHeader` | Page title with optional eyebrow, description and action slot. |
 | `ConfirmModal` | Accessible confirmation dialog (Escape to close, initial focus, danger variant). |
+| `ToggleSetting` | Labelled on/off row for the settings screen, built on a real checkbox with `role="switch"` so keyboard and screen reader behaviour come for free. |
 
 ### Shared helpers (`frontend/lib/`)
 
@@ -153,6 +159,13 @@ python3 frontend/scripts/generate-icons.py
 - `PUT /api/users/:id` — update email, password, and/or role (admin only).
 - `DELETE /api/users/:id` — delete user, with safeguards to keep at least one admin (admin only).
 
+### Settings / Push Notifications
+- `GET /api/settings` — the signed-in user's settings, plus push metadata: whether the server has VAPID keys, the VAPID public key the browser needs to subscribe, how many devices the account has registered, and the reminder time zone (authenticated users).
+- `PUT /api/settings` — update the caller's settings. Body: `{ "dinnerReminderEnabled": boolean }` (authenticated users).
+- `POST /api/push/subscriptions` — register the calling browser for push. Body is the browser's `PushSubscription` JSON (`{ endpoint, keys: { p256dh, auth } }`). Keyed on the endpoint, so re-posting the same subscription updates it instead of duplicating (authenticated users).
+- `DELETE /api/push/subscriptions` — unregister one device. Body: `{ "endpoint": "…" }`. Only deletes endpoints belonging to the caller (authenticated users).
+- `POST /api/push/test` — send today's real reminder to the caller's own devices, ignoring their on/off setting, so push can be verified end to end. Returns `503` when the server has no VAPID keys (authenticated users).
+
 ### Weekly Plans / Meals
 - Plan and meal endpoints under `/api/plans/...` handle week creation, day meal entries, breakfast/lunch rows, and dinner updates.
 - `POST /api/plans` — create a plan and all plan-day rows for a validated date range (admin only).
@@ -166,6 +179,66 @@ python3 frontend/scripts/generate-icons.py
 - `PUT /api/plans/:planId/grocery-items/order` — store the manual shopping order for a plan; the body is `{ "itemIds": [12, 7, 3, …] }`, listing the item ids in the order they should appear (admin only).
 - Shared shopper routes under `/api/grocery/:token...` allow token-scoped reads and checkoff updates without admin login.
 - SSE stream endpoint(s) provide realtime grocery state synchronization for both admin and shared-token clients.
+
+## Settings
+
+`/settings` is the per-account preferences screen, reachable from the header for every signed-in user (viewers included, since it only ever changes the caller's own account). It exists as a general home for preferences — notifications are simply the first thing living there.
+
+Today it holds one control, **Daily dinner reminder**, plus a **Send a test notification** button that delivers today's actual reminder to your own devices so you can see what the 10:00 message will look like.
+
+The toggle does two things at once, because both are needed before a notification can arrive:
+
+1. **This browser** is subscribed to push (permission prompt → service worker → `PushSubscription` sent to the backend).
+2. **Your account** is marked as wanting the reminder (`UserSettings.dinnerReminderEnabled`).
+
+Turning it off reverses both: the device is unregistered and the account-level flag goes to `false`, which silences every other device on the account too. The row underneath the toggle shows whether *this* device is registered and how many devices the account has in total, so a phone and a laptop are easy to tell apart.
+
+## Daily Dinner Reminder
+
+Every day at 10:00 the backend sends one push notification to every registered device whose owner has the reminder switched on.
+
+- **With a dinner planned** the notification reads *"Today's dinner"* / the dish name, with the dinner's notes on a second line when there are any.
+- **With nothing planned** it reads *"No dinner planned for today"* / *"Nothing is set for dinner this Friday. Tap to plan something."*
+- Tapping the notification opens the plan the day belongs to (`/plan/:id`), or the homepage when no plan covers today.
+
+### Which dinner it picks
+
+Plans are allowed to overlap, so the day is resolved in this order: the plan an admin marked as **current** wins first (the same plan the homepage shows), then a day that actually has a dinner beats an empty one, and the newest plan breaks any remaining tie.
+
+### Scheduling behaviour
+
+- The scheduler ticks once a minute rather than sleeping until the next 10:00, so clock changes, daylight saving transitions, and long process suspensions cannot make it drift or oversleep.
+- "Today" and "10:00" are measured in `DINNER_REMINDER_TIMEZONE`, not the container clock, which in Docker is normally UTC. An unknown zone falls back to UTC with a warning.
+- Each day is **claimed** in the `DinnerReminderLog` table before anything is sent. The unique `dayKey` is what makes the claim atomic, so a restart mid-send — or a second backend instance sharing the database — cannot notify the family twice.
+- A backend that was down at 10:00 still sends when it comes back, but only within a **two hour catch-up window**. Later than that the day is skipped rather than buzzing phones at bedtime.
+- Endpoints the push service rejects as gone (HTTP `404`/`410` — browser uninstalled, subscription revoked) are deleted automatically, so the device list does not silently rot.
+
+### Configuration
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `VAPID_PUBLIC_KEY` | *(empty)* | Public half of the VAPID key pair. Also served to the browser so it can subscribe. |
+| `VAPID_PRIVATE_KEY` | *(empty)* | Private half. Signs outgoing push messages. |
+| `VAPID_SUBJECT` | `mailto:no-reply@familyfoodplan.local` | Contact address push services can use to reach the operator. |
+| `DINNER_REMINDER_ENABLED` | `true` | Set to `false` to stop the scheduler entirely. |
+| `DINNER_REMINDER_HOUR` | `10` | Hour of day (0–23) to send at. |
+| `DINNER_REMINDER_MINUTE` | `0` | Minute of the hour to send at. |
+| `DINNER_REMINDER_TIMEZONE` | `Europe/Copenhagen` | Zone that "today" and the send time are measured in. |
+
+Generate the key pair once and keep it stable — regenerating it invalidates every existing subscription, and each browser has to be toggled off and on again:
+
+```bash
+pnpm --dir backend push:vapid-keys
+```
+
+When the keys are missing — the default for local development — nothing is sent and the notification is logged to the backend console instead, mirroring how the mailer behaves without SMTP credentials. The settings screen says so plainly rather than offering a toggle that could not work.
+
+### Browser requirements
+
+- Push needs a **secure context**, so it works on `https://` and on `http://localhost`, but not over plain HTTP on a LAN address.
+- The service worker is `frontend/public/sw.js`, served at `/sw.js`. It handles the `push` and `notificationclick` events only — it deliberately does not cache or intercept requests. `frontend/middleware.ts` excludes `/sw.js` from the auth redirect, because a browser refuses to register a worker whose URL answers with anything but the script itself.
+- **On iPhone and iPad, notifications only work once the app has been added to the home screen** and opened from there. The settings screen detects this case and says so instead of failing at the permission prompt.
+- A subscription lives in the browser, so it can outlive the server-side record (a database reset, or the browser being handed to another account). The settings screen re-registers any existing subscription on load, so a toggle that reads "on" is never quietly dead.
 
 ## Grocery List Ordering
 
@@ -253,6 +326,9 @@ cp backend/.env.example backend/.env
 - Optional password reset values in `backend/.env` (see [Email configuration](#email-configuration)):
   - `APP_PUBLIC_URL`, `PASSWORD_RESET_TOKEN_TTL_MINUTES`
   - `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASSWORD`, `MAIL_FROM`
+- Optional push notification values in `backend/.env` (see [Daily Dinner Reminder](#daily-dinner-reminder)):
+  - `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`
+  - `DINNER_REMINDER_ENABLED`, `DINNER_REMINDER_HOUR`, `DINNER_REMINDER_MINUTE`, `DINNER_REMINDER_TIMEZONE`
 
 > Ensure Postgres is running and reachable by `DATABASE_URL`.
 
@@ -313,6 +389,7 @@ pnpm test
 - `pnpm --dir backend prisma:migrate` — run Prisma development migrations.
 - `pnpm --dir backend prisma:generate` — regenerate Prisma client.
 - `pnpm --dir backend prisma:seed` — seed initial admin user and ensure the default `Legacy Plan` exists.
+- `pnpm --dir backend push:vapid-keys` — generate a VAPID key pair for push notifications (see [Daily Dinner Reminder](#daily-dinner-reminder)).
 
 ### Frontend (`frontend/package.json`)
 
