@@ -1,10 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { Check, ShoppingBasket } from "lucide-react";
 import { backendApiUrl } from "../../../lib/auth";
 import { cn } from "../../../lib/cn";
+import { sortItemsByIdOrder, sortPickedUpItemsLast } from "../../../lib/grocery";
+import { useReorderAnimation } from "../../../lib/useReorderAnimation";
 import Alert from "../../../components/ui/Alert";
 import Card from "../../../components/ui/Card";
 import EmptyState from "../../../components/ui/EmptyState";
@@ -54,18 +56,6 @@ type GroceryRealtimeEvent = {
   orderedItemIds: number[] | null;
 };
 
-// Keeps the shopping list in the manual order the plan owner arranged, so the
-// list follows the route through the store.
-const sortItemsByIdOrder = (items: GroceryItem[], orderedItemIds: number[]) => {
-  const positionByItemId = new Map(orderedItemIds.map((itemId, position) => [itemId, position]));
-
-  return [...items].sort(
-    (firstItem, secondItem) =>
-      (positionByItemId.get(firstItem.id) ?? Number.MAX_SAFE_INTEGER) -
-      (positionByItemId.get(secondItem.id) ?? Number.MAX_SAFE_INTEGER)
-  );
-};
-
 // Tells the shopper what an ingredient is for, so a line they do not recognise
 // can still be traced back to the meal it was added for.
 const describeItemSource = (item: GroceryItem) => {
@@ -98,6 +88,13 @@ export default function SharedGroceryPage() {
   const [isRealtimeConnected, setIsRealtimeConnected] = useState(false);
   const [planPeriod, setPlanPeriod] = useState("");
   const [items, setItems] = useState<GroceryItem[]>([]);
+
+  // `items` always holds the shopping order itself. Sinking the picked up rows
+  // is a view on top of it, which is what lets an item that was ticked by
+  // mistake return to the exact place it came from.
+  const visibleItems = useMemo(() => sortPickedUpItemsLast(items), [items]);
+  const visibleItemIds = useMemo(() => visibleItems.map((item) => item.id), [visibleItems]);
+  const { containerRef, registerRow } = useReorderAnimation(visibleItemIds);
 
   const loadSharedList = useCallback(
     async ({ showLoadingState = true }: { showLoadingState?: boolean } = {}) => {
@@ -251,6 +248,19 @@ export default function SharedGroceryPage() {
   }, [isRealtimeConnected, loadSharedList]);
 
   const toggleItem = async (item: GroceryItem) => {
+    const setItemCheckedState = (isChecked: boolean) => {
+      setItems((currentItems) =>
+        currentItems.map((currentItem) =>
+          currentItem.id === item.id ? { ...currentItem, isChecked } : currentItem
+        )
+      );
+    };
+
+    // The tick lands immediately instead of after the round trip: shopping
+    // happens on a slow connection, and a row that only starts moving once the
+    // server answers reads as the list jumping on its own.
+    setItemCheckedState(!item.isChecked);
+
     let response: Response;
 
     try {
@@ -260,11 +270,13 @@ export default function SharedGroceryPage() {
         body: JSON.stringify({ isChecked: !item.isChecked })
       });
     } catch (_error) {
+      setItemCheckedState(item.isChecked);
       setErrorMessage("Could not reach the grocery list. That tick was not saved.");
       return;
     }
 
     if (!response.ok) {
+      setItemCheckedState(item.isChecked);
       setErrorMessage("Could not update item state.");
       return;
     }
@@ -357,9 +369,9 @@ export default function SharedGroceryPage() {
           title="Nothing to shop for yet"
         />
       ) : (
-        <ul className="space-y-2">
-          {items.map((item) => (
-            <li key={item.id}>
+        <ul className="space-y-2" ref={containerRef}>
+          {visibleItems.map((item) => (
+            <li key={item.id} ref={registerRow(item.id)}>
               <label
                 className={cn(
                   "flex cursor-pointer items-center gap-3 rounded-2xl border bg-surface p-4 transition",
