@@ -21,6 +21,8 @@ import {
 } from "lucide-react";
 import { backendApiUrl } from "../../../../lib/auth";
 import { cn } from "../../../../lib/cn";
+import { sortItemsByIdOrder, sortPickedUpItemsLast } from "../../../../lib/grocery";
+import { useReorderAnimation } from "../../../../lib/useReorderAnimation";
 import Alert from "../../../../components/ui/Alert";
 import Badge from "../../../../components/ui/Badge";
 import Button, { buttonClassName } from "../../../../components/ui/Button";
@@ -99,18 +101,6 @@ type GroceryRealtimeEvent = {
 const formatQuantity = (quantity: number, unit: string | null) =>
   `${quantity}${unit ? ` ${unit}` : ""}`;
 
-// Applies a plan-wide item order to the rows currently held in state, so the
-// detailed list follows the manual order set on the merged shopping list.
-const sortItemsByIdOrder = (items: GroceryItem[], orderedItemIds: number[]) => {
-  const positionByItemId = new Map(orderedItemIds.map((itemId, position) => [itemId, position]));
-
-  return [...items].sort(
-    (firstItem, secondItem) =>
-      (positionByItemId.get(firstItem.id) ?? Number.MAX_SAFE_INTEGER) -
-      (positionByItemId.get(secondItem.id) ?? Number.MAX_SAFE_INTEGER)
-  );
-};
-
 const describeItemSource = (item: GroceryItem) => {
   if (item.dinnerDish) {
     return `Dinner · ${item.dinnerDish.name}`;
@@ -152,6 +142,16 @@ export default function GroceryListPage() {
   const [selectedMealId, setSelectedMealId] = useState("");
 
   const [editingRows, setEditingRows] = useState<Record<number, EditableRow>>({});
+
+  // The detailed list mirrors what the shoppers see, so items they picked up
+  // sink to the bottom here too. It is display only — `groceryItems` keeps the
+  // stored shopping order, which is what the merged list above writes.
+  const visibleGroceryItems = useMemo(() => sortPickedUpItemsLast(groceryItems), [groceryItems]);
+  const visibleGroceryItemIds = useMemo(
+    () => visibleGroceryItems.map((item) => item.id),
+    [visibleGroceryItems]
+  );
+  const { containerRef, registerRow } = useReorderAnimation(visibleGroceryItemIds);
 
   const loadItems = useCallback(
     async ({ showLoadingState = true }: { showLoadingState?: boolean } = {}) => {
@@ -905,8 +905,8 @@ export default function GroceryListPage() {
             title="No items available"
           />
         ) : (
-          <ul className="space-y-2">
-            {groceryItems.map((item) => {
+          <ul className="space-y-2" ref={containerRef}>
+            {visibleGroceryItems.map((item) => {
               const editingRow = editingRows[item.id];
 
               if (!editingRow) {
@@ -914,6 +914,7 @@ export default function GroceryListPage() {
                   <li
                     className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-surface-muted/40 px-4 py-3"
                     key={item.id}
+                    ref={registerRow(item.id)}
                   >
                     <div className="min-w-0">
                       <p
@@ -964,6 +965,7 @@ export default function GroceryListPage() {
                 <li
                   className="space-y-3 rounded-2xl border border-brand-border bg-surface px-4 py-3"
                   key={item.id}
+                  ref={registerRow(item.id)}
                 >
                   <div className="grid gap-3 sm:grid-cols-4">
                     <TextField
