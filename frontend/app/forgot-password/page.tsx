@@ -4,12 +4,15 @@ import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { ArrowLeft, KeyRound, MailCheck, Send } from "lucide-react";
 import { backendApiUrl } from "../../lib/auth";
+import { useTranslations } from "../../lib/i18n/client";
+import { localeHeader } from "../../lib/i18n/requestHeaders";
 import Alert from "../../components/ui/Alert";
 import Button from "../../components/ui/Button";
 import Card from "../../components/ui/Card";
 import { TextField } from "../../components/ui/Field";
 
 export default function ForgotPasswordPage() {
+  const { locale, t, plural } = useTranslations();
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -24,7 +27,7 @@ export default function ForgotPasswordPage() {
     try {
       const response = await fetch(`${backendApiUrl}/api/auth/forgot-password`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...localeHeader(locale) },
         body: JSON.stringify({ email })
       });
 
@@ -34,19 +37,16 @@ export default function ForgotPasswordPage() {
       } | null;
 
       if (!response.ok) {
-        setErrorMessage(
-          data?.message ?? "Could not send a reset link right now. Please try again."
-        );
+        setErrorMessage(data?.message ?? t("forgotPassword.failed"));
         return;
       }
 
       setExpiresInMinutes(data?.expiresInMinutes ?? null);
       setConfirmationMessage(
-        data?.message ??
-          "If that email address has an account, a password reset link is on its way."
+        data?.message ?? t("forgotPassword.confirmationFallback")
       );
     } catch (_error) {
-      setErrorMessage("Could not send a reset link right now. Please try again.");
+      setErrorMessage(t("forgotPassword.failed"));
     } finally {
       setIsSubmitting(false);
     }
@@ -62,12 +62,14 @@ export default function ForgotPasswordPage() {
         )}
       </span>
       <h1 className="mt-5 text-center text-3xl font-semibold tracking-tight text-fg">
-        {confirmationMessage ? "Check your inbox" : "Forgot your password?"}
+        {confirmationMessage
+          ? t("forgotPassword.sentTitle")
+          : t("forgotPassword.title")}
       </h1>
       <p className="mt-2 text-center text-sm text-fg-muted">
         {confirmationMessage
-          ? "Follow the link in the email to choose a new password."
-          : "Enter the email address on your account and we will send you a link to choose a new password."}
+          ? t("forgotPassword.sentSubtitle")
+          : t("forgotPassword.subtitle")}
       </p>
 
       <Card className="mt-7 w-full">
@@ -76,15 +78,15 @@ export default function ForgotPasswordPage() {
             <Alert tone="success">{confirmationMessage}</Alert>
             <p className="text-sm text-fg-muted">
               {expiresInMinutes
-                ? `The link expires in ${expiresInMinutes} minutes and can only be used once.`
-                : "The link expires shortly and can only be used once."}{" "}
-              No email yet? Check your spam folder, or{" "}
+                ? plural("forgotPassword.expiresIn", expiresInMinutes)
+                : t("forgotPassword.expiresSoon")}{" "}
+              {t("forgotPassword.noEmailYet")}{" "}
               <button
                 className="font-semibold text-brand underline underline-offset-2 hover:text-brand-strong"
                 onClick={() => setConfirmationMessage("")}
                 type="button"
               >
-                try another address
+                {t("forgotPassword.tryAnotherAddress")}
               </button>
               .
             </p>
@@ -93,9 +95,9 @@ export default function ForgotPasswordPage() {
           <form className="space-y-4" onSubmit={handleSubmit}>
             <TextField
               autoComplete="email"
-              label="Email"
+              label={t("common.email")}
               onChange={(event) => setEmail(event.target.value)}
-              placeholder="you@example.com"
+              placeholder={t("login.emailPlaceholder")}
               required
               type="email"
               value={email}
@@ -105,7 +107,9 @@ export default function ForgotPasswordPage() {
 
             <Button className="w-full" disabled={isSubmitting} size="lg" type="submit">
               <Send className="h-4 w-4" />
-              {isSubmitting ? "Sending..." : "Send reset link"}
+              {isSubmitting
+                ? t("forgotPassword.submitting")
+                : t("forgotPassword.submit")}
             </Button>
           </form>
         )}
@@ -116,7 +120,7 @@ export default function ForgotPasswordPage() {
         href="/login"
       >
         <ArrowLeft className="h-4 w-4" />
-        Back to sign in
+        {t("forgotPassword.backToSignIn")}
       </Link>
     </section>
   );

@@ -33,7 +33,8 @@ Family Food Planner is a weekly meal-planning app for families. Admins create pl
 - **Plan-wide shared grocery list**: the shared shopper link covers every day of the plan, so ingredients added for a specific breakfast, lunch, or dinner appear alongside the general items instead of only the items stored on the plan's first day. Each line also names the meal it was added for. See [Grocery Sharing Behavior Notes](#grocery-sharing-behavior-notes).
 - **UI redesign + design system**: the whole frontend was restyled around a warm, food-themed token set with automatic light/dark theming, a shared component library (`Button`, `Card`/`SectionCard`, `Field`, `Badge`, `Alert`, `EmptyState`, `PageHeader`, `ConfirmModal`), a sticky app header with active-route navigation, meal-coded colours (breakfast / lunch / dinner), "today" highlighting across plan views, and a redesigned shared shopping list with checkbox rows and a progress bar. See [Design System](#design-system) below.
 - **Daily dinner push notification**: every day at 10:00 the backend sends a push notification telling everyone what is planned for dinner that day, or that no dinner has been set yet. See [Daily Dinner Reminder](#daily-dinner-reminder).
-- **Settings section**: a per-account `/settings` screen where a signed-in user turns the daily dinner reminder on or off, sees how many of their devices are registered, and can fire a test notification. The screen is built to hold future preferences alongside notifications. See [Settings](#settings).
+- **Settings section**: a per-account `/settings` screen where a signed-in user picks their language, turns the daily dinner reminder on or off, sees how many of their devices are registered, and can fire a test notification. The screen is built to hold future preferences alongside language and notifications. See [Settings](#settings).
+- **English and Danish (i18n)**: every screen, button, validation message, and error is translated, and the language is picked per account under Settings. All copy lives in JSON files (`frontend/locales/*.json` for the UI, `backend/src/i18n/locales/*.json` for API messages), and dates follow the chosen language too — `4. aug.` and `tirsdag` in Danish, `Aug 4` and `Tuesday` in English. The daily dinner reminder and the password reset email are written in the recipient's own language, not the sender's. See [Internationalisation (i18n)](#internationalisation-i18n).
 - **App icon + home screen install**: the app ships a branded cooking-pot icon (favicon, Apple touch icon, and Android/Chrome manifest icons) plus a web app manifest, so saving the site to a phone home screen shows the app icon and name instead of a generic screenshot, and launches it standalone without browser chrome. See [App icon and home screen install](#app-icon-and-home-screen-install).
 
 ## Architecture Summary
@@ -58,8 +59,9 @@ Family Food Planner is a weekly meal-planning app for families. Admins create pl
   - Weekly plan and meal management
   - Grocery list APIs (admin + shared token access)
   - Realtime grocery streaming (SSE)
-  - Per-user settings and Web Push device registrations
+  - Per-user settings (language, notifications) and Web Push device registrations
   - The daily dinner reminder scheduler
+  - Translated API messages, reminders and emails (`src/i18n/`)
 
 ### `frontend/`
 
@@ -74,6 +76,7 @@ Family Food Planner is a weekly meal-planning app for families. Admins create pl
   - Shared grocery page for tokenized links
   - Realtime checkoff UX updates
   - Settings screen and the push notification service worker
+  - English/Danish translation of the whole UI (`lib/i18n/`, `locales/`)
 
 ## Design System
 
@@ -109,7 +112,8 @@ Use them through normal Tailwind utilities — `bg-surface`, `text-fg-muted`, `b
 ### Shared helpers (`frontend/lib/`)
 
 - `cn.ts` — small class-name joiner.
-- `dates.ts` — day-key parsing plus `formatWeekday`, `formatShortDate`, `formatDayLabel`, `formatDateRange` and `getTodayDayKey` (used for the "Today" highlight across plan views).
+- `dates.ts` — day-key parsing (`toDayKey`), `getTodayDayKey` (used for the "Today" highlight across plan views), and `createDateFormatter(translator)`, which returns the language-aware `formatWeekday`, `formatShortDate`, `formatDayLabel`, `formatDateRange`, `formatCalendarDate` and `formatCompactDayLabel`.
+- `i18n/` — the translation layer: `config.ts` (supported locales, cookie name, `Accept-Language` parsing), `translate.ts` (message lookup, `{placeholder}` interpolation, plural selection), `dictionaries.ts` (loads `frontend/locales/*.json`), `server.ts` (`getLocale` / `getTranslations` for server components), `client.tsx` (`I18nProvider`, `useTranslations`, `writeLocaleCookie`), and `requestHeaders.ts` (sends the language to the backend). See [Internationalisation (i18n)](#internationalisation-i18n).
 
 ### App icon and home screen install
 
@@ -163,7 +167,7 @@ python3 frontend/scripts/generate-icons.py
 
 ### Settings / Push Notifications
 - `GET /api/settings` — the signed-in user's settings, plus push metadata: whether the server has VAPID keys, the VAPID public key the browser needs to subscribe, how many devices the account has registered, and the reminder time zone (authenticated users).
-- `PUT /api/settings` — update the caller's settings. Body: `{ "dinnerReminderEnabled": boolean }` (authenticated users).
+- `PUT /api/settings` — update the caller's settings. Body: `{ "dinnerReminderEnabled"?: boolean, "language"?: "en" | "da" }`. Both fields are optional, so the language picker and the reminder toggle can each save on their own; sending neither returns `400` (authenticated users).
 - `POST /api/push/subscriptions` — register the calling browser for push. Body is the browser's `PushSubscription` JSON (`{ endpoint, keys: { p256dh, auth } }`). Keyed on the endpoint, so re-posting the same subscription updates it instead of duplicating (authenticated users).
 - `DELETE /api/push/subscriptions` — unregister one device. Body: `{ "endpoint": "…" }`. Only deletes endpoints belonging to the caller (authenticated users).
 - `POST /api/push/test` — send today's real reminder to the caller's own devices, ignoring their on/off setting, so push can be verified end to end. Returns `503` when the server has no VAPID keys (authenticated users).
@@ -185,9 +189,12 @@ python3 frontend/scripts/generate-icons.py
 
 ## Settings
 
-`/settings` is the per-account preferences screen, reachable from the header for every signed-in user (viewers included, since it only ever changes the caller's own account). It exists as a general home for preferences — notifications are simply the first thing living there.
+`/settings` is the per-account preferences screen, reachable from the header for every signed-in user (viewers included, since it only ever changes the caller's own account). It is the general home for preferences.
 
-Today it holds one control, **Daily dinner reminder**, plus a **Send a test notification** button that delivers today's actual reminder to your own devices so you can see what the 10:00 message will look like.
+It holds two sections:
+
+- **Language** — English or Danish, applied to the whole app the moment it is picked. See [Internationalisation (i18n)](#internationalisation-i18n).
+- **Notifications** — the **Daily dinner reminder** toggle, plus a **Send a test notification** button that delivers today's actual reminder to your own devices so you can see what the 10:00 message will look like.
 
 The toggle does two things at once, because both are needed before a notification can arrive:
 
@@ -196,6 +203,57 @@ The toggle does two things at once, because both are needed before a notificatio
 
 Turning it off reverses both: the device is unregistered and the account-level flag goes to `false`, which silences every other device on the account too. The row underneath the toggle shows whether *this* device is registered and how many devices the account has in total, so a phone and a laptop are easy to tell apart.
 
+## Internationalisation (i18n)
+
+The app ships in **English (`en`)** and **Danish (`da`)**. The language is a per-account preference, chosen under **Settings → Language**.
+
+### Where the copy lives
+
+All translated text is in JSON files, one per language, with no strings hardcoded in components:
+
+| File | Covers |
+| --- | --- |
+| `frontend/locales/en.json`, `da.json` | Every screen, button, label, placeholder, empty state, ARIA label and client-side validation message. |
+| `backend/src/i18n/locales/en.json`, `da.json` | API messages the UI shows verbatim, the daily dinner reminder, and the password reset email. |
+
+Messages are nested and looked up by dotted path (`t("plans.emptyTitle")`), with `{placeholder}` interpolation (`t("grocery.items.editAriaLabel", { name: item.name })`).
+
+**English is the reference dictionary.** Both `Dictionary` types are `typeof en`, and the locale map is typed `Record<Locale, Dictionary>`, so a key missing from `da.json` fails the type check rather than showing a key name to a user. The message keys themselves are a literal union derived from `en.json`, so a mistyped key is also a compile error.
+
+Counted messages are `{ "one": …, "other": … }` pairs read through `plural(key, count)`, which injects `count` for you:
+
+```json
+"days": { "one": "{count} day", "other": "{count} days" }
+```
+
+English and Danish share the same one/other split, so the count alone selects the form.
+
+### How the language reaches each layer
+
+- **The cookie** `ffp_locale` is what every server component reads while rendering (`getLocale()` in `frontend/lib/i18n/server.ts`). It is written by the settings picker and, on a device that has never seen this account before, seeded from the login response.
+- **The account** (`UserSettings.language`) is the durable copy, so the choice follows the user to their other devices and is available to the scheduler and the mailer, which have no request to read.
+- **A first visit with no cookie** falls back to the browser's `Accept-Language`, then to English.
+- **Client components** get the active dictionary from `<I18nProvider>` in the root layout via `useTranslations()`. Only the language being rendered is serialised into the page, so a page never ships the messages of a language nobody is reading.
+- **The backend** lives on its own origin, so the cookie never reaches it. The frontend sends the chosen language as an `Accept-Language` header on the API calls whose response messages it displays (`localeHeader(locale)`), and `requestLocale(request)` resolves it server-side.
+
+`<html lang>` is set from the active locale, and `generateMetadata` translates the document title and description.
+
+### Dates
+
+Nothing formats a date on its own. `createDateFormatter(translator)` in `frontend/lib/dates.ts` binds `Intl.DateTimeFormat` to the active language, so the same day renders as `Tuesday, Aug 4` in English and `tirsdag 4. aug.` in Danish. The words around a range ("From …", "Dates not set") are translated messages, not string literals.
+
+### Adding a language
+
+1. Add the code to `locales` in `frontend/lib/i18n/config.ts` and `backend/src/i18n/index.ts`, along with its `Intl` tag in `localeTags` and its own name in `localeNames`.
+2. Copy `en.json` to `<code>.json` in both `frontend/locales/` and `backend/src/i18n/locales/` and translate the values. The type checker lists anything you missed.
+3. Add the language to `weekdayFormatters` in `backend/src/services/dinnerReminder.ts` so the reminder can name weekdays in it.
+
+The picker, the `Accept-Language` negotiation, and the per-language reminder dispatch all read the `locales` list, so nothing else needs touching.
+
+### Known boundary
+
+The `members`, `planDays`, and `grocery` routes still answer with English validation detail (`"Invalid day key. Expected YYYY-MM-DD."`, `"Selected member does not exist."`). Nothing surfaces those strings — every UI path through them shows its own translated copy instead — so they are left as developer-facing detail. The routes whose messages the UI *does* display verbatim (`auth`, `users`, `plans`, `settings`) are fully translated.
+
 ## Daily Dinner Reminder
 
 Every day at 10:00 the backend sends one push notification to every registered device whose owner has the reminder switched on.
@@ -203,6 +261,7 @@ Every day at 10:00 the backend sends one push notification to every registered d
 - **With a dinner planned** the notification reads *"Today's dinner"* / the dish name, with the dinner's notes on a second line when there are any.
 - **With nothing planned** it reads *"No dinner planned for today"* / *"Nothing is set for dinner this Friday. Tap to plan something."*
 - Tapping the notification opens the plan the day belongs to (`/plan/:id`), or the homepage when no plan covers today.
+- **Each recipient reads it in their own language.** The text is built once per supported language and sent to the subscribers who chose it, so a household with a Danish and an English reader gets *"Dagens aftensmad"* on one phone and *"Today's dinner"* on the other. The weekday name in the "nothing planned" line is formatted in the same language. An account whose stored language is not one we ship is treated as English rather than skipped.
 
 ### Which dinner it picks
 
@@ -280,6 +339,7 @@ The store you shop in has its own layout, so the list is ordered by hand rather 
 - The emailed link points at `/reset-password?token=…`. That page is server-rendered and validates the token before rendering the form, so an expired or already-used link shows a "request a new link" state rather than a form that fails on submit.
 - Tokens are 32 random bytes. Only their SHA-256 hash is stored, so a leaked database cannot be replayed as a working reset link.
 - Each token is single-use and expires after `PASSWORD_RESET_TOKEN_TTL_MINUTES` (60 by default). Requesting a new link invalidates any earlier link for that account.
+- The email is written in the **account owner's** language, not the language of whoever filled in the form, since the mail belongs to whoever holds the address.
 - `POST /api/auth/forgot-password` is rate limited in memory to 5 requests per address/client every 15 minutes. A multi-instance deployment would need a shared store for this to hold across processes.
 - **Known limitation**: sessions are stateless JWTs, so a session issued before a reset stays valid until it expires. Resetting a password does not sign other devices out.
 

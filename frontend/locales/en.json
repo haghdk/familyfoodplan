@@ -1,0 +1,434 @@
+{
+  "app": {
+    "name": "Family Food Planner",
+    "shortName": "Food Planner",
+    "tagline": "Meals, planned week by week",
+    "description": "Plan weekly meals for your family with confidence.",
+    "footer": "Family Food Planner — plan the week, shop once, eat well."
+  },
+  "common": {
+    "save": "Save",
+    "saving": "Saving...",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "delete": "Delete",
+    "remove": "Remove",
+    "working": "Working...",
+    "open": "Open",
+    "copy": "Copy",
+    "today": "Today",
+    "name": "Name",
+    "email": "Email",
+    "password": "Password",
+    "quantity": "Quantity",
+    "unit": "Unit",
+    "startDate": "Start date",
+    "endDate": "End date",
+    "openPlan": "Open plan",
+    "groceryList": "Grocery list",
+    "currentPlan": "Current plan",
+    "setAsCurrent": "Set as current",
+    "settingAsCurrentShort": "Setting...",
+    "settingAsCurrent": "Setting as current...",
+    "setCurrentFailed": "Could not set this as the current plan right now.",
+    "days": {
+      "one": "{count} day",
+      "other": "{count} days"
+    },
+    "mealsPlanned": {
+      "one": "{count} meal planned",
+      "other": "{count} meals planned"
+    }
+  },
+  "nav": {
+    "plans": "Plans",
+    "members": "Members",
+    "users": "Users",
+    "settings": "Settings",
+    "login": "Login",
+    "logout": "Logout",
+    "logoutAriaLabel": "Log out"
+  },
+  "meals": {
+    "breakfast": "Breakfast",
+    "lunch": "Lunch",
+    "dinner": "Dinner",
+    "notPlanned": "Not planned"
+  },
+  "mealsLowercase": {
+    "breakfast": "breakfast",
+    "lunch": "lunch",
+    "dinner": "dinner"
+  },
+  "dates": {
+    "from": "From {date}",
+    "until": "Until {date}",
+    "notSet": "Dates not set"
+  },
+  "home": {
+    "empty": {
+      "eyebrow": "Weekly planning made simple",
+      "title": "Build your next family meal plan.",
+      "description": "We could not load plans right now, or you have not created one yet. Start by picking the days your week runs from and to.",
+      "createPlan": "Create a plan",
+      "pickWeekTitle": "Pick your week",
+      "pickWeekDescription": "Any start and end weekday — Sunday to Saturday, or your own rhythm.",
+      "fillMealsTitle": "Fill in the meals",
+      "fillMealsDescription": "Breakfast, lunch and dinner per day, with per-member assignments.",
+      "shareShoppingTitle": "Share the shopping",
+      "shareShoppingDescription": "Turn the plan into a grocery list anyone can tick off live."
+    },
+    "currentPlanEyebrow": "Current plan",
+    "noActivePlan": "No active plan",
+    "newPlan": "New plan",
+    "noCurrentPlanTitle": "No plan is set as current",
+    "noCurrentPlanDescription": "Mark one of your plans as the current plan to see it here.",
+    "recentPlansTitle": "Recent plans",
+    "recentPlansDescription": "Quickly reopen weekly plans from the last four weeks.",
+    "viewAllPlans": "View all plans",
+    "noRecentPlansTitle": "No other recent plans",
+    "noRecentPlansDescription": "Plans you create will show up here for four weeks."
+  },
+  "currentPlanTable": {
+    "mealColumn": "Meal",
+    "loadFailed": "Could not load meals for this plan."
+  },
+  "login": {
+    "title": "Welcome back",
+    "subtitle": "Sign in to view and manage your family meal plans.",
+    "emailPlaceholder": "you@example.com",
+    "forgotPassword": "Forgot your password?",
+    "submit": "Sign in",
+    "submitting": "Signing in...",
+    "invalidCredentials": "Invalid email or password.",
+    "unavailable": "Unable to login right now. Please try again."
+  },
+  "forgotPassword": {
+    "title": "Forgot your password?",
+    "subtitle": "Enter the email address on your account and we will send you a link to choose a new password.",
+    "sentTitle": "Check your inbox",
+    "sentSubtitle": "Follow the link in the email to choose a new password.",
+    "confirmationFallback": "If that email address has an account, a password reset link is on its way.",
+    "expiresIn": {
+      "one": "The link expires in {count} minute and can only be used once.",
+      "other": "The link expires in {count} minutes and can only be used once."
+    },
+    "expiresSoon": "The link expires shortly and can only be used once.",
+    "noEmailYet": "No email yet? Check your spam folder, or",
+    "tryAnotherAddress": "try another address",
+    "submit": "Send reset link",
+    "submitting": "Sending...",
+    "failed": "Could not send a reset link right now. Please try again.",
+    "backToSignIn": "Back to sign in"
+  },
+  "resetPassword": {
+    "title": "Choose a new password",
+    "subtitle": "Choose a password you have not used on this account before.",
+    "expiredTitle": "This link has expired",
+    "expiredSubtitle": "Password reset links can only be used once, and they expire after a short while.",
+    "expiredAlert": "This reset link is no longer valid. Request a new one to continue.",
+    "requestNewLink": "Request a new link",
+    "backToSignIn": "Back to sign in",
+    "newPasswordLabel": "New password",
+    "confirmPasswordLabel": "Confirm new password",
+    "minimumLength": {
+      "one": "At least {count} character.",
+      "other": "At least {count} characters."
+    },
+    "tooShort": {
+      "one": "Password must be at least {count} character.",
+      "other": "Password must be at least {count} characters."
+    },
+    "mismatch": "The two passwords do not match.",
+    "failed": "Could not reset your password.",
+    "failedNow": "Could not reset your password right now. Please try again.",
+    "success": "Your password has been updated. You can sign in with it now.",
+    "goToSignIn": "Go to sign in",
+    "submit": "Save new password"
+  },
+  "plans": {
+    "eyebrow": "Weekly plans",
+    "title": "Plans",
+    "description": "Select a weekly plan to edit meals or open its grocery list.",
+    "createNewPlan": "Create new plan",
+    "emptyTitle": "No plans yet",
+    "emptyDescription": "Once a plan is created it will appear here with its meals and grocery list.",
+    "createFirstPlan": "Create your first plan",
+    "currentBadge": "Current"
+  },
+  "planNew": {
+    "allPlans": "All plans",
+    "eyebrow": "New plan",
+    "title": "Create a plan",
+    "description": "Choose the days your week runs from and to. A day card is created for every date in the range.",
+    "nameLabel": "Plan name (optional)",
+    "nameHint": "Leave blank to let the app name the plan from its date range.",
+    "namePlaceholder": "Example: Sunday to Saturday",
+    "submit": "Create plan",
+    "submitting": "Creating...",
+    "failed": "Could not create plan.",
+    "failedNow": "Could not create plan right now."
+  },
+  "planDetail": {
+    "loadFailed": "Could not load this plan.",
+    "backToPlans": "Back to plans",
+    "allPlans": "All plans",
+    "daysInPlan": {
+      "one": "{count} day in this plan.",
+      "other": "{count} days in this plan."
+    }
+  },
+  "planSettings": {
+    "title": "Plan settings",
+    "description": "Rename the plan or move its date range. Days are added or removed to match.",
+    "deleteAriaLabel": "Delete plan",
+    "titleLabel": "Title",
+    "submit": "Save settings",
+    "titleRequired": "Plan title is required.",
+    "datesRequired": "Both start and end dates are required.",
+    "updated": "Plan updated.",
+    "updateFailed": "Could not update this plan right now.",
+    "deleteFailed": "Could not delete this plan right now.",
+    "deleteTitle": "Delete this plan?",
+    "deleteDescription": "This action cannot be undone. Deleting this food plan will also delete its grocery list.",
+    "deleteConfirm": "Delete plan"
+  },
+  "planDay": {
+    "addRow": "Add row",
+    "noBreakfasts": "No breakfasts added yet.",
+    "noLunches": "No lunches added yet.",
+    "noMemberSelected": "No member selected",
+    "membersLoadFailed": "Could not load members for breakfast/lunch assignments.",
+    "assignToMember": "Assign to family member",
+    "notes": "Notes",
+    "notesPlaceholder": "Notes (optional)",
+    "breakfastDish": "Breakfast dish",
+    "lunchDish": "Lunch dish",
+    "dinnerDish": "Dinner dish",
+    "dinnerNotes": "Dinner notes",
+    "saveDinner": "Save dinner",
+    "dinnerNameRequired": "Dinner name is required.",
+    "dinnerSaved": "Dinner saved.",
+    "dinnerSaveFailed": "Could not save dinner right now.",
+    "nameRequired": "{meal} name is required.",
+    "mealSaved": "{meal} saved.",
+    "mealDeleted": "{meal} deleted.",
+    "rowSaveFailed": "Could not save this {meal} right now.",
+    "someRowsFailed": "One or more {meal} rows failed to save.",
+    "rowDeleteFailed": "Could not delete this {meal} right now.",
+    "deleteFailed": "Could not delete {meal}.",
+    "deleteAriaLabel": "Delete {meal}"
+  },
+  "mealSwap": {
+    "swap": "Swap",
+    "swapping": "Swapping...",
+    "hintBefore": "Need Tuesday's dinner on Monday? Drag a meal's",
+    "hintAfter": " button onto the same meal of another day, or press it to pick the day from a list. Breakfast, lunch, and dinner each move on their own.",
+    "handleAriaLabel": "Move {meal} for {day} to another day. Drag it onto another day, or activate to pick a day.",
+    "menuAriaLabel": "Swap {meal} with another day",
+    "menuTitle": "Swap {meal} with",
+    "nothingPlanned": "Nothing planned",
+    "movingAnnouncement": "Moving {meal} from {day}.",
+    "swapped": "Swapped {meal} between {source} and {target}.",
+    "swapFailed": "Could not swap {meal} between those days right now."
+  },
+  "grocery": {
+    "backToPlan": "Back to plan",
+    "eyebrow": "Grocery list",
+    "title": "Shopping for plan #{planId}",
+    "description": "Everything you need to buy for this plan, synced live with anyone holding the share link.",
+    "liveUpdatesOn": "Live updates on",
+    "reconnecting": "Reconnecting...",
+    "loading": "Loading grocery list...",
+    "loadFailed": "Could not load grocery list for this plan.",
+    "invalidPlanId": "Invalid plan id.",
+    "categoryGeneral": "General",
+    "categoryIngredient": "Ingredient",
+    "sourceGeneralItem": "General item",
+    "sourceMeal": "{meal} · {dish}",
+    "mealOption": "{day} · {meal}: {dish}",
+    "share": {
+      "title": "Share the list",
+      "description": "Share this link so anyone can tick items off while shopping, or open it yourself in a new tab. Rotate it only when you need to invalidate old links.",
+      "linkAriaLabel": "Share link",
+      "noLinkYet": "No share link yet",
+      "loadOrCreate": "Load / create",
+      "rotate": "Rotate",
+      "createFirst": "Create a share link first.",
+      "loadFailed": "Could not load share link.",
+      "existingLoaded": "Existing share link loaded.",
+      "ready": "Share link ready.",
+      "rotateFailed": "Could not rotate share link.",
+      "rotated": "Share link rotated.",
+      "copied": "Share link copied to clipboard.",
+      "copyFailed": "Could not copy link automatically."
+    },
+    "general": {
+      "title": "Add general item",
+      "description": "Household staples that are not tied to a specific meal.",
+      "namePlaceholder": "Coffee",
+      "unitPlaceholder": "kg",
+      "submit": "Add general item",
+      "nameRequired": "General item name is required.",
+      "createFailed": "Could not create general grocery item.",
+      "added": "General item added."
+    },
+    "ingredient": {
+      "title": "Add ingredient for a meal",
+      "description": "Ingredients linked to a meal in this plan, so you know what they are for.",
+      "mealTypeLabel": "Meal type",
+      "mealLabel": "Meal",
+      "selectMeal": "Select meal",
+      "nameLabel": "Ingredient",
+      "namePlaceholder": "Tomatoes",
+      "unitPlaceholder": "g",
+      "noMealsWarning": "Add at least one breakfast, lunch, or dinner dish in this plan before creating ingredient items.",
+      "submit": "Add ingredient item",
+      "required": "Ingredient name and meal are required.",
+      "createFailed": "Could not create ingredient item.",
+      "added": "Ingredient item added."
+    },
+    "merged": {
+      "title": "Merged shopping list",
+      "description": "Duplicate ingredients across meals are combined into a single shopping line. Drag a line by its handle to arrange the list in the order you walk the store.",
+      "lines": {
+        "one": "{count} line",
+        "other": "{count} lines"
+      },
+      "emptyTitle": "No grocery items yet",
+      "emptyDescription": "Add a general item or a meal ingredient to start your list.",
+      "dragHint": "Drag the handle to reorder, or focus it and use the arrow keys. The order is shared with everyone using the link.",
+      "orderSaved": "Shopping order saved.",
+      "orderFailed": "Could not save the new shopping order."
+    },
+    "items": {
+      "title": "Edit or remove items",
+      "description": "Every individual entry, including the meal it came from, listed in the shopping order set above.",
+      "checkedOff": "{checked} of {total} checked off",
+      "emptyTitle": "No items available",
+      "emptyDescription": "Items you add above will show up here.",
+      "bought": "Bought",
+      "editAriaLabel": "Edit {name}",
+      "removeAriaLabel": "Remove {name}",
+      "nameRequired": "Item name is required for save.",
+      "updated": "Grocery item updated.",
+      "updateFailed": "Could not update grocery item.",
+      "removed": "Grocery item removed.",
+      "removeFailed": "Could not remove grocery item."
+    }
+  },
+  "sharedGrocery": {
+    "eyebrow": "Shared list",
+    "title": "Grocery list",
+    "planPeriod": "Plan period: {period}",
+    "live": "Live",
+    "reconnecting": "Reconnecting",
+    "loading": "Loading shared grocery list...",
+    "notFound": "Shared list not found or no longer available.",
+    "unreachable": "Could not reach the grocery list. Retrying...",
+    "tickNotSaved": "Could not reach the grocery list. That tick was not saved.",
+    "updateFailed": "Could not update item state.",
+    "pickedUp": "{checked} of {total} picked up",
+    "progressAriaLabel": "Shopping progress",
+    "emptyTitle": "Nothing to shop for yet",
+    "emptyDescription": "When the plan owner adds items they will appear here instantly.",
+    "sourceGeneral": "General"
+  },
+  "members": {
+    "eyebrow": "Household",
+    "title": "Family members",
+    "description": "Manage who is included in your family meal planning. Members can be assigned to breakfast and lunch dishes.",
+    "addTitle": "Add member",
+    "addDescription": "Add the people you are planning meals for this week.",
+    "addSubmit": "Add member",
+    "emptyTitle": "No family members yet",
+    "emptyDescription": "Members you add can be assigned to breakfast and lunch dishes.",
+    "activeCount": "{count} active",
+    "archivedCount": " · {count} archived",
+    "active": "Active",
+    "archived": "Archived",
+    "archive": "Archive",
+    "createFailed": "Could not create member right now.",
+    "updateFailed": "Could not update member right now.",
+    "archiveFailed": "Could not archive member right now.",
+    "namePlaceholder": "Enter family member name",
+    "nameRequired": "Name is required.",
+    "nameTooShort": {
+      "one": "Name must be at least {count} character.",
+      "other": "Name must be at least {count} characters."
+    },
+    "nameTooLong": {
+      "one": "Name must be {count} character or fewer.",
+      "other": "Name must be {count} characters or fewer."
+    }
+  },
+  "users": {
+    "eyebrow": "Access",
+    "title": "Users",
+    "description": "Manage admin and regular viewer accounts. Viewers can only read plans.",
+    "addTitle": "Add user",
+    "addDescription": "Admins can edit everything. Viewers can only read plans and grocery lists.",
+    "addSubmit": "Add user",
+    "emailPlaceholder": "name@example.com",
+    "passwordHint": {
+      "one": "At least {count} character.",
+      "other": "At least {count} characters."
+    },
+    "roleLabel": "Role",
+    "roleViewerOption": "Regular user (viewer)",
+    "roleAdminOption": "Admin",
+    "newPasswordLabel": "New password",
+    "newPasswordHint": "Leave blank to keep the current password.",
+    "emptyTitle": "No users yet",
+    "emptyDescription": "Create an account so other family members can sign in.",
+    "badgeAdmin": "Admin",
+    "badgeViewer": "Regular viewer",
+    "createFailed": "Unable to create user.",
+    "updateFailed": "Unable to update user.",
+    "deleteFailed": "Unable to delete user."
+  },
+  "settings": {
+    "eyebrow": "Your account",
+    "title": "Settings",
+    "description": "Choose how the planner keeps you up to date. These settings apply to your account.",
+    "language": {
+      "title": "Language",
+      "description": "Pick the language the planner is shown in. The choice is stored on your account, so it follows you to every device you sign in on.",
+      "label": "Preferred language",
+      "saved": "Language updated.",
+      "saveFailed": "Could not save your language right now."
+    },
+    "notifications": {
+      "title": "Notifications",
+      "description": "Every day at 10:00 ({timeZone}) we send a push notification with what is planned for dinner. If nothing is planned yet, the notification says so.",
+      "notConfiguredBefore": "Push notifications are not configured on the server yet. An admin needs to set the",
+      "notConfiguredBetween": "and",
+      "notConfiguredAfter": "environment variables.",
+      "unsupported": "This browser does not support push notifications. Try a recent version of Chrome, Edge, Firefox, or Safari.",
+      "homeScreen": "On iPhone and iPad, notifications only work once the app is added to the home screen. Tap Share, then “Add to Home Screen”, and open the app from there.",
+      "toggleLabel": "Daily dinner reminder",
+      "toggleDescription": "Get a push notification each morning with today's dinner.",
+      "deviceRegistered": "This device is registered",
+      "deviceNotRegistered": "This device is not registered yet",
+      "devicesOnAccount": {
+        "one": "{count} device on your account",
+        "other": "{count} devices on your account"
+      },
+      "enabled": "Daily dinner reminders are on for this device.",
+      "disabled": "Daily dinner reminders are off.",
+      "registerFailed": "Could not register this device for notifications.",
+      "saveFailed": "Could not save your notification setting.",
+      "serverNotConfigured": "Push notifications are not configured on the server yet. Ask an admin to set the VAPID keys.",
+      "permissionDenied": "Notifications are blocked for this site. Allow them in your browser settings and try again.",
+      "permissionNotGranted": "Notification permission was not granted.",
+      "updateFailed": "Could not update notifications.",
+      "sendTest": "Send a test notification",
+      "sendTestHint": "Sends today's reminder to your devices right now, so you can check how it looks.",
+      "testSent": "Test notification sent.",
+      "testFailed": "Could not send a test notification."
+    }
+  },
+  "sortableList": {
+    "reorderAriaLabel": "Reorder {name}. Drag it, or move it with the arrow up and arrow down keys."
+  }
+}

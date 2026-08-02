@@ -1,6 +1,8 @@
 import { Croissant, Sandwich, UtensilsCrossed } from "lucide-react";
 import type { ReactNode } from "react";
 import { cn } from "../../lib/cn";
+import type { AppTranslator } from "../../lib/i18n/dictionaries";
+import { getTranslations } from "../../lib/i18n/server";
 
 export type CurrentPlanTableDayRow = {
   id: number;
@@ -26,13 +28,16 @@ type MealSection = {
   iconClassName: string;
 };
 
-const buildMealSections = (includeBreakfast: boolean): MealSection[] => [
+const buildMealSections = (
+  includeBreakfast: boolean,
+  { t }: AppTranslator
+): MealSection[] => [
   ...(includeBreakfast
     ? [
         {
           key: "breakfasts" as const,
-          label: "Breakfast",
-          emptyText: "Not planned",
+          label: t("meals.breakfast"),
+          emptyText: t("meals.notPlanned"),
           icon: <Croissant className="h-4 w-4" />,
           accentClassName: "text-breakfast",
           iconClassName: "bg-breakfast-soft text-breakfast"
@@ -41,30 +46,32 @@ const buildMealSections = (includeBreakfast: boolean): MealSection[] => [
     : []),
   {
     key: "lunches" as const,
-    label: "Lunch",
-    emptyText: "Not planned",
+    label: t("meals.lunch"),
+    emptyText: t("meals.notPlanned"),
     icon: <Sandwich className="h-4 w-4" />,
     accentClassName: "text-lunch",
     iconClassName: "bg-lunch-soft text-lunch"
   },
   {
     key: "dinners" as const,
-    label: "Dinner",
-    emptyText: "Not planned",
+    label: t("meals.dinner"),
+    emptyText: t("meals.notPlanned"),
     icon: <UtensilsCrossed className="h-4 w-4" />,
     accentClassName: "text-dinner",
     iconClassName: "bg-dinner-soft text-dinner"
   }
 ];
 
-export default function CurrentPlanTable({ dayRows }: CurrentPlanTableProps) {
+export default async function CurrentPlanTable({ dayRows }: CurrentPlanTableProps) {
+  const translator = await getTranslations();
+  const { t } = translator;
   const includeBreakfast = dayRows.some((row) => (row.breakfasts?.length ?? 0) > 0);
-  const mealSections = buildMealSections(includeBreakfast);
+  const mealSections = buildMealSections(includeBreakfast, translator);
 
   if (dayRows.length === 0) {
     return (
       <p className="rounded-2xl border border-dashed border-border-strong bg-surface-muted/60 px-4 py-6 text-center text-sm text-fg-muted">
-        Could not load meals for this plan.
+        {t("currentPlanTable.loadFailed")}
       </p>
     );
   }
@@ -92,7 +99,7 @@ export default function CurrentPlanTable({ dayRows }: CurrentPlanTableProps) {
                 )}
                 scope="col"
               >
-                Meal
+                {t("currentPlanTable.mealColumn")}
               </th>
               {dayRows.map((row) => (
                 <th
@@ -113,7 +120,7 @@ export default function CurrentPlanTable({ dayRows }: CurrentPlanTableProps) {
                     {row.weekdayLabel}
                   </span>
                   <span className="mt-0.5 block text-xs font-medium text-fg-subtle">
-                    {row.isToday ? "Today" : row.dateLabel}
+                    {row.isToday ? t("common.today") : row.dateLabel}
                   </span>
                 </th>
               ))}
@@ -197,7 +204,7 @@ export default function CurrentPlanTable({ dayRows }: CurrentPlanTableProps) {
                   row.isToday ? "text-brand" : "text-fg-subtle"
                 )}
               >
-                {row.isToday ? "Today" : row.dateLabel}
+                {row.isToday ? t("common.today") : row.dateLabel}
               </p>
             </div>
 

@@ -1,5 +1,6 @@
 import { prisma } from "../lib/prisma";
 import { dayKeyToUtcDate, getLocalDayKey, resolveTimeZone } from "../lib/localTime";
+import { defaultLocale, localeTags, locales, translate, type Locale } from "../i18n";
 import type { PushNotificationPayload } from "../lib/webPush";
 import {
   type PushDispatchSummary,
@@ -12,10 +13,10 @@ export const reminderTimeZone = resolveTimeZone(
   process.env.DINNER_REMINDER_TIMEZONE || "Europe/Copenhagen"
 );
 
-const weekdayFormatter = new Intl.DateTimeFormat("en-US", {
-  weekday: "long",
-  timeZone: "UTC"
-});
+const weekdayFormatters: Record<Locale, Intl.DateTimeFormat> = {
+  en: new Intl.DateTimeFormat(localeTags.en, { weekday: "long", timeZone: "UTC" }),
+  da: new Intl.DateTimeFormat(localeTags.da, { weekday: "long", timeZone: "UTC" })
+};
 
 export type DinnerReminder = {
   dayKey: string;
@@ -61,7 +62,10 @@ const selectPlanDay = (candidates: PlanDayCandidate[]): PlanDayCandidate | null 
 };
 
 /** Builds the notification text for one calendar day (`YYYY-MM-DD`). */
-export const buildDinnerReminder = async (dayKey: string): Promise<DinnerReminder> => {
+export const buildDinnerReminder = async (
+  dayKey: string,
+  locale: Locale = defaultLocale
+): Promise<DinnerReminder> => {
   const planDays = await prisma.planDay.findMany({
     where: {
       date: dayKeyToUtcDate(dayKey)
@@ -91,7 +95,7 @@ export const buildDinnerReminder = async (dayKey: string): Promise<DinnerReminde
     }))
   );
 
-  const weekdayLabel = weekdayFormatter.format(dayKeyToUtcDate(dayKey));
+  const weekdayLabel = weekdayFormatters[locale].format(dayKeyToUtcDate(dayKey));
   const planUrl = selectedDay ? `/plan/${selectedDay.planId}` : "/";
   const tag = `dinner-reminder-${dayKey}`;
 
@@ -101,8 +105,10 @@ export const buildDinnerReminder = async (dayKey: string): Promise<DinnerReminde
       dinnerName: null,
       planId: selectedDay?.planId ?? null,
       payload: {
-        title: "No dinner planned for today",
-        body: `Nothing is set for dinner this ${weekdayLabel}. Tap to plan something.`,
+        title: translate(locale, "dinnerReminder.nothingPlannedTitle"),
+        body: translate(locale, "dinnerReminder.nothingPlannedBody", {
+          weekday: weekdayLabel
+        }),
         url: planUrl,
         tag
       }
@@ -114,7 +120,7 @@ export const buildDinnerReminder = async (dayKey: string): Promise<DinnerReminde
     dinnerName: selectedDay.dinnerName,
     planId: selectedDay.planId,
     payload: {
-      title: "Today's dinner",
+      title: translate(locale, "dinnerReminder.todaysDinnerTitle"),
       body: selectedDay.dinnerNotes
         ? `${selectedDay.dinnerName}\n${selectedDay.dinnerNotes}`
         : selectedDay.dinnerName,
@@ -125,25 +131,56 @@ export const buildDinnerReminder = async (dayKey: string): Promise<DinnerReminde
 };
 
 /** Today's reminder, using the configured reminder time zone. */
-export const buildTodaysDinnerReminder = (): Promise<DinnerReminder> =>
-  buildDinnerReminder(getLocalDayKey(reminderTimeZone));
+export const buildTodaysDinnerReminder = (
+  locale: Locale = defaultLocale
+): Promise<DinnerReminder> =>
+  buildDinnerReminder(getLocalDayKey(reminderTimeZone), locale);
 
 /** Sends today's reminder to a single user, ignoring their opt-in setting. */
 export const sendDinnerReminderToUser = async (
-  userId: number
+  userId: number,
+  locale: Locale = defaultLocale
 ): Promise<{ reminder: DinnerReminder; summary: PushDispatchSummary }> => {
-  const reminder = await buildTodaysDinnerReminder();
+  const reminder = await buildTodaysDinnerReminder(locale);
   const summary = await sendPushToUser(userId, reminder.payload);
 
   return { reminder, summary };
 };
 
-/** Sends one day's reminder to every opted-in device. */
+/**
+ * Sends one day's reminder to every opted-in device.
+ *
+ * The text is built once per language and sent to the subscribers who asked for
+ * it, so a household with a Danish and an English reader gets each of them a
+ * notification they can read. The returned reminder is the default-language one,
+ * which is what the scheduler logs.
+ */
 export const sendDinnerReminderToEveryone = async (
   dayKey: string
 ): Promise<{ reminder: DinnerReminder; summary: PushDispatchSummary }> => {
-  const reminder = await buildDinnerReminder(dayKey);
-  const summary = await sendPushToDinnerReminderSubscribers(reminder.payload);
+  const remindersByLocale = new Map<Locale, DinnerReminder>();
 
-  return { reminder, summary };
+  for (const locale of locales) {
+    remindersByLocale.set(locale, await buildDinnerReminder(dayKey, locale));
+  }
+
+  const summaries = await Promise.all(
+    locales.map((locale) =>
+      sendPushToDinnerReminderSubscribers(
+        remindersByLocale.get(locale)!.payload,
+        locale
+      )
+    )
+  );
+
+  const summary = summaries.reduce<PushDispatchSummary>(
+    (total, current) => ({
+      sent: total.sent + current.sent,
+      removed: total.removed + current.removed,
+      failed: total.failed + current.failed
+    }),
+    { sent: 0, removed: 0, failed: 0 }
+  );
+
+  return { reminder: remindersByLocale.get(defaultLocale)!, summary };
 };

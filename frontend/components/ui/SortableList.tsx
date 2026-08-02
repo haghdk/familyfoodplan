@@ -12,6 +12,7 @@ import {
 import { flushSync } from "react-dom";
 import { GripVertical } from "lucide-react";
 import { cn } from "../../lib/cn";
+import { useTranslations } from "../../lib/i18n/client";
 
 type SortableListProps<TItem> = {
   className?: string;
@@ -98,6 +99,7 @@ export default function SortableList<TItem>({
   onReorder,
   renderItem
 }: SortableListProps<TItem>) {
+  const { t } = useTranslations();
   const [draggedItemKey, setDraggedItemKey] = useState<string | null>(null);
   const [previewItems, setPreviewItems] = useState<TItem[] | null>(null);
 
@@ -270,7 +272,9 @@ export default function SortableList<TItem>({
             {...{ [sortableRowAttribute]: itemKey }}
           >
             <button
-              aria-label={`Reorder ${getItemLabel(item)}. Drag it, or move it with the arrow up and arrow down keys.`}
+              aria-label={t("sortableList.reorderAriaLabel", {
+                name: getItemLabel(item)
+              })}
               className={cn(
                 "flex w-9 shrink-0 touch-none items-center justify-center rounded-l-2xl text-fg-subtle transition",
                 "hover:bg-surface-muted hover:text-fg focus-visible:outline-none focus-visible:ring-2",

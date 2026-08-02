@@ -1,0 +1,434 @@
+{
+  "app": {
+    "name": "Family Food Planner",
+    "shortName": "Madplanlægger",
+    "tagline": "Måltider, planlagt uge for uge",
+    "description": "Planlæg familiens måltider for hele ugen med ro i maven.",
+    "footer": "Family Food Planner — planlæg ugen, køb ind én gang, spis godt."
+  },
+  "common": {
+    "save": "Gem",
+    "saving": "Gemmer ...",
+    "cancel": "Annullér",
+    "edit": "Rediger",
+    "delete": "Slet",
+    "remove": "Fjern",
+    "working": "Arbejder ...",
+    "open": "Åbn",
+    "copy": "Kopiér",
+    "today": "I dag",
+    "name": "Navn",
+    "email": "E-mail",
+    "password": "Adgangskode",
+    "quantity": "Antal",
+    "unit": "Enhed",
+    "startDate": "Startdato",
+    "endDate": "Slutdato",
+    "openPlan": "Åbn plan",
+    "groceryList": "Indkøbsliste",
+    "currentPlan": "Aktuel plan",
+    "setAsCurrent": "Vælg som aktuel",
+    "settingAsCurrentShort": "Vælger ...",
+    "settingAsCurrent": "Vælger som aktuel ...",
+    "setCurrentFailed": "Kunne ikke vælge denne som den aktuelle plan lige nu.",
+    "days": {
+      "one": "{count} dag",
+      "other": "{count} dage"
+    },
+    "mealsPlanned": {
+      "one": "{count} måltid planlagt",
+      "other": "{count} måltider planlagt"
+    }
+  },
+  "nav": {
+    "plans": "Planer",
+    "members": "Medlemmer",
+    "users": "Brugere",
+    "settings": "Indstillinger",
+    "login": "Log ind",
+    "logout": "Log ud",
+    "logoutAriaLabel": "Log ud"
+  },
+  "meals": {
+    "breakfast": "Morgenmad",
+    "lunch": "Frokost",
+    "dinner": "Aftensmad",
+    "notPlanned": "Ikke planlagt"
+  },
+  "mealsLowercase": {
+    "breakfast": "morgenmad",
+    "lunch": "frokost",
+    "dinner": "aftensmad"
+  },
+  "dates": {
+    "from": "Fra {date}",
+    "until": "Til {date}",
+    "notSet": "Datoer er ikke valgt"
+  },
+  "home": {
+    "empty": {
+      "eyebrow": "Ugeplanlægning gjort enkel",
+      "title": "Byg familiens næste madplan.",
+      "description": "Vi kunne ikke hente planerne lige nu, eller også har du ikke oprettet en endnu. Start med at vælge de dage, din uge løber fra og til.",
+      "createPlan": "Opret en plan",
+      "pickWeekTitle": "Vælg din uge",
+      "pickWeekDescription": "En hvilken som helst start- og slutdag — søndag til lørdag, eller jeres egen rytme.",
+      "fillMealsTitle": "Udfyld måltiderne",
+      "fillMealsDescription": "Morgenmad, frokost og aftensmad for hver dag, fordelt på familiens medlemmer.",
+      "shareShoppingTitle": "Del indkøbene",
+      "shareShoppingDescription": "Lav planen om til en indkøbsliste, som alle kan krydse af live."
+    },
+    "currentPlanEyebrow": "Aktuel plan",
+    "noActivePlan": "Ingen aktiv plan",
+    "newPlan": "Ny plan",
+    "noCurrentPlanTitle": "Ingen plan er valgt som aktuel",
+    "noCurrentPlanDescription": "Markér en af dine planer som den aktuelle plan for at se den her.",
+    "recentPlansTitle": "Seneste planer",
+    "recentPlansDescription": "Åbn hurtigt ugeplaner fra de sidste fire uger igen.",
+    "viewAllPlans": "Se alle planer",
+    "noRecentPlansTitle": "Ingen andre nye planer",
+    "noRecentPlansDescription": "Planer, du opretter, vises her i fire uger."
+  },
+  "currentPlanTable": {
+    "mealColumn": "Måltid",
+    "loadFailed": "Kunne ikke hente måltiderne for denne plan."
+  },
+  "login": {
+    "title": "Velkommen tilbage",
+    "subtitle": "Log ind for at se og redigere familiens madplaner.",
+    "emailPlaceholder": "dig@eksempel.dk",
+    "forgotPassword": "Har du glemt din adgangskode?",
+    "submit": "Log ind",
+    "submitting": "Logger ind ...",
+    "invalidCredentials": "Forkert e-mail eller adgangskode.",
+    "unavailable": "Kunne ikke logge ind lige nu. Prøv igen."
+  },
+  "forgotPassword": {
+    "title": "Har du glemt din adgangskode?",
+    "subtitle": "Indtast e-mailadressen på din konto, så sender vi dig et link til at vælge en ny adgangskode.",
+    "sentTitle": "Tjek din indbakke",
+    "sentSubtitle": "Følg linket i e-mailen for at vælge en ny adgangskode.",
+    "confirmationFallback": "Hvis der findes en konto med den e-mailadresse, er et link til nulstilling på vej.",
+    "expiresIn": {
+      "one": "Linket udløber om {count} minut og kan kun bruges én gang.",
+      "other": "Linket udløber om {count} minutter og kan kun bruges én gang."
+    },
+    "expiresSoon": "Linket udløber snart og kan kun bruges én gang.",
+    "noEmailYet": "Ingen e-mail endnu? Tjek dit spamfilter, eller",
+    "tryAnotherAddress": "prøv en anden adresse",
+    "submit": "Send nulstillingslink",
+    "submitting": "Sender ...",
+    "failed": "Kunne ikke sende et nulstillingslink lige nu. Prøv igen.",
+    "backToSignIn": "Tilbage til login"
+  },
+  "resetPassword": {
+    "title": "Vælg en ny adgangskode",
+    "subtitle": "Vælg en adgangskode, du ikke har brugt på denne konto før.",
+    "expiredTitle": "Dette link er udløbet",
+    "expiredSubtitle": "Links til nulstilling kan kun bruges én gang, og de udløber efter kort tid.",
+    "expiredAlert": "Dette nulstillingslink er ikke længere gyldigt. Bed om et nyt for at fortsætte.",
+    "requestNewLink": "Bed om et nyt link",
+    "backToSignIn": "Tilbage til login",
+    "newPasswordLabel": "Ny adgangskode",
+    "confirmPasswordLabel": "Bekræft ny adgangskode",
+    "minimumLength": {
+      "one": "Mindst {count} tegn.",
+      "other": "Mindst {count} tegn."
+    },
+    "tooShort": {
+      "one": "Adgangskoden skal være på mindst {count} tegn.",
+      "other": "Adgangskoden skal være på mindst {count} tegn."
+    },
+    "mismatch": "De to adgangskoder er ikke ens.",
+    "failed": "Kunne ikke nulstille din adgangskode.",
+    "failedNow": "Kunne ikke nulstille din adgangskode lige nu. Prøv igen.",
+    "success": "Din adgangskode er opdateret. Du kan logge ind med den nu.",
+    "goToSignIn": "Gå til login",
+    "submit": "Gem ny adgangskode"
+  },
+  "plans": {
+    "eyebrow": "Ugeplaner",
+    "title": "Planer",
+    "description": "Vælg en ugeplan for at redigere måltider eller åbne dens indkøbsliste.",
+    "createNewPlan": "Opret ny plan",
+    "emptyTitle": "Ingen planer endnu",
+    "emptyDescription": "Når en plan er oprettet, vises den her sammen med sine måltider og sin indkøbsliste.",
+    "createFirstPlan": "Opret din første plan",
+    "currentBadge": "Aktuel"
+  },
+  "planNew": {
+    "allPlans": "Alle planer",
+    "eyebrow": "Ny plan",
+    "title": "Opret en plan",
+    "description": "Vælg de dage, din uge løber fra og til. Der oprettes et dagskort for hver dato i perioden.",
+    "nameLabel": "Plannavn (valgfrit)",
+    "nameHint": "Lad feltet stå tomt, så navngiver appen planen ud fra dens datoer.",
+    "namePlaceholder": "Eksempel: Søndag til lørdag",
+    "submit": "Opret plan",
+    "submitting": "Opretter ...",
+    "failed": "Kunne ikke oprette planen.",
+    "failedNow": "Kunne ikke oprette planen lige nu."
+  },
+  "planDetail": {
+    "loadFailed": "Kunne ikke hente denne plan.",
+    "backToPlans": "Tilbage til planer",
+    "allPlans": "Alle planer",
+    "daysInPlan": {
+      "one": "{count} dag i denne plan.",
+      "other": "{count} dage i denne plan."
+    }
+  },
+  "planSettings": {
+    "title": "Planindstillinger",
+    "description": "Omdøb planen, eller flyt dens datoer. Dage tilføjes eller fjernes, så de passer.",
+    "deleteAriaLabel": "Slet plan",
+    "titleLabel": "Titel",
+    "submit": "Gem indstillinger",
+    "titleRequired": "Planens titel er påkrævet.",
+    "datesRequired": "Både start- og slutdato er påkrævet.",
+    "updated": "Planen er opdateret.",
+    "updateFailed": "Kunne ikke opdatere denne plan lige nu.",
+    "deleteFailed": "Kunne ikke slette denne plan lige nu.",
+    "deleteTitle": "Vil du slette denne plan?",
+    "deleteDescription": "Handlingen kan ikke fortrydes. Sletter du denne madplan, slettes dens indkøbsliste også.",
+    "deleteConfirm": "Slet plan"
+  },
+  "planDay": {
+    "addRow": "Tilføj række",
+    "noBreakfasts": "Ingen morgenmad tilføjet endnu.",
+    "noLunches": "Ingen frokost tilføjet endnu.",
+    "noMemberSelected": "Intet medlem valgt",
+    "membersLoadFailed": "Kunne ikke hente medlemmerne til morgenmad og frokost.",
+    "assignToMember": "Tildel til familiemedlem",
+    "notes": "Noter",
+    "notesPlaceholder": "Noter (valgfrit)",
+    "breakfastDish": "Morgenmadsret",
+    "lunchDish": "Frokostret",
+    "dinnerDish": "Aftensmadsret",
+    "dinnerNotes": "Noter til aftensmaden",
+    "saveDinner": "Gem aftensmad",
+    "dinnerNameRequired": "Navnet på aftensmaden er påkrævet.",
+    "dinnerSaved": "Aftensmaden er gemt.",
+    "dinnerSaveFailed": "Kunne ikke gemme aftensmaden lige nu.",
+    "nameRequired": "Navnet på {meal} er påkrævet.",
+    "mealSaved": "{meal} er gemt.",
+    "mealDeleted": "{meal} er slettet.",
+    "rowSaveFailed": "Kunne ikke gemme denne {meal} lige nu.",
+    "someRowsFailed": "En eller flere rækker med {meal} kunne ikke gemmes.",
+    "rowDeleteFailed": "Kunne ikke slette denne {meal} lige nu.",
+    "deleteFailed": "Kunne ikke slette {meal}.",
+    "deleteAriaLabel": "Slet {meal}"
+  },
+  "mealSwap": {
+    "swap": "Byt",
+    "swapping": "Bytter ...",
+    "hintBefore": "Skal tirsdagens aftensmad flyttes til mandag? Træk et måltids",
+    "hintAfter": "-knap over på det samme måltid en anden dag, eller tryk på den for at vælge dagen fra en liste. Morgenmad, frokost og aftensmad flytter hver for sig.",
+    "handleAriaLabel": "Flyt {meal} for {day} til en anden dag. Træk den over på en anden dag, eller aktivér for at vælge en dag.",
+    "menuAriaLabel": "Byt {meal} med en anden dag",
+    "menuTitle": "Byt {meal} med",
+    "nothingPlanned": "Intet planlagt",
+    "movingAnnouncement": "Flytter {meal} fra {day}.",
+    "swapped": "Byttede {meal} mellem {source} og {target}.",
+    "swapFailed": "Kunne ikke bytte {meal} mellem de dage lige nu."
+  },
+  "grocery": {
+    "backToPlan": "Tilbage til planen",
+    "eyebrow": "Indkøbsliste",
+    "title": "Indkøb til plan #{planId}",
+    "description": "Alt, du skal købe til denne plan, synkroniseret live med alle, der har delelinket.",
+    "liveUpdatesOn": "Live-opdateringer slået til",
+    "reconnecting": "Genopretter forbindelse ...",
+    "loading": "Henter indkøbsliste ...",
+    "loadFailed": "Kunne ikke hente indkøbslisten til denne plan.",
+    "invalidPlanId": "Ugyldigt plan-id.",
+    "categoryGeneral": "Almindelig",
+    "categoryIngredient": "Ingrediens",
+    "sourceGeneralItem": "Almindelig vare",
+    "sourceMeal": "{meal} · {dish}",
+    "mealOption": "{day} · {meal}: {dish}",
+    "share": {
+      "title": "Del listen",
+      "description": "Del dette link, så alle kan krydse varer af, mens de handler, eller åbn det selv i en ny fane. Rotér det kun, når du vil gøre gamle links ugyldige.",
+      "linkAriaLabel": "Delelink",
+      "noLinkYet": "Intet delelink endnu",
+      "loadOrCreate": "Hent / opret",
+      "rotate": "Rotér",
+      "createFirst": "Opret et delelink først.",
+      "loadFailed": "Kunne ikke hente delelinket.",
+      "existingLoaded": "Eksisterende delelink hentet.",
+      "ready": "Delelinket er klar.",
+      "rotateFailed": "Kunne ikke rotere delelinket.",
+      "rotated": "Delelinket er roteret.",
+      "copied": "Delelinket er kopieret til udklipsholderen.",
+      "copyFailed": "Kunne ikke kopiere linket automatisk."
+    },
+    "general": {
+      "title": "Tilføj almindelig vare",
+      "description": "Dagligvarer, som ikke hører til et bestemt måltid.",
+      "namePlaceholder": "Kaffe",
+      "unitPlaceholder": "kg",
+      "submit": "Tilføj almindelig vare",
+      "nameRequired": "Navnet på den almindelige vare er påkrævet.",
+      "createFailed": "Kunne ikke oprette den almindelige vare.",
+      "added": "Almindelig vare tilføjet."
+    },
+    "ingredient": {
+      "title": "Tilføj ingrediens til et måltid",
+      "description": "Ingredienser, der er knyttet til et måltid i denne plan, så du ved, hvad de skal bruges til.",
+      "mealTypeLabel": "Måltidstype",
+      "mealLabel": "Måltid",
+      "selectMeal": "Vælg måltid",
+      "nameLabel": "Ingrediens",
+      "namePlaceholder": "Tomater",
+      "unitPlaceholder": "g",
+      "noMealsWarning": "Tilføj mindst én ret til morgenmad, frokost eller aftensmad i denne plan, før du opretter ingredienser.",
+      "submit": "Tilføj ingrediens",
+      "required": "Både ingrediensens navn og et måltid er påkrævet.",
+      "createFailed": "Kunne ikke oprette ingrediensen.",
+      "added": "Ingrediens tilføjet."
+    },
+    "merged": {
+      "title": "Samlet indkøbsliste",
+      "description": "Ens ingredienser på tværs af måltider lægges sammen til én linje. Træk en linje i dens håndtag for at sortere listen i den rækkefølge, du går gennem butikken.",
+      "lines": {
+        "one": "{count} linje",
+        "other": "{count} linjer"
+      },
+      "emptyTitle": "Ingen varer endnu",
+      "emptyDescription": "Tilføj en almindelig vare eller en ingrediens for at komme i gang med listen.",
+      "dragHint": "Træk i håndtaget for at ændre rækkefølgen, eller sæt fokus på det og brug piletasterne. Rækkefølgen deles med alle, der bruger linket.",
+      "orderSaved": "Indkøbsrækkefølgen er gemt.",
+      "orderFailed": "Kunne ikke gemme den nye indkøbsrækkefølge."
+    },
+    "items": {
+      "title": "Rediger eller fjern varer",
+      "description": "Hver enkelt vare, inklusive det måltid den kom fra, vist i den indkøbsrækkefølge, der er valgt ovenfor.",
+      "checkedOff": "{checked} af {total} krydset af",
+      "emptyTitle": "Ingen varer tilgængelige",
+      "emptyDescription": "Varer, du tilføjer ovenfor, vises her.",
+      "bought": "Købt",
+      "editAriaLabel": "Rediger {name}",
+      "removeAriaLabel": "Fjern {name}",
+      "nameRequired": "Varens navn er påkrævet for at gemme.",
+      "updated": "Varen er opdateret.",
+      "updateFailed": "Kunne ikke opdatere varen.",
+      "removed": "Varen er fjernet.",
+      "removeFailed": "Kunne ikke fjerne varen."
+    }
+  },
+  "sharedGrocery": {
+    "eyebrow": "Delt liste",
+    "title": "Indkøbsliste",
+    "planPeriod": "Planens periode: {period}",
+    "live": "Live",
+    "reconnecting": "Genopretter",
+    "loading": "Henter delt indkøbsliste ...",
+    "notFound": "Den delte liste blev ikke fundet eller er ikke tilgængelig længere.",
+    "unreachable": "Kunne ikke nå indkøbslisten. Prøver igen ...",
+    "tickNotSaved": "Kunne ikke nå indkøbslisten. Afkrydsningen blev ikke gemt.",
+    "updateFailed": "Kunne ikke opdatere varens status.",
+    "pickedUp": "{checked} af {total} taget",
+    "progressAriaLabel": "Indkøbsstatus",
+    "emptyTitle": "Der er ikke noget at købe endnu",
+    "emptyDescription": "Når planens ejer tilføjer varer, dukker de op her med det samme.",
+    "sourceGeneral": "Almindelig"
+  },
+  "members": {
+    "eyebrow": "Husstand",
+    "title": "Familiemedlemmer",
+    "description": "Styr, hvem der er med i familiens madplanlægning. Medlemmer kan tildeles retter til morgenmad og frokost.",
+    "addTitle": "Tilføj medlem",
+    "addDescription": "Tilføj de personer, du planlægger måltider for i denne uge.",
+    "addSubmit": "Tilføj medlem",
+    "emptyTitle": "Ingen familiemedlemmer endnu",
+    "emptyDescription": "Medlemmer, du tilføjer, kan tildeles retter til morgenmad og frokost.",
+    "activeCount": "{count} aktive",
+    "archivedCount": " · {count} arkiverede",
+    "active": "Aktiv",
+    "archived": "Arkiveret",
+    "archive": "Arkivér",
+    "createFailed": "Kunne ikke oprette medlemmet lige nu.",
+    "updateFailed": "Kunne ikke opdatere medlemmet lige nu.",
+    "archiveFailed": "Kunne ikke arkivere medlemmet lige nu.",
+    "namePlaceholder": "Indtast familiemedlemmets navn",
+    "nameRequired": "Navn er påkrævet.",
+    "nameTooShort": {
+      "one": "Navnet skal være på mindst {count} tegn.",
+      "other": "Navnet skal være på mindst {count} tegn."
+    },
+    "nameTooLong": {
+      "one": "Navnet må højst være på {count} tegn.",
+      "other": "Navnet må højst være på {count} tegn."
+    }
+  },
+  "users": {
+    "eyebrow": "Adgang",
+    "title": "Brugere",
+    "description": "Styr administratorer og almindelige brugere. Almindelige brugere kan kun læse planerne.",
+    "addTitle": "Tilføj bruger",
+    "addDescription": "Administratorer kan redigere alt. Almindelige brugere kan kun læse planer og indkøbslister.",
+    "addSubmit": "Tilføj bruger",
+    "emailPlaceholder": "navn@eksempel.dk",
+    "passwordHint": {
+      "one": "Mindst {count} tegn.",
+      "other": "Mindst {count} tegn."
+    },
+    "roleLabel": "Rolle",
+    "roleViewerOption": "Almindelig bruger (læseadgang)",
+    "roleAdminOption": "Administrator",
+    "newPasswordLabel": "Ny adgangskode",
+    "newPasswordHint": "Lad feltet stå tomt for at beholde den nuværende adgangskode.",
+    "emptyTitle": "Ingen brugere endnu",
+    "emptyDescription": "Opret en konto, så andre i familien kan logge ind.",
+    "badgeAdmin": "Administrator",
+    "badgeViewer": "Almindelig bruger",
+    "createFailed": "Kunne ikke oprette brugeren.",
+    "updateFailed": "Kunne ikke opdatere brugeren.",
+    "deleteFailed": "Kunne ikke slette brugeren."
+  },
+  "settings": {
+    "eyebrow": "Din konto",
+    "title": "Indstillinger",
+    "description": "Vælg, hvordan planlæggeren holder dig opdateret. Indstillingerne gælder for din konto.",
+    "language": {
+      "title": "Sprog",
+      "description": "Vælg det sprog, planlæggeren vises på. Valget gemmes på din konto, så det følger med til alle de enheder, du logger ind på.",
+      "label": "Foretrukket sprog",
+      "saved": "Sproget er opdateret.",
+      "saveFailed": "Kunne ikke gemme dit sprogvalg lige nu."
+    },
+    "notifications": {
+      "title": "Notifikationer",
+      "description": "Hver dag klokken 10:00 ({timeZone}) sender vi en notifikation med dagens aftensmad. Er der ikke planlagt noget endnu, skriver notifikationen det.",
+      "notConfiguredBefore": "Push-notifikationer er endnu ikke konfigureret på serveren. En administrator skal sætte miljøvariablerne",
+      "notConfiguredBetween": "og",
+      "notConfiguredAfter": ".",
+      "unsupported": "Denne browser understøtter ikke push-notifikationer. Prøv en nyere version af Chrome, Edge, Firefox eller Safari.",
+      "homeScreen": "På iPhone og iPad virker notifikationer først, når appen er lagt på hjemmeskærmen. Tryk på Del, derefter „Føj til hjemmeskærm“, og åbn appen derfra.",
+      "toggleLabel": "Daglig påmindelse om aftensmad",
+      "toggleDescription": "Få en notifikation hver morgen med dagens aftensmad.",
+      "deviceRegistered": "Denne enhed er tilmeldt",
+      "deviceNotRegistered": "Denne enhed er ikke tilmeldt endnu",
+      "devicesOnAccount": {
+        "one": "{count} enhed på din konto",
+        "other": "{count} enheder på din konto"
+      },
+      "enabled": "Daglige påmindelser om aftensmad er slået til for denne enhed.",
+      "disabled": "Daglige påmindelser om aftensmad er slået fra.",
+      "registerFailed": "Kunne ikke tilmelde denne enhed til notifikationer.",
+      "saveFailed": "Kunne ikke gemme din notifikationsindstilling.",
+      "serverNotConfigured": "Push-notifikationer er endnu ikke konfigureret på serveren. Bed en administrator om at sætte VAPID-nøglerne.",
+      "permissionDenied": "Notifikationer er blokeret for dette site. Tillad dem i browserens indstillinger, og prøv igen.",
+      "permissionNotGranted": "Der blev ikke givet tilladelse til notifikationer.",
+      "updateFailed": "Kunne ikke opdatere notifikationerne.",
+      "sendTest": "Send en testnotifikation",
+      "sendTestHint": "Sender dagens påmindelse til dine enheder med det samme, så du kan se, hvordan den ser ud.",
+      "testSent": "Testnotifikation sendt.",
+      "testFailed": "Kunne ikke sende en testnotifikation."
+    }
+  },
+  "sortableList": {
+    "reorderAriaLabel": "Flyt {name}. Træk i den, eller flyt den med pil op og pil ned."
+  }
+}

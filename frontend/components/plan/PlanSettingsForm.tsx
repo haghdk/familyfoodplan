@@ -4,6 +4,8 @@ import { Settings2, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { backendApiUrl } from "../../lib/auth";
+import { useTranslations } from "../../lib/i18n/client";
+import { localeHeader } from "../../lib/i18n/requestHeaders";
 import Button from "../ui/Button";
 import { SectionCard } from "../ui/Card";
 import { TextField } from "../ui/Field";
@@ -23,6 +25,7 @@ export default function PlanSettingsForm({
   initialEndDate
 }: PlanSettingsFormProps) {
   const router = useRouter();
+  const { locale, t } = useTranslations();
   const [name, setName] = useState(initialName);
   const [startDate, setStartDate] = useState(initialStartDate ?? "");
   const [endDate, setEndDate] = useState(initialEndDate ?? "");
@@ -35,12 +38,12 @@ export default function PlanSettingsForm({
     const normalizedName = name.trim();
 
     if (!normalizedName) {
-      setFeedback({ type: "error", message: "Plan title is required." });
+      setFeedback({ type: "error", message: t("planSettings.titleRequired") });
       return;
     }
 
     if (!startDate || !endDate) {
-      setFeedback({ type: "error", message: "Both start and end dates are required." });
+      setFeedback({ type: "error", message: t("planSettings.datesRequired") });
       return;
     }
 
@@ -51,7 +54,8 @@ export default function PlanSettingsForm({
       const response = await fetch(`${backendApiUrl}/api/plans/${planId}`, {
         method: "PUT",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          ...localeHeader(locale)
         },
         credentials: "include",
         body: JSON.stringify({
@@ -65,15 +69,15 @@ export default function PlanSettingsForm({
         const data = (await response.json().catch(() => null)) as { message?: string } | null;
         setFeedback({
           type: "error",
-          message: data?.message ?? "Could not update this plan right now."
+          message: data?.message ?? t("planSettings.updateFailed")
         });
         return;
       }
 
-      setFeedback({ type: "success", message: "Plan updated." });
+      setFeedback({ type: "success", message: t("planSettings.updated") });
       router.refresh();
     } catch (_error) {
-      setFeedback({ type: "error", message: "Could not update this plan right now." });
+      setFeedback({ type: "error", message: t("planSettings.updateFailed") });
     } finally {
       setIsSaving(false);
     }
@@ -86,6 +90,7 @@ export default function PlanSettingsForm({
     try {
       const response = await fetch(`${backendApiUrl}/api/plans/${planId}`, {
         method: "DELETE",
+        headers: localeHeader(locale),
         credentials: "include"
       });
 
@@ -93,7 +98,7 @@ export default function PlanSettingsForm({
         const data = (await response.json().catch(() => null)) as { message?: string } | null;
         setFeedback({
           type: "error",
-          message: data?.message ?? "Could not delete this plan right now."
+          message: data?.message ?? t("planSettings.deleteFailed")
         });
         return;
       }
@@ -102,7 +107,7 @@ export default function PlanSettingsForm({
       router.push("/plan");
       router.refresh();
     } catch (_error) {
-      setFeedback({ type: "error", message: "Could not delete this plan right now." });
+      setFeedback({ type: "error", message: t("planSettings.deleteFailed") });
     } finally {
       setIsDeleting(false);
     }
@@ -113,7 +118,7 @@ export default function PlanSettingsForm({
       <SectionCard
         actions={
           <Button
-            aria-label="Delete plan"
+            aria-label={t("planSettings.deleteAriaLabel")}
             disabled={isDeleting}
             onClick={() => setIsDeleteModalOpen(true)}
             size="icon"
@@ -122,24 +127,24 @@ export default function PlanSettingsForm({
             <Trash2 className="h-4 w-4" />
           </Button>
         }
-        description="Rename the plan or move its date range. Days are added or removed to match."
+        description={t("planSettings.description")}
         icon={<Settings2 className="h-4 w-4" />}
-        title="Plan settings"
+        title={t("planSettings.title")}
       >
         <div className="grid gap-4 md:grid-cols-3">
           <TextField
-            label="Title"
+            label={t("planSettings.titleLabel")}
             onChange={(event) => setName(event.target.value)}
             value={name}
           />
           <TextField
-            label="Start date"
+            label={t("common.startDate")}
             onChange={(event) => setStartDate(event.target.value)}
             type="date"
             value={startDate}
           />
           <TextField
-            label="End date"
+            label={t("common.endDate")}
             onChange={(event) => setEndDate(event.target.value)}
             type="date"
             value={endDate}
@@ -148,7 +153,7 @@ export default function PlanSettingsForm({
 
         <div className="mt-4 flex flex-wrap items-center gap-3">
           <Button disabled={isSaving || isDeleting} onClick={savePlanSettings}>
-            {isSaving ? "Saving..." : "Save settings"}
+            {isSaving ? t("common.saving") : t("planSettings.submit")}
           </Button>
           {feedback ? (
             <p
@@ -163,15 +168,15 @@ export default function PlanSettingsForm({
       </SectionCard>
 
       <ConfirmModal
-        cancelLabel="Cancel"
-        confirmLabel="Delete plan"
+        cancelLabel={t("common.cancel")}
+        confirmLabel={t("planSettings.deleteConfirm")}
         confirmVariant="danger"
-        description="This action cannot be undone. Deleting this food plan will also delete its grocery list."
+        description={t("planSettings.deleteDescription")}
         isLoading={isDeleting}
         isOpen={isDeleteModalOpen}
         onCancel={() => setIsDeleteModalOpen(false)}
         onConfirm={deletePlan}
-        title="Delete this plan?"
+        title={t("planSettings.deleteTitle")}
       />
     </>
   );

@@ -17,6 +17,7 @@ import {
   userRoleCookieName,
 } from "../../lib/auth";
 import { cn } from "../../lib/cn";
+import { useTranslations } from "../../lib/i18n/client";
 
 type AuthNavProps = {
   isAuthenticated: boolean;
@@ -36,6 +37,7 @@ const navLinkClassName =
 export default function AuthNav({ isAuthenticated, isAdmin }: AuthNavProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const { t } = useTranslations();
 
   const handleLogout = async () => {
     try {
@@ -62,21 +64,21 @@ export default function AuthNav({ isAuthenticated, isAdmin }: AuthNavProps) {
           href="/login"
         >
           <LogIn className="h-4 w-4" />
-          Login
+          {t("nav.login")}
         </Link>
       </nav>
     );
   }
 
   const navLinks: NavLink[] = [
-    { href: "/plan", label: "Plans", icon: CalendarDays },
+    { href: "/plan", label: t("nav.plans"), icon: CalendarDays },
     ...(isAdmin
       ? [
-          { href: "/members", label: "Members", icon: Users },
-          { href: "/users", label: "Users", icon: ShieldUser },
+          { href: "/members", label: t("nav.members"), icon: Users },
+          { href: "/users", label: t("nav.users"), icon: ShieldUser },
         ]
       : []),
-    { href: "/settings", label: "Settings", icon: Settings },
+    { href: "/settings", label: t("nav.settings"), icon: Settings },
   ];
 
   return (
@@ -107,7 +109,7 @@ export default function AuthNav({ isAuthenticated, isAdmin }: AuthNavProps) {
       </div>
 
       <button
-        aria-label="Log out"
+        aria-label={t("nav.logoutAriaLabel")}
         className={cn(
           navLinkClassName,
           "border border-border text-fg-muted hover:border-danger-border hover:bg-danger-soft hover:text-danger",
@@ -116,7 +118,7 @@ export default function AuthNav({ isAuthenticated, isAdmin }: AuthNavProps) {
         type="button"
       >
         <LogOut className="h-4 w-4" />
-        <span className="hidden sm:inline">Logout</span>
+        <span className="hidden sm:inline">{t("nav.logout")}</span>
       </button>
     </nav>
   );

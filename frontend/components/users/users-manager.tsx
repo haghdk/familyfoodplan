@@ -3,6 +3,8 @@
 import { FormEvent, useState } from "react";
 import { Pencil, ShieldUser, Trash2, UserPlus } from "lucide-react";
 import { backendApiUrl } from "../../lib/auth";
+import { useTranslations } from "../../lib/i18n/client";
+import { localeHeader } from "../../lib/i18n/requestHeaders";
 import Alert from "../ui/Alert";
 import Badge from "../ui/Badge";
 import Button from "../ui/Button";
@@ -22,7 +24,10 @@ type UsersManagerProps = {
   initialUsers: User[];
 };
 
+const minimumPasswordLength = 6;
+
 export default function UsersManager({ initialUsers }: UsersManagerProps) {
+  const { locale, t, plural } = useTranslations();
   const [users, setUsers] = useState(initialUsers);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -40,14 +45,14 @@ export default function UsersManager({ initialUsers }: UsersManagerProps) {
     try {
       const response = await fetch(`${backendApiUrl}/api/users`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...localeHeader(locale) },
         credentials: "include",
         body: JSON.stringify({ email, password, role })
       });
 
       if (!response.ok) {
         const data = (await response.json()) as { message?: string };
-        throw new Error(data.message || "Unable to create user.");
+        throw new Error(data.message || t("users.createFailed"));
       }
 
       const data = (await response.json()) as { user: User };
@@ -56,7 +61,9 @@ export default function UsersManager({ initialUsers }: UsersManagerProps) {
       setPassword("");
       setRole("VIEWER");
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Unable to create user.");
+      setErrorMessage(
+        error instanceof Error ? error.message : t("users.createFailed")
+      );
     }
   };
 
@@ -73,7 +80,7 @@ export default function UsersManager({ initialUsers }: UsersManagerProps) {
     try {
       const response = await fetch(`${backendApiUrl}/api/users/${userId}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...localeHeader(locale) },
         credentials: "include",
         body: JSON.stringify({
           email: editingEmail,
@@ -84,7 +91,7 @@ export default function UsersManager({ initialUsers }: UsersManagerProps) {
 
       if (!response.ok) {
         const data = (await response.json()) as { message?: string };
-        throw new Error(data.message || "Unable to update user.");
+        throw new Error(data.message || t("users.updateFailed"));
       }
 
       const data = (await response.json()) as { user: User };
@@ -93,7 +100,9 @@ export default function UsersManager({ initialUsers }: UsersManagerProps) {
       );
       setEditingId(null);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Unable to update user.");
+      setErrorMessage(
+        error instanceof Error ? error.message : t("users.updateFailed")
+      );
     }
   };
 
@@ -103,43 +112,46 @@ export default function UsersManager({ initialUsers }: UsersManagerProps) {
     try {
       const response = await fetch(`${backendApiUrl}/api/users/${userId}`, {
         method: "DELETE",
+        headers: localeHeader(locale),
         credentials: "include"
       });
 
       if (!response.ok) {
         const data = (await response.json()) as { message?: string };
-        throw new Error(data.message || "Unable to delete user.");
+        throw new Error(data.message || t("users.deleteFailed"));
       }
 
       setUsers((currentUsers) => currentUsers.filter((user) => user.id !== userId));
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Unable to delete user.");
+      setErrorMessage(
+        error instanceof Error ? error.message : t("users.deleteFailed")
+      );
     }
   };
 
   return (
     <section className="space-y-5">
       <SectionCard
-        description="Admins can edit everything. Viewers can only read plans and grocery lists."
+        description={t("users.addDescription")}
         icon={<UserPlus className="h-4 w-4" />}
-        title="Add user"
+        title={t("users.addTitle")}
       >
         <form onSubmit={createUser}>
           <div className="grid gap-3 md:grid-cols-3">
             <TextField
               autoComplete="off"
-              label="Email"
+              label={t("common.email")}
               onChange={(event) => setEmail(event.target.value)}
-              placeholder="name@example.com"
+              placeholder={t("users.emailPlaceholder")}
               required
               type="email"
               value={email}
             />
             <TextField
               autoComplete="new-password"
-              hint="At least 6 characters."
-              label="Password"
-              minLength={6}
+              hint={plural("users.passwordHint", minimumPasswordLength)}
+              label={t("common.password")}
+              minLength={minimumPasswordLength}
               onChange={(event) => setPassword(event.target.value)}
               placeholder="••••••••"
               required
@@ -147,18 +159,18 @@ export default function UsersManager({ initialUsers }: UsersManagerProps) {
               value={password}
             />
             <SelectField
-              label="Role"
+              label={t("users.roleLabel")}
               onChange={(event) => setRole(event.target.value as UserRole)}
               value={role}
             >
-              <option value="VIEWER">Regular user (viewer)</option>
-              <option value="ADMIN">Admin</option>
+              <option value="VIEWER">{t("users.roleViewerOption")}</option>
+              <option value="ADMIN">{t("users.roleAdminOption")}</option>
             </SelectField>
           </div>
 
           <Button className="mt-4" type="submit">
             <UserPlus className="h-4 w-4" />
-            Add user
+            {t("users.addSubmit")}
           </Button>
         </form>
       </SectionCard>
@@ -167,9 +179,9 @@ export default function UsersManager({ initialUsers }: UsersManagerProps) {
 
       {users.length === 0 ? (
         <EmptyState
-          description="Create an account so other family members can sign in."
+          description={t("users.emptyDescription")}
           icon={<ShieldUser className="h-5 w-5" />}
-          title="No users yet"
+          title={t("users.emptyTitle")}
         />
       ) : (
         <ul className="space-y-3">
@@ -180,32 +192,34 @@ export default function UsersManager({ initialUsers }: UsersManagerProps) {
                   <div className="space-y-4">
                     <div className="grid gap-3 md:grid-cols-3">
                       <TextField
-                        label="Email"
+                        label={t("common.email")}
                         onChange={(event) => setEditingEmail(event.target.value)}
                         type="email"
                         value={editingEmail}
                       />
                       <TextField
-                        hint="Leave blank to keep the current password."
-                        label="New password"
+                        hint={t("users.newPasswordHint")}
+                        label={t("users.newPasswordLabel")}
                         onChange={(event) => setEditingPassword(event.target.value)}
                         placeholder="••••••••"
                         type="password"
                         value={editingPassword}
                       />
                       <SelectField
-                        label="Role"
+                        label={t("users.roleLabel")}
                         onChange={(event) => setEditingRole(event.target.value as UserRole)}
                         value={editingRole}
                       >
-                        <option value="VIEWER">Regular user (viewer)</option>
-                        <option value="ADMIN">Admin</option>
+                        <option value="VIEWER">{t("users.roleViewerOption")}</option>
+                        <option value="ADMIN">{t("users.roleAdminOption")}</option>
                       </SelectField>
                     </div>
                     <div className="flex gap-2">
-                      <Button onClick={() => updateUser(user.id)}>Save</Button>
+                      <Button onClick={() => updateUser(user.id)}>
+                        {t("common.save")}
+                      </Button>
                       <Button onClick={() => setEditingId(null)} variant="secondary">
-                        Cancel
+                        {t("common.cancel")}
                       </Button>
                     </div>
                   </div>
@@ -224,7 +238,9 @@ export default function UsersManager({ initialUsers }: UsersManagerProps) {
                       <div>
                         <p className="font-semibold text-fg">{user.email}</p>
                         <Badge tone={user.role === "ADMIN" ? "accent" : "neutral"}>
-                          {user.role === "ADMIN" ? "Admin" : "Regular viewer"}
+                          {user.role === "ADMIN"
+                            ? t("users.badgeAdmin")
+                            : t("users.badgeViewer")}
                         </Badge>
                       </div>
                     </div>
@@ -236,7 +252,7 @@ export default function UsersManager({ initialUsers }: UsersManagerProps) {
                         variant="secondary"
                       >
                         <Pencil className="h-3.5 w-3.5" />
-                        Edit
+                        {t("common.edit")}
                       </Button>
                       <Button
                         onClick={() => deleteUser(user.id)}
@@ -244,7 +260,7 @@ export default function UsersManager({ initialUsers }: UsersManagerProps) {
                         variant="danger"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
-                        Delete
+                        {t("common.delete")}
                       </Button>
                     </div>
                   </div>

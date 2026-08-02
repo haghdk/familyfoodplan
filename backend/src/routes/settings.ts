@@ -3,6 +3,15 @@ import { prisma } from "../lib/prisma";
 import { requireAuth } from "../middleware/auth";
 import { isPushConfigured, pushPublicKey } from "../lib/webPush";
 import { reminderTimeZone, sendDinnerReminderToUser } from "../services/dinnerReminder";
+import {
+  defaultLocale,
+  isLocale,
+  locales,
+  requestLocale,
+  translate,
+  translatePlural,
+  userLocale
+} from "../i18n";
 
 const settingsRouter = Router();
 
@@ -17,13 +26,14 @@ const getSessionUser = (response: Response): SessionUser =>
 
 /** Users who have never opened the settings screen have no row yet. */
 const defaultSettings = {
-  dinnerReminderEnabled: false
+  dinnerReminderEnabled: false,
+  language: defaultLocale as string
 };
 
 const readSettings = async (userId: number) => {
   const settings = await prisma.userSettings.findUnique({
     where: { userId },
-    select: { dinnerReminderEnabled: true }
+    select: { dinnerReminderEnabled: true, language: true }
   });
 
   return settings ?? defaultSettings;
@@ -50,27 +60,59 @@ settingsRouter.get("/api/settings", requireAuth, async (_request, response) => {
   });
 });
 
+/**
+ * Updates one or both preferences. Each field is optional so the language
+ * picker and the reminder toggle can save independently without either of them
+ * having to resend the other's current value.
+ */
 settingsRouter.put("/api/settings", requireAuth, async (request, response) => {
+  const locale = requestLocale(request);
   const user = getSessionUser(response);
-  const { dinnerReminderEnabled } = request.body as {
+  const { dinnerReminderEnabled, language } = request.body as {
     dinnerReminderEnabled?: unknown;
+    language?: unknown;
   };
 
-  if (typeof dinnerReminderEnabled !== "boolean") {
-    response.status(400).json({ message: "dinnerReminderEnabled must be a boolean." });
+  if (dinnerReminderEnabled === undefined && language === undefined) {
+    response
+      .status(400)
+      .json({ message: translate(locale, "settings.nothingToUpdate") });
     return;
   }
+
+  if (
+    dinnerReminderEnabled !== undefined &&
+    typeof dinnerReminderEnabled !== "boolean"
+  ) {
+    response
+      .status(400)
+      .json({ message: translate(locale, "settings.reminderMustBeBoolean") });
+    return;
+  }
+
+  if (language !== undefined && !isLocale(language)) {
+    response.status(400).json({
+      message: translate(locale, "settings.unsupportedLanguage", {
+        languages: locales.join(", ")
+      })
+    });
+    return;
+  }
+
+  const updates = {
+    ...(dinnerReminderEnabled === undefined ? {} : { dinnerReminderEnabled }),
+    ...(language === undefined ? {} : { language })
+  };
 
   const settings = await prisma.userSettings.upsert({
     where: { userId: user.id },
     create: {
       userId: user.id,
-      dinnerReminderEnabled
+      ...defaultSettings,
+      ...updates
     },
-    update: {
-      dinnerReminderEnabled
-    },
-    select: { dinnerReminderEnabled: true }
+    update: updates,
+    select: { dinnerReminderEnabled: true, language: true }
   });
 
   response.status(200).json({ settings });
@@ -82,6 +124,7 @@ settingsRouter.put("/api/settings", requireAuth, async (request, response) => {
  * account moves to that account instead of duplicating.
  */
 settingsRouter.post("/api/push/subscriptions", requireAuth, async (request, response) => {
+  const locale = requestLocale(request);
   const user = getSessionUser(response);
   const { endpoint, keys } = request.body as {
     endpoint?: unknown;
@@ -100,7 +143,7 @@ settingsRouter.post("/api/push/subscriptions", requireAuth, async (request, resp
     !authKey.trim()
   ) {
     response.status(400).json({
-      message: "A push subscription with endpoint, keys.p256dh and keys.auth is required."
+      message: translate(locale, "settings.subscriptionRequired")
     });
     return;
   }
@@ -131,11 +174,14 @@ settingsRouter.post("/api/push/subscriptions", requireAuth, async (request, resp
 });
 
 settingsRouter.delete("/api/push/subscriptions", requireAuth, async (request, response) => {
+  const locale = requestLocale(request);
   const user = getSessionUser(response);
   const { endpoint } = request.body as { endpoint?: unknown };
 
   if (typeof endpoint !== "string" || !endpoint.trim()) {
-    response.status(400).json({ message: "endpoint is required." });
+    response
+      .status(400)
+      .json({ message: translate(locale, "settings.endpointRequired") });
     return;
   }
 
@@ -156,25 +202,31 @@ settingsRouter.delete("/api/push/subscriptions", requireAuth, async (request, re
  * Sends today's real reminder to the caller's own devices, so a user can check
  * both that push works and what the 10:00 message will say.
  */
-settingsRouter.post("/api/push/test", requireAuth, async (_request, response) => {
+settingsRouter.post("/api/push/test", requireAuth, async (request, response) => {
+  const locale = requestLocale(request);
   const user = getSessionUser(response);
 
   if (!isPushConfigured) {
     response.status(503).json({
-      message: "Push notifications are not configured on the server."
+      message: translate(locale, "settings.pushNotConfigured")
     });
     return;
   }
 
-  const { reminder, summary } = await sendDinnerReminderToUser(user.id);
+  // The preview has to match the real 10:00 notification, which is written in
+  // the account's language rather than in whatever this request asked for.
+  const { reminder, summary } = await sendDinnerReminderToUser(
+    user.id,
+    await userLocale(user.id)
+  );
 
   if (summary.sent === 0) {
     response.status(200).json({
       sent: 0,
       message:
         summary.removed > 0
-          ? "This device's push registration had expired. Turn reminders off and on again."
-          : "No devices are registered for this account yet.",
+          ? translate(locale, "settings.registrationExpired")
+          : translate(locale, "settings.noDevices"),
       preview: reminder.payload
     });
     return;
@@ -182,7 +234,7 @@ settingsRouter.post("/api/push/test", requireAuth, async (_request, response) =>
 
   response.status(200).json({
     sent: summary.sent,
-    message: `Test notification sent to ${summary.sent} device${summary.sent === 1 ? "" : "s"}.`,
+    message: translatePlural(locale, "settings.testSent", summary.sent),
     preview: reminder.payload
   });
 });

@@ -3,8 +3,9 @@
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { ArrowLeftRight } from "lucide-react";
 import { cn } from "../../lib/cn";
+import { useTranslations } from "../../lib/i18n/client";
 import {
-  mealTypeLabels,
+  mealTypeLabelInSentence,
   useMealSwap,
   type SwappableMealType
 } from "./MealSwapProvider";
@@ -31,6 +32,8 @@ export default function MealSwapHandle({
   mealType
 }: MealSwapHandleProps) {
   const mealSwap = useMealSwap();
+  const translator = useTranslations();
+  const { t } = translator;
   const [isDayPickerOpen, setIsDayPickerOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const pointerStartRef = useRef<{ x: number; y: number } | null>(null);
@@ -72,7 +75,7 @@ export default function MealSwapHandle({
   const isSwapping =
     mealSwap.pendingSwap?.mealType === mealType &&
     mealSwap.pendingSwap.dayKeys.includes(dayKey);
-  const mealLabel = mealTypeLabels[mealType];
+  const mealLabel = mealTypeLabelInSentence(translator, mealType);
 
   if (swapPartners.length === 0) {
     return null;
@@ -135,7 +138,10 @@ export default function MealSwapHandle({
       <button
         aria-expanded={isDayPickerOpen}
         aria-haspopup="menu"
-        aria-label={`Move ${mealLabel.toLowerCase()} for ${dayLabel} to another day. Drag it onto another day, or activate to pick a day.`}
+        aria-label={t("mealSwap.handleAriaLabel", {
+          meal: mealLabel,
+          day: dayLabel
+        })}
         className={cn(
           "inline-flex touch-none items-center gap-1.5 rounded-full px-2.5 py-1 text-xs",
           "font-semibold transition focus-visible:outline-none focus-visible:ring-2",
@@ -153,12 +159,12 @@ export default function MealSwapHandle({
         type="button"
       >
         <ArrowLeftRight className="h-3.5 w-3.5" />
-        {isSwapping ? "Swapping..." : "Swap"}
+        {isSwapping ? t("mealSwap.swapping") : t("mealSwap.swap")}
       </button>
 
       {isDayPickerOpen ? (
         <div
-          aria-label={`Swap ${mealLabel.toLowerCase()} with another day`}
+          aria-label={t("mealSwap.menuAriaLabel", { meal: mealLabel })}
           className={cn(
             "absolute right-0 z-30 mt-1 w-64 overflow-hidden rounded-2xl border",
             "border-border bg-surface p-1 shadow-card"
@@ -166,7 +172,7 @@ export default function MealSwapHandle({
           role="menu"
         >
           <p className="px-3 py-2 text-xs font-semibold uppercase tracking-[0.1em] text-fg-subtle">
-            Swap {mealLabel.toLowerCase()} with
+            {t("mealSwap.menuTitle", { meal: mealLabel })}
           </p>
           {swapPartners.map((swapPartner) => (
             <button
@@ -188,7 +194,7 @@ export default function MealSwapHandle({
                   swapPartner.mealSummary ? "text-fg-muted" : "text-fg-subtle"
                 )}
               >
-                {swapPartner.mealSummary || "Nothing planned"}
+                {swapPartner.mealSummary || t("mealSwap.nothingPlanned")}
               </span>
             </button>
           ))}

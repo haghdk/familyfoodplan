@@ -5,6 +5,10 @@ import { useParams } from "next/navigation";
 import { Check, ShoppingBasket } from "lucide-react";
 import { backendApiUrl } from "../../../lib/auth";
 import { cn } from "../../../lib/cn";
+import { createDateFormatter } from "../../../lib/dates";
+import { useTranslations } from "../../../lib/i18n/client";
+import type { AppTranslator } from "../../../lib/i18n/dictionaries";
+import { localeHeader } from "../../../lib/i18n/requestHeaders";
 import { sortItemsByIdOrder, sortPickedUpItemsLast } from "../../../lib/grocery";
 import { useReorderAnimation } from "../../../lib/useReorderAnimation";
 import Alert from "../../../components/ui/Alert";
@@ -58,31 +62,36 @@ type GroceryRealtimeEvent = {
 
 // Tells the shopper what an ingredient is for, so a line they do not recognise
 // can still be traced back to the meal it was added for.
-const describeItemSource = (item: GroceryItem) => {
+const describeItemSource = (item: GroceryItem, { t }: AppTranslator) => {
   if (item.dinnerDish) {
-    return `Dinner · ${item.dinnerDish.name}`;
+    return t("grocery.sourceMeal", {
+      meal: t("meals.dinner"),
+      dish: item.dinnerDish.name
+    });
   }
 
   if (item.breakfastDish) {
-    return `Breakfast · ${item.breakfastDish.name}`;
+    return t("grocery.sourceMeal", {
+      meal: t("meals.breakfast"),
+      dish: item.breakfastDish.name
+    });
   }
 
   if (item.lunchDish) {
-    return `Lunch · ${item.lunchDish.name}`;
+    return t("grocery.sourceMeal", {
+      meal: t("meals.lunch"),
+      dish: item.lunchDish.name
+    });
   }
 
-  return "General";
-};
-
-const formatDate = (dateValue: string) => {
-  const parsedDate = new Date(dateValue);
-
-  return Number.isNaN(parsedDate.valueOf()) ? "" : parsedDate.toLocaleDateString();
+  return t("sharedGrocery.sourceGeneral");
 };
 
 export default function SharedGroceryPage() {
   const params = useParams<{ token: string }>();
   const token = params.token;
+  const translator = useTranslations();
+  const { locale, t } = translator;
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [isRealtimeConnected, setIsRealtimeConnected] = useState(false);
@@ -111,26 +120,29 @@ export default function SharedGroceryPage() {
         const response = await fetch(`${backendApiUrl}/api/grocery/shared/${token}`);
 
         if (!response.ok) {
-          setErrorMessage("Shared list not found or no longer available.");
+          setErrorMessage(t("sharedGrocery.notFound"));
           setIsLoading(false);
           return;
         }
 
         const data = (await response.json()) as SharedResponse;
-        const startLabel = formatDate(data.plan.startDate ?? data.plan.date);
-        const endLabel = data.plan.endDate ? formatDate(data.plan.endDate) : "";
+        const { formatCalendarDate } = createDateFormatter(translator);
+        const startLabel = formatCalendarDate(data.plan.startDate ?? data.plan.date);
+        const endLabel = data.plan.endDate
+          ? formatCalendarDate(data.plan.endDate)
+          : "";
 
         setPlanPeriod(
           endLabel && endLabel !== startLabel ? `${startLabel} – ${endLabel}` : startLabel
         );
         setItems(data.groceryItems);
       } catch (_error) {
-        setErrorMessage("Could not reach the grocery list. Retrying...");
+        setErrorMessage(t("sharedGrocery.unreachable"));
       } finally {
         setIsLoading(false);
       }
     },
-    [token]
+    [t, token, translator]
   );
 
   useEffect(() => {
@@ -266,18 +278,18 @@ export default function SharedGroceryPage() {
     try {
       response = await fetch(`${backendApiUrl}/api/grocery/shared/${token}/items/${item.id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...localeHeader(locale) },
         body: JSON.stringify({ isChecked: !item.isChecked })
       });
     } catch (_error) {
       setItemCheckedState(item.isChecked);
-      setErrorMessage("Could not reach the grocery list. That tick was not saved.");
+      setErrorMessage(t("sharedGrocery.tickNotSaved"));
       return;
     }
 
     if (!response.ok) {
       setItemCheckedState(item.isChecked);
-      setErrorMessage("Could not update item state.");
+      setErrorMessage(t("sharedGrocery.updateFailed"));
       return;
     }
 
@@ -299,7 +311,7 @@ export default function SharedGroceryPage() {
       <div className="mx-auto max-w-2xl space-y-3">
         <div className="h-24 animate-pulse rounded-3xl bg-surface-muted" />
         <div className="h-72 animate-pulse rounded-3xl bg-surface-muted" />
-        <span className="sr-only">Loading shared grocery list...</span>
+        <span className="sr-only">{t("sharedGrocery.loading")}</span>
       </div>
     );
   }
@@ -315,13 +327,15 @@ export default function SharedGroceryPage() {
           <div>
             <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-brand">
               <ShoppingBasket className="h-4 w-4" />
-              Shared list
+              {t("sharedGrocery.eyebrow")}
             </p>
             <h1 className="mt-2 text-2xl font-semibold tracking-tight text-fg">
-              Grocery list
+              {t("sharedGrocery.title")}
             </h1>
             {planPeriod ? (
-              <p className="mt-1 text-sm text-fg-muted">Plan period: {planPeriod}</p>
+              <p className="mt-1 text-sm text-fg-muted">
+                {t("sharedGrocery.planPeriod", { period: planPeriod })}
+              </p>
             ) : null}
           </div>
           <span className="inline-flex shrink-0 items-center gap-2 rounded-full border border-border px-3 py-1.5 text-xs font-medium text-fg-muted">
@@ -331,7 +345,9 @@ export default function SharedGroceryPage() {
                 isRealtimeConnected ? "bg-success" : "bg-warning"
               )}
             />
-            {isRealtimeConnected ? "Live" : "Reconnecting"}
+            {isRealtimeConnected
+              ? t("sharedGrocery.live")
+              : t("sharedGrocery.reconnecting")}
           </span>
         </div>
 
@@ -339,12 +355,15 @@ export default function SharedGroceryPage() {
           <div className="mt-5">
             <div className="flex items-baseline justify-between text-sm">
               <span className="font-medium text-fg">
-                {checkedCount} of {items.length} picked up
+                {t("sharedGrocery.pickedUp", {
+                  checked: checkedCount,
+                  total: items.length
+                })}
               </span>
               <span className="text-fg-subtle">{progressPercentage}%</span>
             </div>
             <div
-              aria-label="Shopping progress"
+              aria-label={t("sharedGrocery.progressAriaLabel")}
               aria-valuemax={100}
               aria-valuemin={0}
               aria-valuenow={progressPercentage}
@@ -364,9 +383,9 @@ export default function SharedGroceryPage() {
 
       {items.length === 0 ? (
         <EmptyState
-          description="When the plan owner adds items they will appear here instantly."
+          description={t("sharedGrocery.emptyDescription")}
           icon={<ShoppingBasket className="h-5 w-5" />}
-          title="Nothing to shop for yet"
+          title={t("sharedGrocery.emptyTitle")}
         />
       ) : (
         <ul className="space-y-2" ref={containerRef}>
@@ -410,7 +429,7 @@ export default function SharedGroceryPage() {
                     {item.quantity}
                     {item.unit ? ` ${item.unit}` : ""}
                     <span className="mx-1.5">•</span>
-                    {describeItemSource(item)}
+                    {describeItemSource(item, translator)}
                   </span>
                 </span>
               </label>

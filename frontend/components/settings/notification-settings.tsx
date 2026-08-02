@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { BellRing, Send, Smartphone } from "lucide-react";
 import { backendApiUrl } from "../../lib/auth";
+import { useTranslations } from "../../lib/i18n/client";
+import { localeHeader } from "../../lib/i18n/requestHeaders";
 import Alert from "../ui/Alert";
 import Button from "../ui/Button";
 import { SectionCard } from "../ui/Card";
@@ -69,6 +71,7 @@ export default function NotificationSettings({
   initialDinnerReminderEnabled,
   push
 }: NotificationSettingsProps) {
+  const { locale, t, plural } = useTranslations();
   const [isEnabled, setIsEnabled] = useState(initialDinnerReminderEnabled);
   const [deviceCount, setDeviceCount] = useState(push.deviceCount);
   const [isThisDeviceRegistered, setIsThisDeviceRegistered] = useState(false);
@@ -78,25 +81,30 @@ export default function NotificationSettings({
   const [errorMessage, setErrorMessage] = useState("");
   const [statusMessage, setStatusMessage] = useState("");
 
-  const saveSubscription = useCallback(async (subscription: PushSubscription) => {
-    const response = await fetch(`${backendApiUrl}/api/push/subscriptions`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify(subscription.toJSON())
-    });
+  const saveSubscription = useCallback(
+    async (subscription: PushSubscription) => {
+      const response = await fetch(`${backendApiUrl}/api/push/subscriptions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...localeHeader(locale) },
+        credentials: "include",
+        body: JSON.stringify(subscription.toJSON())
+      });
 
-    if (!response.ok) {
-      const data = (await response.json().catch(() => ({}))) as { message?: string };
-      throw new Error(data.message || "Could not register this device for notifications.");
-    }
+      if (!response.ok) {
+        const data = (await response.json().catch(() => ({}))) as { message?: string };
+        throw new Error(
+          data.message || t("settings.notifications.registerFailed")
+        );
+      }
 
-    const data = (await response.json()) as { deviceCount?: number };
+      const data = (await response.json()) as { deviceCount?: number };
 
-    if (typeof data.deviceCount === "number") {
-      setDeviceCount(data.deviceCount);
-    }
-  }, []);
+      if (typeof data.deviceCount === "number") {
+        setDeviceCount(data.deviceCount);
+      }
+    },
+    [locale, t]
+  );
 
   // Re-register on load: a subscription lives in the browser, so it can outlive
   // the server-side record (database reset, account change) and would then look
@@ -141,22 +149,20 @@ export default function NotificationSettings({
   const saveSetting = async (dinnerReminderEnabled: boolean) => {
     const response = await fetch(`${backendApiUrl}/api/settings`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...localeHeader(locale) },
       credentials: "include",
       body: JSON.stringify({ dinnerReminderEnabled })
     });
 
     if (!response.ok) {
       const data = (await response.json().catch(() => ({}))) as { message?: string };
-      throw new Error(data.message || "Could not save your notification setting.");
+      throw new Error(data.message || t("settings.notifications.saveFailed"));
     }
   };
 
   const subscribeThisDevice = async () => {
     if (!push.configured || !push.publicKey) {
-      throw new Error(
-        "Push notifications are not configured on the server yet. Ask an admin to set the VAPID keys."
-      );
+      throw new Error(t("settings.notifications.serverNotConfigured"));
     }
 
     const permission = await Notification.requestPermission();
@@ -164,8 +170,8 @@ export default function NotificationSettings({
     if (permission !== "granted") {
       throw new Error(
         permission === "denied"
-          ? "Notifications are blocked for this site. Allow them in your browser settings and try again."
-          : "Notification permission was not granted."
+          ? t("settings.notifications.permissionDenied")
+          : t("settings.notifications.permissionNotGranted")
       );
     }
 
@@ -207,7 +213,7 @@ export default function NotificationSettings({
 
     const response = await fetch(`${backendApiUrl}/api/push/subscriptions`, {
       method: "DELETE",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...localeHeader(locale) },
       credentials: "include",
       body: JSON.stringify({ endpoint: subscription.endpoint })
     });
@@ -240,12 +246,14 @@ export default function NotificationSettings({
       setIsEnabled(nextEnabled);
       setStatusMessage(
         nextEnabled
-          ? "Daily dinner reminders are on for this device."
-          : "Daily dinner reminders are off."
+          ? t("settings.notifications.enabled")
+          : t("settings.notifications.disabled")
       );
     } catch (error) {
       setErrorMessage(
-        error instanceof Error ? error.message : "Could not update notifications."
+        error instanceof Error
+          ? error.message
+          : t("settings.notifications.updateFailed")
       );
     } finally {
       setIsBusy(false);
@@ -260,6 +268,7 @@ export default function NotificationSettings({
     try {
       const response = await fetch(`${backendApiUrl}/api/push/test`, {
         method: "POST",
+        headers: localeHeader(locale),
         credentials: "include"
       });
 
@@ -268,13 +277,15 @@ export default function NotificationSettings({
       };
 
       if (!response.ok) {
-        throw new Error(data.message || "Could not send a test notification.");
+        throw new Error(data.message || t("settings.notifications.testFailed"));
       }
 
-      setStatusMessage(data.message || "Test notification sent.");
+      setStatusMessage(data.message || t("settings.notifications.testSent"));
     } catch (error) {
       setErrorMessage(
-        error instanceof Error ? error.message : "Could not send a test notification."
+        error instanceof Error
+          ? error.message
+          : t("settings.notifications.testFailed")
       );
     } finally {
       setIsBusy(false);
@@ -283,49 +294,46 @@ export default function NotificationSettings({
 
   return (
     <SectionCard
-      description={`Every day at 10:00 (${push.reminderTimeZone}) we send a push notification with what is planned for dinner. If nothing is planned yet, the notification says so.`}
+      description={t("settings.notifications.description", {
+        timeZone: push.reminderTimeZone
+      })}
       icon={<BellRing className="h-4 w-4" />}
-      title="Notifications"
+      title={t("settings.notifications.title")}
     >
       <div className="space-y-4">
         {!push.configured ? (
           <Alert tone="warning">
-            Push notifications are not configured on the server yet. An admin needs to set
-            the <code>VAPID_PUBLIC_KEY</code> and <code>VAPID_PRIVATE_KEY</code> environment
-            variables.
+            {t("settings.notifications.notConfiguredBefore")}{" "}
+            <code>VAPID_PUBLIC_KEY</code>{" "}
+            {t("settings.notifications.notConfiguredBetween")}{" "}
+            <code>VAPID_PRIVATE_KEY</code>{" "}
+            {t("settings.notifications.notConfiguredAfter")}
           </Alert>
         ) : null}
 
         {!isSupported ? (
-          <Alert tone="warning">
-            This browser does not support push notifications. Try a recent version of
-            Chrome, Edge, Firefox, or Safari.
-          </Alert>
+          <Alert tone="warning">{t("settings.notifications.unsupported")}</Alert>
         ) : null}
 
         {needsHomeScreenInstall ? (
-          <Alert tone="info">
-            On iPhone and iPad, notifications only work once the app is added to the home
-            screen. Tap Share, then &ldquo;Add to Home Screen&rdquo;, and open the app from
-            there.
-          </Alert>
+          <Alert tone="info">{t("settings.notifications.homeScreen")}</Alert>
         ) : null}
 
         <ToggleSetting
           checked={isEnabled}
-          description="Get a push notification each morning with today's dinner."
+          description={t("settings.notifications.toggleDescription")}
           disabled={isBusy || !isSupported || !push.configured}
           footer={
             <p className="flex items-center gap-1.5 text-xs text-fg-subtle">
               <Smartphone className="h-3.5 w-3.5" />
               {isThisDeviceRegistered
-                ? "This device is registered"
-                : "This device is not registered yet"}
+                ? t("settings.notifications.deviceRegistered")
+                : t("settings.notifications.deviceNotRegistered")}
               <span className="text-fg-subtle">•</span>
-              {deviceCount} device{deviceCount === 1 ? "" : "s"} on your account
+              {plural("settings.notifications.devicesOnAccount", deviceCount)}
             </p>
           }
-          label="Daily dinner reminder"
+          label={t("settings.notifications.toggleLabel")}
           onChange={(nextEnabled) => {
             void handleToggle(nextEnabled);
           }}
@@ -343,11 +351,10 @@ export default function NotificationSettings({
             variant="secondary"
           >
             <Send className="h-4 w-4" />
-            Send a test notification
+            {t("settings.notifications.sendTest")}
           </Button>
           <p className="mt-2 text-xs text-fg-subtle">
-            Sends today&rsquo;s reminder to your devices right now, so you can check how it
-            looks.
+            {t("settings.notifications.sendTestHint")}
           </p>
         </div>
       </div>

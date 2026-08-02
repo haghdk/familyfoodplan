@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useRef } from "react";
 import { AlertTriangle } from "lucide-react";
+import { useTranslations } from "../../lib/i18n/client";
 import Button from "./Button";
 
 type ConfirmVariant = "default" | "danger";
@@ -29,6 +30,7 @@ export default function ConfirmModal({
   onConfirm,
   onCancel
 }: ConfirmModalProps) {
+  const { t } = useTranslations();
   const titleId = useId();
   const descriptionId = useId();
   const confirmButtonRef = useRef<HTMLButtonElement | null>(null);
@@ -93,7 +95,7 @@ export default function ConfirmModal({
             ref={confirmButtonRef}
             variant={isDanger ? "dangerSolid" : "primary"}
           >
-            {isLoading ? "Working..." : confirmLabel}
+            {isLoading ? t("common.working") : confirmLabel}
           </Button>
         </div>
       </div>

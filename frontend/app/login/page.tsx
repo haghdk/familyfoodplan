@@ -5,6 +5,8 @@ import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CookingPot, LogIn } from "lucide-react";
 import { adminSessionCookieName, backendApiUrl, userRoleCookieName } from "../../lib/auth";
+import { resolveLocale } from "../../lib/i18n/config";
+import { useTranslations, writeLocaleCookie } from "../../lib/i18n/client";
 import Alert from "../../components/ui/Alert";
 import Button from "../../components/ui/Button";
 import Card from "../../components/ui/Card";
@@ -12,6 +14,7 @@ import { TextField } from "../../components/ui/Field";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { t } = useTranslations();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -33,17 +36,29 @@ export default function LoginPage() {
       });
 
       if (!response.ok) {
-        setErrorMessage("Invalid email or password.");
+        setErrorMessage(t("login.invalidCredentials"));
         return;
       }
 
-      const data = (await response.json()) as { token: string; user: { role: "ADMIN" | "VIEWER" } };
+      const data = (await response.json()) as {
+        token: string;
+        user: { role: "ADMIN" | "VIEWER"; language?: string };
+      };
       document.cookie = `${adminSessionCookieName}=${data.token}; path=/; max-age=${60 * 60 * 24}; samesite=lax`;
       document.cookie = `${userRoleCookieName}=${data.user.role}; path=/; max-age=${60 * 60 * 24}; samesite=lax`;
+
+      // Signing in on a new device is the moment the account's stored language
+      // becomes known, so the cookie the rest of the app reads is seeded here.
+      const accountLocale = resolveLocale(data.user.language);
+
+      if (accountLocale) {
+        writeLocaleCookie(accountLocale);
+      }
+
       router.push("/");
       router.refresh();
     } catch (_error) {
-      setErrorMessage("Unable to login right now. Please try again.");
+      setErrorMessage(t("login.unavailable"));
     } finally {
       setIsSubmitting(false);
     }
@@ -55,19 +70,19 @@ export default function LoginPage() {
         <CookingPot className="h-7 w-7" />
       </span>
       <h1 className="mt-5 text-3xl font-semibold tracking-tight text-fg">
-        Welcome back
+        {t("login.title")}
       </h1>
       <p className="mt-2 text-center text-sm text-fg-muted">
-        Sign in to view and manage your family meal plans.
+        {t("login.subtitle")}
       </p>
 
       <Card className="mt-7 w-full">
         <form className="space-y-4" onSubmit={handleSubmit}>
           <TextField
             autoComplete="email"
-            label="Email"
+            label={t("common.email")}
             onChange={(event) => setEmail(event.target.value)}
-            placeholder="you@example.com"
+            placeholder={t("login.emailPlaceholder")}
             required
             type="email"
             value={email}
@@ -76,7 +91,7 @@ export default function LoginPage() {
           <div>
             <TextField
               autoComplete="current-password"
-              label="Password"
+              label={t("common.password")}
               onChange={(event) => setPassword(event.target.value)}
               placeholder="••••••••"
               required
@@ -88,7 +103,7 @@ export default function LoginPage() {
                 className="text-sm font-medium text-fg-muted transition hover:text-brand"
                 href="/forgot-password"
               >
-                Forgot your password?
+                {t("login.forgotPassword")}
               </Link>
             </p>
           </div>
@@ -102,7 +117,7 @@ export default function LoginPage() {
             type="submit"
           >
             <LogIn className="h-4 w-4" />
-            {isSubmitting ? "Signing in..." : "Sign in"}
+            {isSubmitting ? t("login.submitting") : t("login.submit")}
           </Button>
         </form>
       </Card>

@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { Archive, Pencil, UserPlus, Users } from "lucide-react";
 import { backendApiUrl } from "../../lib/auth";
+import { useTranslations } from "../../lib/i18n/client";
+import { localeHeader } from "../../lib/i18n/requestHeaders";
 import MemberForm from "./member-form";
 import Alert from "../ui/Alert";
 import Badge from "../ui/Badge";
@@ -29,6 +31,7 @@ const getInitials = (name: string) =>
     .join("") || "?";
 
 export default function MembersManager({ initialMembers }: MembersManagerProps) {
+  const { locale, t } = useTranslations();
   const [members, setMembers] = useState(initialMembers);
   const [isCreating, setIsCreating] = useState(false);
   const [editingMemberId, setEditingMemberId] = useState<number | null>(null);
@@ -46,7 +49,7 @@ export default function MembersManager({ initialMembers }: MembersManagerProps) 
     try {
       const response = await fetch(`${backendApiUrl}/api/members`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...localeHeader(locale) },
         credentials: "include",
         body: JSON.stringify({ name })
       });
@@ -65,7 +68,7 @@ export default function MembersManager({ initialMembers }: MembersManagerProps) 
       setMembers((currentMembers) =>
         currentMembers.filter((member) => member.id !== optimisticId)
       );
-      setErrorMessage("Could not create member right now.");
+      setErrorMessage(t("members.createFailed"));
     } finally {
       setIsCreating(false);
     }
@@ -89,7 +92,7 @@ export default function MembersManager({ initialMembers }: MembersManagerProps) 
     try {
       const response = await fetch(`${backendApiUrl}/api/members/${memberId}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...localeHeader(locale) },
         credentials: "include",
         body: JSON.stringify({ name })
       });
@@ -111,7 +114,7 @@ export default function MembersManager({ initialMembers }: MembersManagerProps) 
           member.id === memberId ? existingMember : member
         )
       );
-      setErrorMessage("Could not update member right now.");
+      setErrorMessage(t("members.updateFailed"));
     } finally {
       setIsSavingId(null);
     }
@@ -135,6 +138,7 @@ export default function MembersManager({ initialMembers }: MembersManagerProps) 
     try {
       const response = await fetch(`${backendApiUrl}/api/members/${memberId}/archive`, {
         method: "PATCH",
+        headers: localeHeader(locale),
         credentials: "include"
       });
 
@@ -154,7 +158,7 @@ export default function MembersManager({ initialMembers }: MembersManagerProps) 
           member.id === memberId ? existingMember : member
         )
       );
-      setErrorMessage("Could not archive member right now.");
+      setErrorMessage(t("members.archiveFailed"));
     } finally {
       setIsSavingId(null);
     }
@@ -165,14 +169,14 @@ export default function MembersManager({ initialMembers }: MembersManagerProps) 
   return (
     <section className="space-y-5">
       <SectionCard
-        description="Add the people you are planning meals for this week."
+        description={t("members.addDescription")}
         icon={<UserPlus className="h-4 w-4" />}
-        title="Add member"
+        title={t("members.addTitle")}
       >
         <MemberForm
           isSubmitting={isCreating}
           onSubmit={createMember}
-          submitLabel="Add member"
+          submitLabel={t("members.addSubmit")}
         />
       </SectionCard>
 
@@ -180,16 +184,18 @@ export default function MembersManager({ initialMembers }: MembersManagerProps) 
 
       {members.length === 0 ? (
         <EmptyState
-          description="Members you add can be assigned to breakfast and lunch dishes."
+          description={t("members.emptyDescription")}
           icon={<Users className="h-5 w-5" />}
-          title="No family members yet"
+          title={t("members.emptyTitle")}
         />
       ) : (
         <>
           <p className="text-sm text-fg-muted">
-            {activeMembersCount} active
+            {t("members.activeCount", { count: activeMembersCount })}
             {members.length - activeMembersCount > 0
-              ? ` · ${members.length - activeMembersCount} archived`
+              ? t("members.archivedCount", {
+                  count: members.length - activeMembersCount
+                })
               : ""}
           </p>
 
@@ -203,7 +209,7 @@ export default function MembersManager({ initialMembers }: MembersManagerProps) 
                       isSubmitting={isSavingId === member.id}
                       onCancel={() => setEditingMemberId(null)}
                       onSubmit={(name) => updateMember(member.id, name)}
-                      submitLabel="Save"
+                      submitLabel={t("common.save")}
                     />
                   ) : (
                     <div className="flex flex-wrap items-center justify-between gap-3">
@@ -220,7 +226,9 @@ export default function MembersManager({ initialMembers }: MembersManagerProps) 
                         <div>
                           <p className="font-semibold text-fg">{member.name}</p>
                           <Badge tone={member.isActive ? "brand" : "neutral"}>
-                            {member.isActive ? "Active" : "Archived"}
+                            {member.isActive
+                              ? t("members.active")
+                              : t("members.archived")}
                           </Badge>
                         </div>
                       </div>
@@ -233,7 +241,7 @@ export default function MembersManager({ initialMembers }: MembersManagerProps) 
                           variant="secondary"
                         >
                           <Pencil className="h-3.5 w-3.5" />
-                          Edit
+                          {t("common.edit")}
                         </Button>
                         <Button
                           disabled={!member.isActive || isSavingId === member.id}
@@ -242,7 +250,7 @@ export default function MembersManager({ initialMembers }: MembersManagerProps) 
                           variant="danger"
                         >
                           <Archive className="h-3.5 w-3.5" />
-                          Archive
+                          {t("members.archive")}
                         </Button>
                       </div>
                     </div>

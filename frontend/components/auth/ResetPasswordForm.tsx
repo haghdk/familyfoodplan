@@ -4,6 +4,8 @@ import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { CheckCircle2, LogIn, ShieldCheck } from "lucide-react";
 import { backendApiUrl } from "../../lib/auth";
+import { useTranslations } from "../../lib/i18n/client";
+import { localeHeader } from "../../lib/i18n/requestHeaders";
 import Alert from "../ui/Alert";
 import Button, { buttonClassName } from "../ui/Button";
 import { TextField } from "../ui/Field";
@@ -15,6 +17,7 @@ type ResetPasswordFormProps = {
 };
 
 export default function ResetPasswordForm({ token }: ResetPasswordFormProps) {
+  const { locale, t, plural } = useTranslations();
   const [password, setPassword] = useState("");
   const [confirmedPassword, setConfirmedPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -26,14 +29,12 @@ export default function ResetPasswordForm({ token }: ResetPasswordFormProps) {
     setErrorMessage("");
 
     if (password.length < minimumPasswordLength) {
-      setErrorMessage(
-        `Password must be at least ${minimumPasswordLength} characters.`
-      );
+      setErrorMessage(plural("resetPassword.tooShort", minimumPasswordLength));
       return;
     }
 
     if (password !== confirmedPassword) {
-      setErrorMessage("The two passwords do not match.");
+      setErrorMessage(t("resetPassword.mismatch"));
       return;
     }
 
@@ -42,7 +43,7 @@ export default function ResetPasswordForm({ token }: ResetPasswordFormProps) {
     try {
       const response = await fetch(`${backendApiUrl}/api/auth/reset-password`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...localeHeader(locale) },
         body: JSON.stringify({ token, password })
       });
 
@@ -50,7 +51,7 @@ export default function ResetPasswordForm({ token }: ResetPasswordFormProps) {
         const data = (await response.json().catch(() => null)) as {
           message?: string;
         } | null;
-        setErrorMessage(data?.message ?? "Could not reset your password.");
+        setErrorMessage(data?.message ?? t("resetPassword.failed"));
         return;
       }
 
@@ -59,7 +60,7 @@ export default function ResetPasswordForm({ token }: ResetPasswordFormProps) {
       // "link expired" branch and hide this success state.
       setIsComplete(true);
     } catch (_error) {
-      setErrorMessage("Could not reset your password right now. Please try again.");
+      setErrorMessage(t("resetPassword.failedNow"));
     } finally {
       setIsSubmitting(false);
     }
@@ -68,12 +69,10 @@ export default function ResetPasswordForm({ token }: ResetPasswordFormProps) {
   if (isComplete) {
     return (
       <div className="space-y-4">
-        <Alert tone="success">
-          Your password has been updated. You can sign in with it now.
-        </Alert>
+        <Alert tone="success">{t("resetPassword.success")}</Alert>
         <Link className={buttonClassName({ className: "w-full", size: "lg" })} href="/login">
           <LogIn className="h-4 w-4" />
-          Go to sign in
+          {t("resetPassword.goToSignIn")}
         </Link>
       </div>
     );
@@ -83,8 +82,8 @@ export default function ResetPasswordForm({ token }: ResetPasswordFormProps) {
     <form className="space-y-4" onSubmit={handleSubmit}>
       <TextField
         autoComplete="new-password"
-        hint={`At least ${minimumPasswordLength} characters.`}
-        label="New password"
+        hint={plural("resetPassword.minimumLength", minimumPasswordLength)}
+        label={t("resetPassword.newPasswordLabel")}
         minLength={minimumPasswordLength}
         onChange={(event) => setPassword(event.target.value)}
         placeholder="••••••••"
@@ -95,7 +94,7 @@ export default function ResetPasswordForm({ token }: ResetPasswordFormProps) {
 
       <TextField
         autoComplete="new-password"
-        label="Confirm new password"
+        label={t("resetPassword.confirmPasswordLabel")}
         minLength={minimumPasswordLength}
         onChange={(event) => setConfirmedPassword(event.target.value)}
         placeholder="••••••••"
@@ -112,7 +111,7 @@ export default function ResetPasswordForm({ token }: ResetPasswordFormProps) {
         ) : (
           <CheckCircle2 className="h-4 w-4" />
         )}
-        {isSubmitting ? "Saving..." : "Save new password"}
+        {isSubmitting ? t("common.saving") : t("resetPassword.submit")}
       </Button>
     </form>
   );

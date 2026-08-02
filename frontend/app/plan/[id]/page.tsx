@@ -9,7 +9,8 @@ import {
   UtensilsCrossed
 } from "lucide-react";
 import { adminSessionCookieName, backendApiUrl, userRoleCookieName } from "../../../lib/auth";
-import { formatDateRange, formatDayLabel, getTodayDayKey, toDayKey } from "../../../lib/dates";
+import { createDateFormatter, getTodayDayKey, toDayKey } from "../../../lib/dates";
+import { getTranslations } from "../../../lib/i18n/server";
 import PlanDayBoard from "../../../components/plan/PlanDayBoard";
 import PlanSettingsForm from "../../../components/plan/PlanSettingsForm";
 import SetCurrentPlanButton from "../../../components/plan/SetCurrentPlanButton";
@@ -82,14 +83,17 @@ export default async function PlanPage({
   const plan = await getPlan(id);
   const cookieStore = await cookies();
   const isAdmin = cookieStore.get(userRoleCookieName)?.value === "ADMIN";
+  const translator = await getTranslations();
+  const { t, plural } = translator;
+  const dateFormatter = createDateFormatter(translator);
 
   if (!plan) {
     return (
       <section className="mx-auto max-w-lg space-y-4">
-        <Alert tone="error">Could not load this plan.</Alert>
+        <Alert tone="error">{t("planDetail.loadFailed")}</Alert>
         <Link className={buttonClassName({ variant: "secondary" })} href="/plan">
           <ArrowLeft className="h-4 w-4" />
-          Back to plans
+          {t("planDetail.backToPlans")}
         </Link>
       </section>
     );
@@ -105,7 +109,7 @@ export default async function PlanPage({
           href="/plan"
         >
           <ArrowLeft className="h-4 w-4" />
-          All plans
+          {t("planDetail.allPlans")}
         </Link>
       </div>
 
@@ -113,30 +117,28 @@ export default async function PlanPage({
         actions={
           <>
             {isAdmin ? (
-              <SetCurrentPlanButton
-                idleLabel="Set as current"
-                isCurrent={plan.isCurrent}
-                planId={plan.id}
-              />
+              <SetCurrentPlanButton isCurrent={plan.isCurrent} planId={plan.id} />
             ) : null}
             <Link
               className={buttonClassName()}
               href={`/plan/${plan.id}/grocery-list`}
             >
               <ShoppingCart className="h-4 w-4" />
-              Grocery list
+              {t("common.groceryList")}
             </Link>
           </>
         }
-        description={`${plan.planDays.length} day${plan.planDays.length === 1 ? "" : "s"} in this plan.`}
+        description={plural("planDetail.daysInPlan", plan.planDays.length)}
         title={plan.name}
       />
 
       <div className="flex flex-wrap items-center gap-2">
         <Badge icon={<CalendarRange className="h-3.5 w-3.5" />} tone="brand">
-          {formatDateRange(plan.startDate, plan.endDate)}
+          {dateFormatter.formatDateRange(plan.startDate, plan.endDate)}
         </Badge>
-        {plan.isCurrent ? <Badge tone="accent">Current plan</Badge> : null}
+        {plan.isCurrent ? (
+          <Badge tone="accent">{t("common.currentPlan")}</Badge>
+        ) : null}
       </div>
 
       {isAdmin ? (
@@ -167,19 +169,19 @@ export default async function PlanPage({
             const isToday = dayKey === todayDayKey;
             const meals = [
               {
-                label: "Breakfast",
+                label: t("meals.breakfast"),
                 icon: <Croissant className="h-4 w-4" />,
                 iconClassName: "bg-breakfast-soft text-breakfast",
                 value: planDay.breakfastDishes.map((dish) => dish.name).join(", ")
               },
               {
-                label: "Lunch",
+                label: t("meals.lunch"),
                 icon: <Sandwich className="h-4 w-4" />,
                 iconClassName: "bg-lunch-soft text-lunch",
                 value: planDay.lunchDishes.map((dish) => dish.name).join(", ")
               },
               {
-                label: "Dinner",
+                label: t("meals.dinner"),
                 icon: <UtensilsCrossed className="h-4 w-4" />,
                 iconClassName: "bg-dinner-soft text-dinner",
                 value: planDay.dinnerDish?.name ?? ""
@@ -193,9 +195,9 @@ export default async function PlanPage({
               >
                 <div className="flex items-center justify-between gap-3">
                   <h2 className="text-base font-semibold text-fg">
-                    {formatDayLabel(dayKey)}
+                    {dateFormatter.formatDayLabel(dayKey)}
                   </h2>
-                  {isToday ? <Badge tone="brand">Today</Badge> : null}
+                  {isToday ? <Badge tone="brand">{t("common.today")}</Badge> : null}
                 </div>
 
                 <dl className="mt-4 space-y-3">
@@ -214,7 +216,7 @@ export default async function PlanPage({
                         <span
                           className={`mt-0.5 block ${meal.value ? "text-fg" : "text-fg-subtle"}`}
                         >
-                          {meal.value || "Not planned"}
+                          {meal.value || t("meals.notPlanned")}
                         </span>
                       </dd>
                     </div>

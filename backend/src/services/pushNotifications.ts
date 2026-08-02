@@ -1,4 +1,5 @@
 import { prisma } from "../lib/prisma";
+import { defaultLocale, locales, type Locale } from "../i18n";
 import {
   type PushNotificationPayload,
   isPushConfigured,
@@ -101,19 +102,33 @@ export const sendPushToUser = async (
  * Notifies every registered device whose owner has the daily dinner reminder
  * switched on. Turning the reminder on is what registers a device in the first
  * place, so a user without a settings row has nothing to notify anyway.
+ *
+ * Passing a `locale` narrows the send to the users reading in that language, so
+ * the caller can dispatch one already-translated payload per language. The
+ * default language also picks up any account whose stored value is not a
+ * language we ship, so an unexpected value never silences someone's reminder.
  */
 export const sendPushToDinnerReminderSubscribers = async (
-  payload: PushNotificationPayload
+  payload: PushNotificationPayload,
+  locale?: Locale
 ): Promise<PushDispatchSummary> => {
   if (!isPushConfigured) {
     return { ...emptySummary };
   }
 
+  const languageFilter =
+    locale === undefined
+      ? {}
+      : locale === defaultLocale
+        ? { language: { notIn: locales.filter((other) => other !== defaultLocale) } }
+        : { language: locale };
+
   const subscriptions = await prisma.pushSubscription.findMany({
     where: {
       user: {
         settings: {
-          dinnerReminderEnabled: true
+          dinnerReminderEnabled: true,
+          ...languageFilter
         }
       }
     },
