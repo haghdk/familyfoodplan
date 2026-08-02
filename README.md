@@ -25,6 +25,7 @@ Family Food Planner is a weekly meal-planning app for families. Admins create pl
 - **Plan-scoped plan days**: day entries are now scoped to a `Plan`, and legacy rows are migrated into a default `Legacy Plan` during database migration/seed.
 - **Plan-scoped day editing routes**: dinner, breakfast, and lunch write endpoints now require both `planId` and `dayKey` (`/api/plans/:planId/days/:dayKey/...`) so updates are validated against the selected plan before persisting.
 - **Breakfast planning support**: each plan day now supports repeatable breakfast rows with optional member assignment, matching lunch behavior in APIs/UI and allowing breakfast-linked grocery ingredients.
+- **Swap meals between days**: weeks rarely go to plan, so any meal can be moved to another day of the week without retyping it. Drag a meal's **Swap** button onto the same meal of another day, or press it to pick the day from a list. Breakfast, lunch, and dinner each move on their own, so trading Monday's and Tuesday's dinners leaves both days' breakfasts and lunches exactly where they were, and the ingredients on the grocery list follow the meal. See [Swapping Meals Between Days](#swapping-meals-between-days).
 - **Grocery sharing**: generate tokenized public grocery links so non-admin shoppers can check off items.
 - **Drag-to-reorder grocery list**: items are still added as they come to mind (each new item lands at the bottom), and the merged shopping list can then be dragged into the order you walk the store — vegetables, bread, meat, cheeses, eggs, milk, hygiene. The manual order is stored per plan and used by the detailed item list and the shared shopper link as well. See [Grocery List Ordering](#grocery-list-ordering).
 - **Picked up items sink to the bottom**: ticking an item on the shared shopping list slides it below everything still to buy, so what is left keeps shrinking towards the top of the screen. The move is display only — unticking an item slides it straight back to the place it came from — and every row that shifts glides there instead of the list snapping into a new shape. See [Grocery List Ordering](#grocery-list-ordering).
@@ -174,6 +175,7 @@ python3 frontend/scripts/generate-icons.py
 - `GET /api/plans/:planId` — fetch one plan with nested `planDays`, `dinnerDish`, `breakfastDishes`, and `lunchDishes` (authenticated users).
 - `PUT /api/plans/:planId` — update plan name and date range; the backend adds/removes `PlanDay` rows to keep data aligned with the new range (admin only).
 - `DELETE /api/plans/:planId` — delete a plan by id; returns `404` when the plan does not exist and cascades removal of related plan-day and grocery data (admin only).
+- `POST /api/plans/:planId/meal-swaps` — trade one meal of the day between two days of the plan. The body is `{ "mealType": "breakfast" | "lunch" | "dinner", "sourceDayKey": "2026-08-03", "targetDayKey": "2026-08-04" }`, and the response returns both days in the same shape as `GET /api/plans/:planId` so the caller can redraw them without refetching the plan. Returns `400` for an unknown meal type, a malformed day key, or two identical days, and `404` when a day key is not part of the plan (admin only). See [Swapping Meals Between Days](#swapping-meals-between-days).
 
 ### Grocery Lists
 - Admin grocery routes under `/api/plans/:id/grocery-list...` support create/update/delete and share-link management.
@@ -240,6 +242,18 @@ When the keys are missing — the default for local development — nothing is s
 - The service worker is `frontend/public/sw.js`, served at `/sw.js`. It handles the `push` and `notificationclick` events only — it deliberately does not cache or intercept requests. `frontend/middleware.ts` excludes `/sw.js` from the auth redirect, because a browser refuses to register a worker whose URL answers with anything but the script itself.
 - **On iPhone and iPad, notifications only work once the app has been added to the home screen** and opened from there. The settings screen detects this case and says so instead of failing at the permission prompt.
 - A subscription lives in the browser, so it can outlive the server-side record (a database reset, or the browser being handed to another account). The settings screen re-registers any existing subscription on load, so a toggle that reads "on" is never quietly dead.
+
+## Swapping Meals Between Days
+
+Something always comes up mid-week — a late meeting, a sports practice, a delivery that turns up a day early — and the fix is usually to trade two days around rather than to plan them again.
+
+- Every meal section on a plan's day card carries a **Swap** button. Dragging it onto the same meal of another day trades the two, and dropping it on a day that has nothing planned for that meal moves the meal across instead.
+- Pressing the button without dragging opens the plan's other days as a list, each showing what it currently holds for that meal ("Yoghurt and berries", or "Nothing planned"). That is the faster path on a phone, and the only path from a keyboard, since the button is reachable by <kbd>Tab</kbd> and opens the list on <kbd>Enter</kbd>.
+- Dragging works with mouse, touch, and pen — it is built on pointer events, so there is no separate mobile path. While a meal is held, only the same meal on other days is outlined as a place it can go, the meal being moved dims, and the day under the pointer highlights. Holding the meal against the top or bottom of the screen scrolls the page, because two days of a week are rarely both on screen. <kbd>Esc</kbd> abandons the drag.
+- **The three meals move independently.** Swapping dinners changes nothing about either day's breakfasts or lunches, which is what "swap Monday and Tuesday" usually means in practice: the dinner is the part that has to move, and the school lunches stay with the school day.
+- **Ingredients travel with the meal.** A grocery item added for a specific dish is re-pointed to the day the dish landed on, so the plan's shopping data keeps matching the plan. General grocery items — the ones not added for any particular dish — stay on the day they were written down on. The merged shopping list covers the whole plan either way, so nothing appears or disappears from the shopper's list because of a swap.
+- Breakfast and lunch are repeatable rows, so both days hand their whole set to the other day, member assignments and notes included.
+- A day holds at most one dinner, and PostgreSQL enforces that per row rather than at the end of a transaction, so the two dinner rows cannot simply trade day ids. What the dishes are made of is traded instead, and the ingredients are re-pointed to follow the dish they were added for. The result is identical from the outside; only the row ids stay put.
 
 ## Grocery List Ordering
 

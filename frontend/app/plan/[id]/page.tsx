@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { adminSessionCookieName, backendApiUrl, userRoleCookieName } from "../../../lib/auth";
 import { formatDateRange, formatDayLabel, getTodayDayKey, toDayKey } from "../../../lib/dates";
-import PlanDayCard from "../../../components/plan/PlanDayCard";
+import PlanDayBoard from "../../../components/plan/PlanDayBoard";
 import PlanSettingsForm from "../../../components/plan/PlanSettingsForm";
 import SetCurrentPlanButton from "../../../components/plan/SetCurrentPlanButton";
 import Alert from "../../../components/ui/Alert";
@@ -148,24 +148,17 @@ export default async function PlanPage({
             planId={plan.id}
           />
 
-          <div className="grid items-start gap-4 lg:grid-cols-2">
-            {plan.planDays.map((planDay) => {
-              const dayKey = toDayKey(planDay.date) ?? planDay.date;
-
-              return (
-                <PlanDayCard
-                  dayKey={dayKey}
-                  dayLabel={formatDayLabel(dayKey)}
-                  initialBreakfastes={planDay.breakfastDishes}
-                  initialDinner={planDay.dinnerDish}
-                  initialLunches={planDay.lunchDishes}
-                  isToday={dayKey === todayDayKey}
-                  key={planDay.id}
-                  planId={plan.id}
-                />
-              );
-            })}
-          </div>
+          <PlanDayBoard
+            initialPlanDays={plan.planDays.map((planDay) => ({
+              id: planDay.id,
+              dayKey: toDayKey(planDay.date) ?? planDay.date,
+              dinnerDish: planDay.dinnerDish,
+              breakfastDishes: planDay.breakfastDishes,
+              lunchDishes: planDay.lunchDishes
+            }))}
+            planId={plan.id}
+            todayDayKey={todayDayKey}
+          />
         </>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2">
