@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowLeft, KeyRound, LinkIcon } from "lucide-react";
 import { backendApiUrl } from "../../lib/auth";
+import { getTranslations } from "../../lib/i18n/server";
 import ResetPasswordForm from "../../components/auth/ResetPasswordForm";
 import Alert from "../../components/ui/Alert";
 import { buttonClassName } from "../../components/ui/Button";
@@ -31,6 +32,7 @@ export default async function ResetPasswordPage({
 }) {
   const { token } = await searchParams;
   const isValidToken = token ? await isResetTokenValid(token) : false;
+  const { t } = await getTranslations();
 
   return (
     <section className="mx-auto flex max-w-md flex-col items-center py-6">
@@ -42,12 +44,12 @@ export default async function ResetPasswordPage({
         )}
       </span>
       <h1 className="mt-5 text-center text-3xl font-semibold tracking-tight text-fg">
-        {isValidToken ? "Choose a new password" : "This link has expired"}
+        {isValidToken ? t("resetPassword.title") : t("resetPassword.expiredTitle")}
       </h1>
       <p className="mt-2 text-center text-sm text-fg-muted">
         {isValidToken
-          ? "Choose a password you have not used on this account before."
-          : "Password reset links can only be used once, and they expire after a short while."}
+          ? t("resetPassword.subtitle")
+          : t("resetPassword.expiredSubtitle")}
       </p>
 
       <Card className="mt-7 w-full">
@@ -55,14 +57,12 @@ export default async function ResetPasswordPage({
           <ResetPasswordForm token={token} />
         ) : (
           <div className="space-y-4">
-            <Alert tone="warning">
-              This reset link is no longer valid. Request a new one to continue.
-            </Alert>
+            <Alert tone="warning">{t("resetPassword.expiredAlert")}</Alert>
             <Link
               className={buttonClassName({ className: "w-full", size: "lg" })}
               href="/forgot-password"
             >
-              Request a new link
+              {t("resetPassword.requestNewLink")}
             </Link>
           </div>
         )}
@@ -73,7 +73,7 @@ export default async function ResetPasswordPage({
         href="/login"
       >
         <ArrowLeft className="h-4 w-4" />
-        Back to sign in
+        {t("resetPassword.backToSignIn")}
       </Link>
     </section>
   );

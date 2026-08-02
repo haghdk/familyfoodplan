@@ -12,6 +12,7 @@ import { requireAuth } from "../middleware/auth";
 import { sendEmail } from "../lib/mailer";
 import { buildPasswordResetEmail, buildPasswordResetUrl } from "../lib/passwordResetEmail";
 import { createRateLimiter } from "../lib/rateLimit";
+import { requestLocale, translate, translatePlural, userLocale } from "../i18n";
 
 const authRouter = Router();
 
@@ -23,20 +24,25 @@ const forgotPasswordRateLimiter = createRateLimiter({
 });
 
 authRouter.post("/api/auth/login", async (request, response) => {
+  const locale = requestLocale(request);
   const { email, password } = request.body as {
     email?: string;
     password?: string;
   };
 
   if (!email || !password) {
-    response.status(400).json({ message: "Email and password are required" });
+    response
+      .status(400)
+      .json({ message: translate(locale, "auth.credentialsRequired") });
     return;
   }
 
   const user = await validateUserLogin({ email, password });
 
   if (!user) {
-    response.status(401).json({ message: "Invalid credentials" });
+    response
+      .status(401)
+      .json({ message: translate(locale, "auth.invalidCredentials") });
     return;
   }
 
@@ -52,7 +58,10 @@ authRouter.post("/api/auth/login", async (request, response) => {
     user: {
       id: user.id,
       email: user.email,
-      role: user.role
+      role: user.role,
+      // Lets the browser adopt the account's language straight after sign-in,
+      // which is how a second device ends up in the right one.
+      language: await userLocale(user.id)
     }
   });
 });
@@ -74,11 +83,12 @@ authRouter.get("/api/auth/me", requireAuth, (_request, response) => {
  * unauthenticated caller cannot use it to discover which emails have accounts.
  */
 authRouter.post("/api/auth/forgot-password", async (request, response) => {
+  const locale = requestLocale(request);
   const { email } = request.body as { email?: string };
   const normalizedEmail = email?.toLowerCase().trim();
 
   if (!normalizedEmail) {
-    response.status(400).json({ message: "Email is required." });
+    response.status(400).json({ message: translate(locale, "auth.emailRequired") });
     return;
   }
 
@@ -86,14 +96,13 @@ authRouter.post("/api/auth/forgot-password", async (request, response) => {
 
   if (!forgotPasswordRateLimiter.tryConsume(rateLimitKey)) {
     response.status(429).json({
-      message: "Too many reset requests. Please try again in a few minutes."
+      message: translate(locale, "auth.tooManyResetRequests")
     });
     return;
   }
 
   const acknowledgement = {
-    message:
-      "If that email address has an account, a password reset link is on its way.",
+    message: translate(locale, "auth.resetAcknowledgement"),
     expiresInMinutes: passwordResetTokenTtlMinutes
   };
 
@@ -111,7 +120,10 @@ authRouter.post("/api/auth/forgot-password", async (request, response) => {
       buildPasswordResetEmail({
         to: resetRequest.user.email,
         resetUrl,
-        expiresInMinutes: passwordResetTokenTtlMinutes
+        expiresInMinutes: passwordResetTokenTtlMinutes,
+        // The mail belongs to the account, not to whoever filled in the form,
+        // so it is written in the owner's language rather than the caller's.
+        locale: await userLocale(resetRequest.user.id)
       })
     );
   } catch (error) {
@@ -129,13 +141,16 @@ authRouter.get("/api/auth/reset-password/:token", async (request, response) => {
 });
 
 authRouter.post("/api/auth/reset-password", async (request, response) => {
+  const locale = requestLocale(request);
   const { token, password } = request.body as {
     token?: string;
     password?: string;
   };
 
   if (!token || !password) {
-    response.status(400).json({ message: "Token and password are required." });
+    response
+      .status(400)
+      .json({ message: translate(locale, "auth.tokenAndPasswordRequired") });
     return;
   }
 
@@ -143,14 +158,14 @@ authRouter.post("/api/auth/reset-password", async (request, response) => {
 
   if (result.status === "weak_password") {
     response.status(400).json({
-      message: `Password must be at least ${minimumPasswordLength} characters.`
+      message: translatePlural(locale, "auth.passwordTooShort", minimumPasswordLength)
     });
     return;
   }
 
   if (result.status === "invalid_token") {
     response.status(400).json({
-      message: "This reset link is no longer valid. Please request a new one."
+      message: translate(locale, "auth.resetLinkInvalid")
     });
     return;
   }

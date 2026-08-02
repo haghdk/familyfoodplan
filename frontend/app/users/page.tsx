@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { ShieldUser } from "lucide-react";
 import { adminSessionCookieName, backendApiUrl } from "../../lib/auth";
+import { getTranslations } from "../../lib/i18n/server";
 import UsersManager from "../../components/users/users-manager";
 import PageHeader from "../../components/ui/PageHeader";
 
@@ -35,14 +36,15 @@ const getUsers = async (): Promise<User[]> => {
 
 export default async function UsersPage() {
   const users = await getUsers();
+  const { t } = await getTranslations();
 
   return (
     <section className="space-y-6">
       <PageHeader
-        description="Manage admin and regular viewer accounts. Viewers can only read plans."
-        eyebrow="Access"
+        description={t("users.description")}
+        eyebrow={t("users.eyebrow")}
         eyebrowIcon={<ShieldUser className="h-3.5 w-3.5" />}
-        title="Users"
+        title={t("users.title")}
       />
       <UsersManager initialUsers={users} />
     </section>

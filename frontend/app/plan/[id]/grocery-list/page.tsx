@@ -21,6 +21,10 @@ import {
 } from "lucide-react";
 import { backendApiUrl } from "../../../../lib/auth";
 import { cn } from "../../../../lib/cn";
+import { createDateFormatter } from "../../../../lib/dates";
+import { useTranslations } from "../../../../lib/i18n/client";
+import type { AppTranslator } from "../../../../lib/i18n/dictionaries";
+import { localeHeader } from "../../../../lib/i18n/requestHeaders";
 import { sortItemsByIdOrder, sortPickedUpItemsLast } from "../../../../lib/grocery";
 import { useReorderAnimation } from "../../../../lib/useReorderAnimation";
 import Alert from "../../../../components/ui/Alert";
@@ -101,25 +105,36 @@ type GroceryRealtimeEvent = {
 const formatQuantity = (quantity: number, unit: string | null) =>
   `${quantity}${unit ? ` ${unit}` : ""}`;
 
-const describeItemSource = (item: GroceryItem) => {
+const describeItemSource = (item: GroceryItem, { t }: AppTranslator) => {
   if (item.dinnerDish) {
-    return `Dinner · ${item.dinnerDish.name}`;
+    return t("grocery.sourceMeal", {
+      meal: t("meals.dinner"),
+      dish: item.dinnerDish.name
+    });
   }
 
   if (item.breakfastDish) {
-    return `Breakfast · ${item.breakfastDish.name}`;
+    return t("grocery.sourceMeal", {
+      meal: t("meals.breakfast"),
+      dish: item.breakfastDish.name
+    });
   }
 
   if (item.lunchDish) {
-    return `Lunch · ${item.lunchDish.name}`;
+    return t("grocery.sourceMeal", {
+      meal: t("meals.lunch"),
+      dish: item.lunchDish.name
+    });
   }
 
-  return "General item";
+  return t("grocery.sourceGeneralItem");
 };
 
 export default function GroceryListPage() {
   const params = useParams<{ id: string }>();
   const planId = Number(params.id);
+  const translator = useTranslations();
+  const { locale, t, plural } = translator;
   const [planDays, setPlanDays] = useState<PlanDayPayload[]>([]);
   const [groceryItems, setGroceryItems] = useState<GroceryItem[]>([]);
   const [mergedItems, setMergedItems] = useState<MergedGroceryItem[]>([]);
@@ -175,23 +190,23 @@ export default function GroceryListPage() {
         setGroceryItems(data.groceryItems);
         setMergedItems(data.mergedItems);
       } catch (_error) {
-        setErrorMessage("Could not load grocery list for this plan.");
+        setErrorMessage(t("grocery.loadFailed"));
       } finally {
         setIsLoading(false);
       }
     },
-    [planId]
+    [planId, t]
   );
 
   useEffect(() => {
     if (Number.isNaN(planId)) {
-      setErrorMessage("Invalid plan id.");
+      setErrorMessage(t("grocery.invalidPlanId"));
       setIsLoading(false);
       return;
     }
 
     void loadItems();
-  }, [loadItems, planId]);
+  }, [loadItems, planId, t]);
 
   useEffect(() => {
     if (Number.isNaN(planId)) {
@@ -306,26 +321,18 @@ export default function GroceryListPage() {
   }, [isRealtimeConnected, loadItems, planId]);
 
   const mealOptions = useMemo(() => {
-    const formatDayLabel = (dateValue: string) => {
-      const parsedDate = new Date(dateValue);
-
-      if (Number.isNaN(parsedDate.valueOf())) {
-        return dateValue;
-      }
-
-      return parsedDate.toLocaleDateString(undefined, {
-        weekday: "short",
-        month: "short",
-        day: "numeric"
-      });
-    };
+    const { formatCompactDayLabel } = createDateFormatter(translator);
 
     const dinnerOptions: MealOption[] = planDays.flatMap((day) =>
       day.dinnerDish
         ? [
             {
               id: String(day.dinnerDish.id),
-              label: `${formatDayLabel(day.date)} · Dinner: ${day.dinnerDish.name}`
+              label: t("grocery.mealOption", {
+                day: formatCompactDayLabel(day.date),
+                meal: t("meals.dinner"),
+                dish: day.dinnerDish.name
+              })
             }
           ]
         : []
@@ -334,14 +341,22 @@ export default function GroceryListPage() {
     const breakfastOptions: MealOption[] = planDays.flatMap((day) =>
       day.breakfastDishes.map((breakfastDish) => ({
         id: String(breakfastDish.id),
-        label: `${formatDayLabel(day.date)} · Breakfast: ${breakfastDish.name}`
+        label: t("grocery.mealOption", {
+          day: formatCompactDayLabel(day.date),
+          meal: t("meals.breakfast"),
+          dish: breakfastDish.name
+        })
       }))
     );
 
     const lunchOptions: MealOption[] = planDays.flatMap((day) =>
       day.lunchDishes.map((lunchDish) => ({
         id: String(lunchDish.id),
-        label: `${formatDayLabel(day.date)} · Lunch: ${lunchDish.name}`
+        label: t("grocery.mealOption", {
+          day: formatCompactDayLabel(day.date),
+          meal: t("meals.lunch"),
+          dish: lunchDish.name
+        })
       }))
     );
 
@@ -350,7 +365,7 @@ export default function GroceryListPage() {
     }
 
     return selectedMealType === "breakfast" ? breakfastOptions : lunchOptions;
-  }, [planDays, selectedMealType]);
+  }, [planDays, selectedMealType, t, translator]);
 
   const mealAvailability = useMemo(() => {
     const hasDinner = planDays.some((day) => Boolean(day.dinnerDish));
@@ -407,11 +422,12 @@ export default function GroceryListPage() {
     async ({ showSuccessFeedback = false }: { showSuccessFeedback?: boolean } = {}) => {
       const response = await fetch(`${backendApiUrl}/api/plans/${planId}/share-link`, {
         method: "POST",
+        headers: localeHeader(locale),
         credentials: "include"
       });
 
       if (!response.ok) {
-        setShareFeedback("Could not load share link.");
+        setShareFeedback(t("grocery.share.loadFailed"));
         return;
       }
 
@@ -423,9 +439,11 @@ export default function GroceryListPage() {
         return;
       }
 
-      setShareFeedback(data.existed ? "Existing share link loaded." : "Share link ready.");
+      setShareFeedback(
+        data.existed ? t("grocery.share.existingLoaded") : t("grocery.share.ready")
+      );
     },
-    [planId, toShareUrl]
+    [locale, planId, t, toShareUrl]
   );
 
   useEffect(() => {
@@ -443,31 +461,32 @@ export default function GroceryListPage() {
   const rotateShareLink = async () => {
     const response = await fetch(`${backendApiUrl}/api/plans/${planId}/share-link/rotate`, {
       method: "POST",
+      headers: localeHeader(locale),
       credentials: "include"
     });
 
     if (!response.ok) {
-      setShareFeedback("Could not rotate share link.");
+      setShareFeedback(t("grocery.share.rotateFailed"));
       return;
     }
 
     const data = (await response.json()) as { token: string };
     const nextShareLink = toShareUrl(data.token);
     setShareLink(nextShareLink);
-    setShareFeedback("Share link rotated.");
+    setShareFeedback(t("grocery.share.rotated"));
   };
 
   const copyShareLink = async () => {
     if (!shareLink) {
-      setShareFeedback("Create a share link first.");
+      setShareFeedback(t("grocery.share.createFirst"));
       return;
     }
 
     try {
       await navigator.clipboard.writeText(shareLink);
-      setShareFeedback("Share link copied to clipboard.");
+      setShareFeedback(t("grocery.share.copied"));
     } catch (_error) {
-      setShareFeedback("Could not copy link automatically.");
+      setShareFeedback(t("grocery.share.copyFailed"));
     }
   };
 
@@ -475,13 +494,13 @@ export default function GroceryListPage() {
     const name = generalName.trim();
 
     if (!name) {
-      setFeedback("General item name is required.");
+      setFeedback(t("grocery.general.nameRequired"));
       return;
     }
 
     const response = await fetch(`${backendApiUrl}/api/plans/${planId}/grocery-items`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...localeHeader(locale) },
       credentials: "include",
       body: JSON.stringify({
         name,
@@ -492,14 +511,14 @@ export default function GroceryListPage() {
     });
 
     if (!response.ok) {
-      setFeedback("Could not create general grocery item.");
+      setFeedback(t("grocery.general.createFailed"));
       return;
     }
 
     setGeneralName("");
     setGeneralQuantity("1");
     setGeneralUnit("");
-    setFeedback("General item added.");
+    setFeedback(t("grocery.general.added"));
     await loadItems();
   };
 
@@ -507,7 +526,7 @@ export default function GroceryListPage() {
     const name = ingredientName.trim();
 
     if (!name || !selectedMealId) {
-      setFeedback("Ingredient name and meal are required.");
+      setFeedback(t("grocery.ingredient.required"));
       return;
     }
 
@@ -523,20 +542,20 @@ export default function GroceryListPage() {
 
     const response = await fetch(`${backendApiUrl}/api/plans/${planId}/grocery-items`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...localeHeader(locale) },
       credentials: "include",
       body: JSON.stringify(payload)
     });
 
     if (!response.ok) {
-      setFeedback("Could not create ingredient item.");
+      setFeedback(t("grocery.ingredient.createFailed"));
       return;
     }
 
     setIngredientName("");
     setIngredientQuantity("1");
     setIngredientUnit("");
-    setFeedback("Ingredient item added.");
+    setFeedback(t("grocery.ingredient.added"));
     await loadItems();
   };
 
@@ -553,7 +572,7 @@ export default function GroceryListPage() {
 
       const response = await fetch(`${backendApiUrl}/api/plans/${planId}/grocery-items/order`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...localeHeader(locale) },
         credentials: "include",
         body: JSON.stringify({ itemIds: orderedItemIds })
       });
@@ -561,15 +580,15 @@ export default function GroceryListPage() {
       if (!response.ok) {
         setMergedItems(previousMergedItems);
         setFeedback("");
-        setErrorMessage("Could not save the new shopping order.");
+        setErrorMessage(t("grocery.merged.orderFailed"));
         await loadItems({ showLoadingState: false });
         return;
       }
 
       setErrorMessage("");
-      setFeedback("Shopping order saved.");
+      setFeedback(t("grocery.merged.orderSaved"));
     },
-    [loadItems, mergedItems, planId]
+    [loadItems, locale, mergedItems, planId, t]
   );
 
   const startEditing = (item: GroceryItem) => {
@@ -596,13 +615,13 @@ export default function GroceryListPage() {
     const row = editingRows[itemId];
 
     if (!row || !row.name.trim()) {
-      setFeedback("Item name is required for save.");
+      setFeedback(t("grocery.items.nameRequired"));
       return;
     }
 
     const response = await fetch(`${backendApiUrl}/api/plans/${planId}/grocery-items/${itemId}`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...localeHeader(locale) },
       credentials: "include",
       body: JSON.stringify({
         name: row.name.trim(),
@@ -612,11 +631,11 @@ export default function GroceryListPage() {
     });
 
     if (!response.ok) {
-      setFeedback("Could not update grocery item.");
+      setFeedback(t("grocery.items.updateFailed"));
       return;
     }
 
-    setFeedback("Grocery item updated.");
+    setFeedback(t("grocery.items.updated"));
     cancelEditing(itemId);
     await loadItems();
   };
@@ -624,15 +643,16 @@ export default function GroceryListPage() {
   const removeItem = async (itemId: number) => {
     const response = await fetch(`${backendApiUrl}/api/plans/${planId}/grocery-items/${itemId}`, {
       method: "DELETE",
+      headers: localeHeader(locale),
       credentials: "include"
     });
 
     if (!response.ok) {
-      setFeedback("Could not remove grocery item.");
+      setFeedback(t("grocery.items.removeFailed"));
       return;
     }
 
-    setFeedback("Grocery item removed.");
+    setFeedback(t("grocery.items.removed"));
     await loadItems();
   };
 
@@ -642,7 +662,7 @@ export default function GroceryListPage() {
         <div className="h-9 w-56 animate-pulse rounded-full bg-surface-muted" />
         <div className="h-40 animate-pulse rounded-3xl bg-surface-muted" />
         <div className="h-64 animate-pulse rounded-3xl bg-surface-muted" />
-        <span className="sr-only">Loading grocery list...</span>
+        <span className="sr-only">{t("grocery.loading")}</span>
       </div>
     );
   }
@@ -657,7 +677,7 @@ export default function GroceryListPage() {
           href={`/plan/${params.id}`}
         >
           <ArrowLeft className="h-4 w-4" />
-          Back to plan
+          {t("grocery.backToPlan")}
         </Link>
       </div>
 
@@ -670,35 +690,37 @@ export default function GroceryListPage() {
                 isRealtimeConnected ? "bg-success" : "bg-warning"
               )}
             />
-            {isRealtimeConnected ? "Live updates on" : "Reconnecting..."}
+            {isRealtimeConnected
+              ? t("grocery.liveUpdatesOn")
+              : t("grocery.reconnecting")}
           </span>
         }
-        description="Everything you need to buy for this plan, synced live with anyone holding the share link."
-        eyebrow="Grocery list"
+        description={t("grocery.description")}
+        eyebrow={t("grocery.eyebrow")}
         eyebrowIcon={<ShoppingBasket className="h-3.5 w-3.5" />}
-        title={`Shopping for plan #${params.id}`}
+        title={t("grocery.title", { planId: params.id })}
       />
 
       {errorMessage ? <Alert tone="error">{errorMessage}</Alert> : null}
       {feedback ? <Alert tone="success">{feedback}</Alert> : null}
 
       <SectionCard
-        description="Share this link so anyone can tick items off while shopping, or open it yourself in a new tab. Rotate it only when you need to invalidate old links."
+        description={t("grocery.share.description")}
         icon={<Link2 className="h-4 w-4" />}
-        title="Share the list"
+        title={t("grocery.share.title")}
       >
         <div className="flex flex-col gap-3 sm:flex-row">
           <input
-            aria-label="Share link"
+            aria-label={t("grocery.share.linkAriaLabel")}
             className={cn(controlClassName, "font-mono text-xs sm:text-sm")}
-            placeholder="No share link yet"
+            placeholder={t("grocery.share.noLinkYet")}
             readOnly
             value={shareLink}
           />
           <div className="flex flex-wrap gap-2">
             <Button onClick={copyShareLink}>
               <Copy className="h-4 w-4" />
-              Copy
+              {t("common.copy")}
             </Button>
             {shareLink ? (
               <a
@@ -708,21 +730,25 @@ export default function GroceryListPage() {
                 target="_blank"
               >
                 <ExternalLink className="h-4 w-4" />
-                Open
+                {t("common.open")}
               </a>
             ) : (
-              <Button disabled title="Create a share link first" variant="secondary">
+              <Button
+                disabled
+                title={t("grocery.share.createFirst")}
+                variant="secondary"
+              >
                 <ExternalLink className="h-4 w-4" />
-                Open
+                {t("common.open")}
               </Button>
             )}
             <Button onClick={createShareLink} variant="secondary">
               <Link2 className="h-4 w-4" />
-              Load / create
+              {t("grocery.share.loadOrCreate")}
             </Button>
             <Button onClick={rotateShareLink} variant="secondary">
               <RefreshCw className="h-4 w-4" />
-              Rotate
+              {t("grocery.share.rotate")}
             </Button>
           </div>
         </div>
@@ -733,20 +759,20 @@ export default function GroceryListPage() {
 
       <div className="grid gap-4 lg:grid-cols-2">
         <SectionCard
-          description="Household staples that are not tied to a specific meal."
+          description={t("grocery.general.description")}
           icon={<Package className="h-4 w-4" />}
-          title="Add general item"
+          title={t("grocery.general.title")}
         >
           <div className="grid gap-3 sm:grid-cols-4">
             <TextField
               fieldClassName="sm:col-span-2"
-              label="Name"
+              label={t("common.name")}
               onChange={(event) => setGeneralName(event.target.value)}
-              placeholder="Coffee"
+              placeholder={t("grocery.general.namePlaceholder")}
               value={generalName}
             />
             <TextField
-              label="Quantity"
+              label={t("common.quantity")}
               min="1"
               onChange={(event) => setGeneralQuantity(event.target.value)}
               step="1"
@@ -754,44 +780,44 @@ export default function GroceryListPage() {
               value={generalQuantity}
             />
             <TextField
-              label="Unit"
+              label={t("common.unit")}
               onChange={(event) => setGeneralUnit(event.target.value)}
-              placeholder="kg"
+              placeholder={t("grocery.general.unitPlaceholder")}
               value={generalUnit}
             />
           </div>
           <Button className="mt-4" onClick={createGeneralItem}>
             <Plus className="h-4 w-4" />
-            Add general item
+            {t("grocery.general.submit")}
           </Button>
         </SectionCard>
 
         <SectionCard
-          description="Ingredients linked to a meal in this plan, so you know what they are for."
+          description={t("grocery.ingredient.description")}
           icon={<Carrot className="h-4 w-4" />}
-          title="Add ingredient for a meal"
+          title={t("grocery.ingredient.title")}
         >
           <div className="grid gap-3 sm:grid-cols-4">
             <SelectField
               fieldClassName="sm:col-span-2"
-              label="Meal type"
+              label={t("grocery.ingredient.mealTypeLabel")}
               onChange={(event) =>
                 setSelectedMealType(event.target.value as "dinner" | "breakfast" | "lunch")
               }
               value={selectedMealType}
             >
-              <option value="dinner">Dinner</option>
-              <option value="breakfast">Breakfast</option>
-              <option value="lunch">Lunch</option>
+              <option value="dinner">{t("meals.dinner")}</option>
+              <option value="breakfast">{t("meals.breakfast")}</option>
+              <option value="lunch">{t("meals.lunch")}</option>
             </SelectField>
             <SelectField
               disabled={!mealAvailability.hasAnyMeals}
               fieldClassName="sm:col-span-2"
-              label="Meal"
+              label={t("grocery.ingredient.mealLabel")}
               onChange={(event) => setSelectedMealId(event.target.value)}
               value={selectedMealId}
             >
-              <option value="">Select meal</option>
+              <option value="">{t("grocery.ingredient.selectMeal")}</option>
               {mealOptions.map((meal) => (
                 <option key={meal.id} value={meal.id}>
                   {meal.label}
@@ -800,13 +826,13 @@ export default function GroceryListPage() {
             </SelectField>
             <TextField
               fieldClassName="sm:col-span-2"
-              label="Ingredient"
+              label={t("grocery.ingredient.nameLabel")}
               onChange={(event) => setIngredientName(event.target.value)}
-              placeholder="Tomatoes"
+              placeholder={t("grocery.ingredient.namePlaceholder")}
               value={ingredientName}
             />
             <TextField
-              label="Quantity"
+              label={t("common.quantity")}
               min="1"
               onChange={(event) => setIngredientQuantity(event.target.value)}
               step="1"
@@ -814,23 +840,22 @@ export default function GroceryListPage() {
               value={ingredientQuantity}
             />
             <TextField
-              label="Unit"
+              label={t("common.unit")}
               onChange={(event) => setIngredientUnit(event.target.value)}
-              placeholder="g"
+              placeholder={t("grocery.ingredient.unitPlaceholder")}
               value={ingredientUnit}
             />
           </div>
 
           {!mealAvailability.hasAnyMeals ? (
             <Alert className="mt-3" tone="warning">
-              Add at least one breakfast, lunch, or dinner dish in this plan before creating
-              ingredient items.
+              {t("grocery.ingredient.noMealsWarning")}
             </Alert>
           ) : null}
 
           <Button className="mt-4" onClick={createIngredientItem}>
             <Plus className="h-4 w-4" />
-            Add ingredient item
+            {t("grocery.ingredient.submit")}
           </Button>
         </SectionCard>
       </div>
@@ -838,25 +863,26 @@ export default function GroceryListPage() {
       <SectionCard
         actions={
           mergedItems.length > 0 ? (
-            <Badge tone="brand">{mergedItems.length} lines</Badge>
+            <Badge tone="brand">
+              {plural("grocery.merged.lines", mergedItems.length)}
+            </Badge>
           ) : null
         }
-        description="Duplicate ingredients across meals are combined into a single shopping line. Drag a line by its handle to arrange the list in the order you walk the store."
+        description={t("grocery.merged.description")}
         icon={<ListChecks className="h-4 w-4" />}
-        title="Merged shopping list"
+        title={t("grocery.merged.title")}
       >
         {mergedItems.length === 0 ? (
           <EmptyState
-            description="Add a general item or a meal ingredient to start your list."
+            description={t("grocery.merged.emptyDescription")}
             icon={<ShoppingBasket className="h-5 w-5" />}
-            title="No grocery items yet"
+            title={t("grocery.merged.emptyTitle")}
           />
         ) : (
           <>
             <p className="mb-3 flex items-start gap-1.5 text-xs text-fg-subtle">
               <GripVertical className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-              Drag the handle to reorder, or focus it and use the arrow keys. The order is shared
-              with everyone using the link.
+              {t("grocery.merged.dragHint")}
             </p>
             <SortableList
               getItemKey={(item) => item.key}
@@ -873,7 +899,9 @@ export default function GroceryListPage() {
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge tone={item.category === "GENERAL" ? "neutral" : "accent"}>
-                      {item.category === "GENERAL" ? "General" : "Ingredient"}
+                      {item.category === "GENERAL"
+                        ? t("grocery.categoryGeneral")
+                        : t("grocery.categoryIngredient")}
                     </Badge>
                     <span className="rounded-full bg-surface-muted px-3 py-1 text-sm font-semibold text-fg">
                       {formatQuantity(item.quantity, item.unit)}
@@ -890,19 +918,22 @@ export default function GroceryListPage() {
         actions={
           groceryItems.length > 0 ? (
             <Badge>
-              {checkedItemsCount} of {groceryItems.length} checked off
+              {t("grocery.items.checkedOff", {
+                checked: checkedItemsCount,
+                total: groceryItems.length
+              })}
             </Badge>
           ) : null
         }
-        description="Every individual entry, including the meal it came from, listed in the shopping order set above."
+        description={t("grocery.items.description")}
         icon={<Pencil className="h-4 w-4" />}
-        title="Edit or remove items"
+        title={t("grocery.items.title")}
       >
         {groceryItems.length === 0 ? (
           <EmptyState
-            description="Items you add above will show up here."
+            description={t("grocery.items.emptyDescription")}
             icon={<Package className="h-5 w-5" />}
-            title="No items available"
+            title={t("grocery.items.emptyTitle")}
           />
         ) : (
           <ul className="space-y-2" ref={containerRef}>
@@ -929,32 +960,36 @@ export default function GroceryListPage() {
                         </span>
                       </p>
                       <p className="mt-0.5 truncate text-xs text-fg-subtle">
-                        {describeItemSource(item)}
+                        {describeItemSource(item, translator)}
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
                       {item.isChecked ? (
                         <Badge icon={<Check className="h-3.5 w-3.5" />} tone="brand">
-                          Bought
+                          {t("grocery.items.bought")}
                         </Badge>
                       ) : null}
                       <Button
-                        aria-label={`Edit ${item.name}`}
+                        aria-label={t("grocery.items.editAriaLabel", {
+                          name: item.name
+                        })}
                         onClick={() => startEditing(item)}
                         size="sm"
                         variant="secondary"
                       >
                         <Pencil className="h-3.5 w-3.5" />
-                        Edit
+                        {t("common.edit")}
                       </Button>
                       <Button
-                        aria-label={`Remove ${item.name}`}
+                        aria-label={t("grocery.items.removeAriaLabel", {
+                          name: item.name
+                        })}
                         onClick={() => removeItem(item.id)}
                         size="sm"
                         variant="danger"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
-                        Remove
+                        {t("common.remove")}
                       </Button>
                     </div>
                   </li>
@@ -970,7 +1005,7 @@ export default function GroceryListPage() {
                   <div className="grid gap-3 sm:grid-cols-4">
                     <TextField
                       fieldClassName="sm:col-span-2"
-                      label="Name"
+                      label={t("common.name")}
                       onChange={(event) =>
                         setEditingRows((currentRows) => ({
                           ...currentRows,
@@ -980,7 +1015,7 @@ export default function GroceryListPage() {
                       value={editingRow.name}
                     />
                     <TextField
-                      label="Quantity"
+                      label={t("common.quantity")}
                       min="1"
                       onChange={(event) =>
                         setEditingRows((currentRows) => ({
@@ -993,7 +1028,7 @@ export default function GroceryListPage() {
                       value={editingRow.quantity}
                     />
                     <TextField
-                      label="Unit"
+                      label={t("common.unit")}
                       onChange={(event) =>
                         setEditingRows((currentRows) => ({
                           ...currentRows,
@@ -1005,14 +1040,14 @@ export default function GroceryListPage() {
                   </div>
                   <div className="flex gap-2">
                     <Button onClick={() => saveItem(item.id)} size="sm">
-                      Save
+                      {t("common.save")}
                     </Button>
                     <Button
                       onClick={() => cancelEditing(item.id)}
                       size="sm"
                       variant="secondary"
                     >
-                      Cancel
+                      {t("common.cancel")}
                     </Button>
                   </div>
                 </li>

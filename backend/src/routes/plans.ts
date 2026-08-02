@@ -9,6 +9,7 @@ import {
   createPlanWithDays,
   parseIsoDayKey
 } from "../services/plans";
+import { requestLocale, translate, translatePlural } from "../i18n";
 
 const plansRouter = Router();
 
@@ -107,6 +108,7 @@ const resolveDateRange = (payload: {
 };
 
 plansRouter.post("/api/plans", requireAdminAuth, async (request, response) => {
+  const locale = requestLocale(request);
   const { name, startDate, endDate, startWeekday, endWeekday, anchorDate } = request.body as {
     name?: unknown;
     startDate?: unknown;
@@ -130,7 +132,7 @@ plansRouter.post("/api/plans", requireAdminAuth, async (request, response) => {
   }
 
   if (resolvedRange.endDate.getTime() < resolvedRange.startDate.getTime()) {
-    response.status(400).json({ message: "endDate cannot be before startDate." });
+    response.status(400).json({ message: translate(locale, "plans.endBeforeStart") });
     return;
   }
 
@@ -138,7 +140,7 @@ plansRouter.post("/api/plans", requireAdminAuth, async (request, response) => {
 
   if (dateRange.length > MAX_PLAN_SPAN_DAYS) {
     response.status(400).json({
-      message: `Plan range cannot exceed ${MAX_PLAN_SPAN_DAYS} days.`
+      message: translatePlural(locale, "plans.rangeTooLong", MAX_PLAN_SPAN_DAYS)
     });
     return;
   }
@@ -214,10 +216,11 @@ plansRouter.get("/api/plans", requireAuth, async (_request, response) => {
 });
 
 plansRouter.get("/api/plans/:planId", requireAuth, async (request, response) => {
+  const locale = requestLocale(request);
   const planId = Number(request.params.planId);
 
   if (Number.isNaN(planId)) {
-    response.status(400).json({ message: "Invalid plan id." });
+    response.status(400).json({ message: translate(locale, "plans.invalidId") });
     return;
   }
 
@@ -237,7 +240,7 @@ plansRouter.get("/api/plans/:planId", requireAuth, async (request, response) => 
   });
 
   if (!plan) {
-    response.status(404).json({ message: "Plan not found." });
+    response.status(404).json({ message: translate(locale, "plans.notFound") });
     return;
   }
 
@@ -254,10 +257,11 @@ plansRouter.get("/api/plans/:planId", requireAuth, async (request, response) => 
 });
 
 plansRouter.post("/api/plans/:planId/set-current", requireAdminAuth, async (request, response) => {
+  const locale = requestLocale(request);
   const planId = Number(request.params.planId);
 
   if (Number.isNaN(planId)) {
-    response.status(400).json({ message: "Invalid plan id." });
+    response.status(400).json({ message: translate(locale, "plans.invalidId") });
     return;
   }
 
@@ -269,7 +273,7 @@ plansRouter.post("/api/plans/:planId/set-current", requireAdminAuth, async (requ
   });
 
   if (!plan) {
-    response.status(404).json({ message: "Plan not found." });
+    response.status(404).json({ message: translate(locale, "plans.notFound") });
     return;
   }
 
@@ -289,16 +293,17 @@ plansRouter.post("/api/plans/:planId/set-current", requireAdminAuth, async (requ
   });
 
   response.status(200).json({
-    message: "Current plan updated.",
+    message: translate(locale, "plans.currentPlanUpdated"),
     planId
   });
 });
 
 plansRouter.put("/api/plans/:planId", requireAdminAuth, async (request, response) => {
+  const locale = requestLocale(request);
   const planId = Number(request.params.planId);
 
   if (Number.isNaN(planId)) {
-    response.status(400).json({ message: "Invalid plan id." });
+    response.status(400).json({ message: translate(locale, "plans.invalidId") });
     return;
   }
 
@@ -311,7 +316,7 @@ plansRouter.put("/api/plans/:planId", requireAdminAuth, async (request, response
   const normalizedName = typeof name === "string" ? name.trim() : "";
 
   if (!normalizedName) {
-    response.status(400).json({ message: "Plan name is required." });
+    response.status(400).json({ message: translate(locale, "plans.nameRequired") });
     return;
   }
 
@@ -319,7 +324,7 @@ plansRouter.put("/api/plans/:planId", requireAdminAuth, async (request, response
   const parsedEndDate = parseDateKey(endDate);
 
   if (!parsedStartDate || !parsedEndDate) {
-    response.status(400).json({ message: "Invalid date format. Expected YYYY-MM-DD." });
+    response.status(400).json({ message: translate(locale, "plans.invalidDateFormat") });
     return;
   }
 
@@ -327,7 +332,7 @@ plansRouter.put("/api/plans/:planId", requireAdminAuth, async (request, response
 
   if (dateRange.length > MAX_PLAN_SPAN_DAYS) {
     response.status(400).json({
-      message: `Plan range cannot exceed ${MAX_PLAN_SPAN_DAYS} days.`
+      message: translatePlural(locale, "plans.rangeTooLong", MAX_PLAN_SPAN_DAYS)
     });
     return;
   }
@@ -346,7 +351,7 @@ plansRouter.put("/api/plans/:planId", requireAdminAuth, async (request, response
   });
 
   if (!plan) {
-    response.status(404).json({ message: "Plan not found." });
+    response.status(404).json({ message: translate(locale, "plans.notFound") });
     return;
   }
 
@@ -410,7 +415,7 @@ plansRouter.put("/api/plans/:planId", requireAdminAuth, async (request, response
       (error as { code?: string }).code === "P2002";
 
     if (isUniqueConflict) {
-      response.status(409).json({ message: "A plan with this name already exists." });
+      response.status(409).json({ message: translate(locale, "plans.nameTaken") });
       return;
     }
 
@@ -419,10 +424,11 @@ plansRouter.put("/api/plans/:planId", requireAdminAuth, async (request, response
 });
 
 plansRouter.delete("/api/plans/:planId", requireAdminAuth, async (request, response) => {
+  const locale = requestLocale(request);
   const planId = Number(request.params.planId);
 
   if (Number.isNaN(planId)) {
-    response.status(400).json({ message: "Invalid plan id." });
+    response.status(400).json({ message: translate(locale, "plans.invalidId") });
     return;
   }
 
@@ -434,7 +440,7 @@ plansRouter.delete("/api/plans/:planId", requireAdminAuth, async (request, respo
   });
 
   if (!plan) {
-    response.status(404).json({ message: "Plan not found." });
+    response.status(404).json({ message: translate(locale, "plans.notFound") });
     return;
   }
 

@@ -2,7 +2,8 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import { ArrowRight, CalendarDays, CalendarRange, PlusCircle, ShoppingCart } from "lucide-react";
 import { adminSessionCookieName, backendApiUrl, userRoleCookieName } from "../../lib/auth";
-import { formatDateRange } from "../../lib/dates";
+import { createDateFormatter } from "../../lib/dates";
+import { getTranslations } from "../../lib/i18n/server";
 import SetCurrentPlanButton from "../../components/plan/SetCurrentPlanButton";
 import Badge from "../../components/ui/Badge";
 import { buttonClassName } from "../../components/ui/Button";
@@ -46,6 +47,9 @@ export default async function PlansPage() {
   const plans = await getPlans();
   const cookieStore = await cookies();
   const isAdmin = cookieStore.get(userRoleCookieName)?.value === "ADMIN";
+  const translator = await getTranslations();
+  const { t, plural } = translator;
+  const dateFormatter = createDateFormatter(translator);
 
   return (
     <section className="space-y-6">
@@ -54,14 +58,14 @@ export default async function PlansPage() {
           isAdmin ? (
             <Link className={buttonClassName()} href="/plan/new">
               <PlusCircle className="h-4 w-4" />
-              Create new plan
+              {t("plans.createNewPlan")}
             </Link>
           ) : null
         }
-        description="Select a weekly plan to edit meals or open its grocery list."
-        eyebrow="Weekly plans"
+        description={t("plans.description")}
+        eyebrow={t("plans.eyebrow")}
         eyebrowIcon={<CalendarDays className="h-3.5 w-3.5" />}
-        title="Plans"
+        title={t("plans.title")}
       />
 
       {plans.length === 0 ? (
@@ -70,13 +74,13 @@ export default async function PlansPage() {
             isAdmin ? (
               <Link className={buttonClassName({ size: "sm" })} href="/plan/new">
                 <PlusCircle className="h-3.5 w-3.5" />
-                Create your first plan
+                {t("plans.createFirstPlan")}
               </Link>
             ) : null
           }
-          description="Once a plan is created it will appear here with its meals and grocery list."
+          description={t("plans.emptyDescription")}
           icon={<CalendarDays className="h-5 w-5" />}
-          title="No plans yet"
+          title={t("plans.emptyTitle")}
         />
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
@@ -92,13 +96,15 @@ export default async function PlansPage() {
               <div>
                 <div className="flex items-start justify-between gap-3">
                   <h2 className="text-lg font-semibold text-fg">{plan.name}</h2>
-                  {plan.isCurrent ? <Badge tone="brand">Current</Badge> : null}
+                  {plan.isCurrent ? (
+                    <Badge tone="brand">{t("plans.currentBadge")}</Badge>
+                  ) : null}
                 </div>
                 <div className="mt-3 flex flex-wrap items-center gap-2">
                   <Badge icon={<CalendarRange className="h-3.5 w-3.5" />}>
-                    {formatDateRange(plan.startDate, plan.endDate)}
+                    {dateFormatter.formatDateRange(plan.startDate, plan.endDate)}
                   </Badge>
-                  <Badge>{plan.daysCount} days</Badge>
+                  <Badge>{plural("common.days", plan.daysCount)}</Badge>
                 </div>
               </div>
 
@@ -107,7 +113,7 @@ export default async function PlansPage() {
                   className={buttonClassName({ size: "sm" })}
                   href={`/plan/${plan.id}`}
                 >
-                  Open plan
+                  {t("common.openPlan")}
                   <ArrowRight className="h-3.5 w-3.5" />
                 </Link>
                 <Link
@@ -115,13 +121,12 @@ export default async function PlansPage() {
                   href={`/plan/${plan.id}/grocery-list`}
                 >
                   <ShoppingCart className="h-3.5 w-3.5" />
-                  Grocery list
+                  {t("common.groceryList")}
                 </Link>
                 {isAdmin && !plan.isCurrent ? (
                   <SetCurrentPlanButton
-                    idleLabel="Set as current"
                     isCurrent={plan.isCurrent}
-                    loadingLabel="Setting..."
+                    loadingLabel={t("common.settingAsCurrentShort")}
                     planId={plan.id}
                     size="sm"
                   />

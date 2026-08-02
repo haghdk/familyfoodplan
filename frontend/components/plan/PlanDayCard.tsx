@@ -5,6 +5,8 @@ import type { ReactNode } from "react";
 import { Croissant, Plus, Sandwich, Trash2, UtensilsCrossed } from "lucide-react";
 import { backendApiUrl } from "../../lib/auth";
 import { cn } from "../../lib/cn";
+import { useTranslations } from "../../lib/i18n/client";
+import { localeHeader } from "../../lib/i18n/requestHeaders";
 import Alert from "../ui/Alert";
 import Badge from "../ui/Badge";
 import Button from "../ui/Button";
@@ -13,6 +15,8 @@ import MealSwapHandle from "./MealSwapHandle";
 import {
   mealDropZoneAttribute,
   mealDropZoneId,
+  mealTypeLabel,
+  mealTypeLabelInSentence,
   useMealSwap,
   type SwappableMealType
 } from "./MealSwapProvider";
@@ -160,6 +164,8 @@ export default function PlanDayCard({
   initialBreakfastes = [],
   initialLunches = []
 }: PlanDayCardProps) {
+  const translator = useTranslations();
+  const { locale, t } = translator;
   const [members, setMembers] = useState<Member[]>([]);
   const [membersErrorMessage, setMembersErrorMessage] = useState("");
   const [dinnerName, setDinnerName] = useState(initialDinner?.name ?? "");
@@ -187,23 +193,23 @@ export default function PlanDayCard({
         const data = (await response.json()) as { members: Member[] };
         setMembers(data.members.filter((member) => member.isActive));
       } catch (_error) {
-        setMembersErrorMessage("Could not load members for breakfast/lunch assignments.");
+        setMembersErrorMessage(t("planDay.membersLoadFailed"));
       }
     };
 
     void loadMembers();
-  }, []);
+  }, [t]);
 
   const memberOptions = useMemo(
-    () => [{ id: null, name: "No member selected" }, ...members],
-    [members]
+    () => [{ id: null, name: t("planDay.noMemberSelected") }, ...members],
+    [members, t]
   );
 
   const saveDinner = async () => {
     const normalizedName = dinnerName.trim();
 
     if (!normalizedName) {
-      setFeedback({ type: "error", message: "Dinner name is required." });
+      setFeedback({ type: "error", message: t("planDay.dinnerNameRequired") });
       return;
     }
 
@@ -213,7 +219,7 @@ export default function PlanDayCard({
     try {
       const response = await fetch(`${backendApiUrl}/api/plans/${planId}/days/${dayKey}/dinner`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...localeHeader(locale) },
         credentials: "include",
         body: JSON.stringify({
           name: normalizedName,
@@ -228,9 +234,9 @@ export default function PlanDayCard({
       const data = (await response.json()) as { dinnerDish: DinnerDish };
       setDinnerName(data.dinnerDish.name);
       setDinnerNotes(data.dinnerDish.notes ?? "");
-      setFeedback({ type: "success", message: "Dinner saved." });
+      setFeedback({ type: "success", message: t("planDay.dinnerSaved") });
     } catch (_error) {
-      setFeedback({ type: "error", message: "Could not save dinner right now." });
+      setFeedback({ type: "error", message: t("planDay.dinnerSaveFailed") });
     } finally {
       setIsSavingDinner(false);
     }
@@ -244,13 +250,14 @@ export default function PlanDayCard({
 
   const saveMealRow = async (row: MealRow, mealType: MealType) => {
     const normalizedName = row.name.trim();
-    const mealLabel = mealType === "breakfast" ? "Breakfast" : "Lunch";
+    const mealLabel = mealTypeLabel(translator, mealType);
+    const mealLabelInSentence = mealTypeLabelInSentence(translator, mealType);
     const setter = mealType === "breakfast" ? setBreakfastRows : setLunchRows;
 
     if (!normalizedName) {
       setter((currentRows) =>
         updateMealRow(currentRows, row.localId, {
-          errorMessage: `${mealLabel} name is required.`
+          errorMessage: t("planDay.nameRequired", { meal: mealLabelInSentence })
         })
       );
       return;
@@ -268,7 +275,7 @@ export default function PlanDayCard({
     try {
       const response = await fetch(endpoint, {
         method,
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...localeHeader(locale) },
         credentials: "include",
         body: JSON.stringify({
           name: normalizedName,
@@ -296,17 +303,20 @@ export default function PlanDayCard({
           currentRow.localId === row.localId ? createLocalMealRow(savedMeal) : currentRow
         )
       );
-      setFeedback({ type: "success", message: `${mealLabel} saved.` });
+      setFeedback({
+        type: "success",
+        message: t("planDay.mealSaved", { meal: mealLabel })
+      });
     } catch (_error) {
       setter((currentRows) =>
         updateMealRow(currentRows, row.localId, {
-          errorMessage: `Could not save this ${mealType} right now.`,
+          errorMessage: t("planDay.rowSaveFailed", { meal: mealLabelInSentence }),
           isSaving: false
         })
       );
       setFeedback({
         type: "error",
-        message: `One or more ${mealType} rows failed to save.`
+        message: t("planDay.someRowsFailed", { meal: mealLabelInSentence })
       });
       return;
     }
@@ -316,7 +326,8 @@ export default function PlanDayCard({
 
   const deleteMealRow = async (row: MealRow, mealType: MealType) => {
     setFeedback(null);
-    const mealLabel = mealType === "breakfast" ? "Breakfast" : "Lunch";
+    const mealLabel = mealTypeLabel(translator, mealType);
+    const mealLabelInSentence = mealTypeLabelInSentence(translator, mealType);
     const setter = mealType === "breakfast" ? setBreakfastRows : setLunchRows;
 
     if (!row.id) {
@@ -331,6 +342,7 @@ export default function PlanDayCard({
         `${backendApiUrl}/api/plans/${planId}/days/${dayKey}/${mealType === "breakfast" ? "breakfasts" : "lunches"}/${row.id}`,
         {
           method: "DELETE",
+          headers: localeHeader(locale),
           credentials: "include"
         }
       );
@@ -340,15 +352,21 @@ export default function PlanDayCard({
       }
 
       setter((currentRows) => currentRows.filter((currentRow) => currentRow.localId !== row.localId));
-      setFeedback({ type: "success", message: `${mealLabel} deleted.` });
+      setFeedback({
+        type: "success",
+        message: t("planDay.mealDeleted", { meal: mealLabel })
+      });
     } catch (_error) {
       setter((currentRows) =>
         updateMealRow(currentRows, row.localId, {
           isSaving: false,
-          errorMessage: `Could not delete this ${mealType} right now.`
+          errorMessage: t("planDay.rowDeleteFailed", { meal: mealLabelInSentence })
         })
       );
-      setFeedback({ type: "error", message: `Could not delete ${mealType}.` });
+      setFeedback({
+        type: "error",
+        message: t("planDay.deleteFailed", { meal: mealLabelInSentence })
+      });
     }
   };
 
@@ -358,7 +376,8 @@ export default function PlanDayCard({
     }
 
     const setter = mealType === "breakfast" ? setBreakfastRows : setLunchRows;
-    const placeholder = mealType === "breakfast" ? "Breakfast dish" : "Lunch dish";
+    const placeholder =
+      mealType === "breakfast" ? t("planDay.breakfastDish") : t("planDay.lunchDish");
 
     return (
       <ul className="space-y-3">
@@ -381,7 +400,7 @@ export default function PlanDayCard({
                 value={row.name}
               />
               <SelectField
-                aria-label="Assign to family member"
+                aria-label={t("planDay.assignToMember")}
                 onChange={(event) =>
                   setter((currentRows) =>
                     updateMealRow(currentRows, row.localId, {
@@ -398,13 +417,13 @@ export default function PlanDayCard({
                 ))}
               </SelectField>
               <TextField
-                aria-label="Notes"
+                aria-label={t("planDay.notes")}
                 onChange={(event) =>
                   setter((currentRows) =>
                     updateMealRow(currentRows, row.localId, { notes: event.target.value })
                   )
                 }
-                placeholder="Notes (optional)"
+                placeholder={t("planDay.notesPlaceholder")}
                 type="text"
                 value={row.notes}
               />
@@ -420,17 +439,19 @@ export default function PlanDayCard({
                 onClick={() => saveMealRow(row, mealType)}
                 size="sm"
               >
-                {row.isSaving ? "Saving..." : "Save"}
+                {row.isSaving ? t("common.saving") : t("common.save")}
               </Button>
               <Button
-                aria-label={`Delete ${mealType}`}
+                aria-label={t("planDay.deleteAriaLabel", {
+                  meal: mealTypeLabelInSentence(translator, mealType)
+                })}
                 disabled={row.isSaving}
                 onClick={() => deleteMealRow(row, mealType)}
                 size="sm"
                 variant="danger"
               >
                 <Trash2 className="h-3.5 w-3.5" />
-                Delete
+                {t("common.delete")}
               </Button>
             </div>
           </li>
@@ -451,7 +472,7 @@ export default function PlanDayCard({
           <h3 className="text-base font-semibold text-fg">{dayLabel}</h3>
           <p className="text-xs text-fg-subtle">{dayKey}</p>
         </div>
-        {isToday ? <Badge tone="brand">Today</Badge> : null}
+        {isToday ? <Badge tone="brand">{t("common.today")}</Badge> : null}
       </header>
 
       <div className="space-y-6 p-5">
@@ -466,15 +487,15 @@ export default function PlanDayCard({
         ) : null}
 
         <MealSection
-          addLabel="Add row"
+          addLabel={t("planDay.addRow")}
           dayKey={dayKey}
           dayLabel={dayLabel}
-          emptyText="No breakfasts added yet."
+          emptyText={t("planDay.noBreakfasts")}
           icon={<Croissant className="h-4 w-4" />}
           iconClassName="bg-breakfast-soft text-breakfast"
           mealType="breakfast"
           onAdd={() => setBreakfastRows((rows) => [...rows, createLocalMealRow()])}
-          title="Breakfast"
+          title={t("meals.breakfast")}
         >
           {renderMealRows(breakfastRows, "breakfast")}
         </MealSection>
@@ -482,15 +503,15 @@ export default function PlanDayCard({
         <div className="h-px bg-border" />
 
         <MealSection
-          addLabel="Add row"
+          addLabel={t("planDay.addRow")}
           dayKey={dayKey}
           dayLabel={dayLabel}
-          emptyText="No lunches added yet."
+          emptyText={t("planDay.noLunches")}
           icon={<Sandwich className="h-4 w-4" />}
           iconClassName="bg-lunch-soft text-lunch"
           mealType="lunch"
           onAdd={() => setLunchRows((rows) => [...rows, createLocalMealRow()])}
-          title="Lunch"
+          title={t("meals.lunch")}
         >
           {renderMealRows(lunchRows, "lunch")}
         </MealSection>
@@ -505,25 +526,25 @@ export default function PlanDayCard({
           icon={<UtensilsCrossed className="h-4 w-4" />}
           iconClassName="bg-dinner-soft text-dinner"
           mealType="dinner"
-          title="Dinner"
+          title={t("meals.dinner")}
         >
           <div className="space-y-3">
             <TextField
-              aria-label="Dinner dish"
+              aria-label={t("planDay.dinnerDish")}
               onChange={(event) => setDinnerName(event.target.value)}
-              placeholder="Dinner dish"
+              placeholder={t("planDay.dinnerDish")}
               type="text"
               value={dinnerName}
             />
             <TextAreaField
-              aria-label="Dinner notes"
+              aria-label={t("planDay.dinnerNotes")}
               onChange={(event) => setDinnerNotes(event.target.value)}
-              placeholder="Notes (optional)"
+              placeholder={t("planDay.notesPlaceholder")}
               rows={2}
               value={dinnerNotes}
             />
             <Button disabled={isSavingDinner} onClick={saveDinner} size="sm">
-              {isSavingDinner ? "Saving..." : "Save dinner"}
+              {isSavingDinner ? t("common.saving") : t("planDay.saveDinner")}
             </Button>
           </div>
         </MealSection>

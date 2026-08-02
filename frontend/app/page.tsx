@@ -13,12 +13,12 @@ import {
 } from "lucide-react";
 import { adminSessionCookieName, backendApiUrl, userRoleCookieName } from "../lib/auth";
 import {
-  formatDateRange,
-  formatShortDate,
-  formatWeekday,
+  createDateFormatter,
   getTodayDayKey,
-  toDayKey
+  toDayKey,
+  type DateFormatter
 } from "../lib/dates";
+import { getTranslations } from "../lib/i18n/server";
 import CurrentPlanTable, {
   type CurrentPlanTableDayRow
 } from "../components/plan/CurrentPlanTable";
@@ -170,7 +170,8 @@ const getPlanById = async (planId: number): Promise<PlanDetailResponse["plan"] |
 
 const buildCurrentPlanTableRows = (
   planDays: PlanDay[],
-  todayDayKey: string
+  todayDayKey: string,
+  dateFormatter: DateFormatter
 ): CurrentPlanTableDayRow[] => {
   return [...planDays]
     .sort((a, b) => a.date.localeCompare(b.date))
@@ -180,8 +181,8 @@ const buildCurrentPlanTableRows = (
       return {
         id: planDay.id,
         dayKey,
-        weekdayLabel: formatWeekday(dayKey),
-        dateLabel: formatShortDate(dayKey),
+        weekdayLabel: dateFormatter.formatWeekday(dayKey),
+        dateLabel: dateFormatter.formatShortDate(dayKey),
         isToday: dayKey === todayDayKey,
         breakfasts: (planDay.breakfastDishes ?? []).map((dish) => dish.name),
         lunches: planDay.lunchDishes.map((dish) => dish.name),
@@ -201,6 +202,9 @@ export default async function HomePage() {
   const plans = await getPlans();
   const cookieStore = await cookies();
   const isAdmin = cookieStore.get(userRoleCookieName)?.value === "ADMIN";
+  const translator = await getTranslations();
+  const { t, plural } = translator;
+  const dateFormatter = createDateFormatter(translator);
 
   if (!plans || plans.length === 0) {
     return (
@@ -209,19 +213,18 @@ export default async function HomePage() {
           <div className="border-b border-border bg-brand-soft/60 px-6 py-10 sm:px-10 sm:py-14">
             <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-brand">
               <Sparkles className="h-4 w-4" />
-              Weekly planning made simple
+              {t("home.empty.eyebrow")}
             </p>
             <h1 className="mt-4 max-w-2xl text-4xl font-semibold tracking-tight text-fg sm:text-5xl">
-              Build your next family meal plan.
+              {t("home.empty.title")}
             </h1>
             <p className="mt-4 max-w-xl text-base text-fg-muted">
-              We could not load plans right now, or you have not created one yet.
-              Start by picking the days your week runs from and to.
+              {t("home.empty.description")}
             </p>
             {isAdmin ? (
               <Link className={buttonClassName({ size: "lg", className: "mt-7" })} href="/plan/new">
                 <PlusCircle className="h-4 w-4" />
-                Create a plan
+                {t("home.empty.createPlan")}
               </Link>
             ) : null}
           </div>
@@ -229,18 +232,18 @@ export default async function HomePage() {
             {[
               {
                 icon: <CalendarRange className="h-4 w-4" />,
-                title: "Pick your week",
-                description: "Any start and end weekday — Sunday to Saturday, or your own rhythm."
+                title: t("home.empty.pickWeekTitle"),
+                description: t("home.empty.pickWeekDescription")
               },
               {
                 icon: <UtensilsCrossed className="h-4 w-4" />,
-                title: "Fill in the meals",
-                description: "Breakfast, lunch and dinner per day, with per-member assignments."
+                title: t("home.empty.fillMealsTitle"),
+                description: t("home.empty.fillMealsDescription")
               },
               {
                 icon: <ShoppingCart className="h-4 w-4" />,
-                title: "Share the shopping",
-                description: "Turn the plan into a grocery list anyone can tick off live."
+                title: t("home.empty.shareShoppingTitle"),
+                description: t("home.empty.shareShoppingDescription")
               }
             ].map((feature) => (
               <div className="flex gap-3" key={feature.title}>
@@ -266,7 +269,8 @@ export default async function HomePage() {
   const currentPlanRows = currentPlanDetails
     ? buildCurrentPlanTableRows(
         currentPlanDetails.days ?? currentPlanDetails.planDays ?? [],
-        todayDayKey
+        todayDayKey,
+        dateFormatter
       )
     : [];
   const recentPlans = selectRecentPlans(plans, today).filter(
@@ -281,19 +285,19 @@ export default async function HomePage() {
           <div className="space-y-3">
             <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-brand">
               <CalendarDays className="h-4 w-4" />
-              Current plan
+              {t("home.currentPlanEyebrow")}
             </p>
             <h1 className="text-3xl font-semibold tracking-tight text-fg sm:text-4xl">
-              {currentPlan?.name ?? "No active plan"}
+              {currentPlan?.name ?? t("home.noActivePlan")}
             </h1>
             {currentPlan ? (
               <div className="flex flex-wrap items-center gap-2">
                 <Badge icon={<CalendarRange className="h-3.5 w-3.5" />} tone="brand">
-                  {formatDateRange(currentPlan.startDate, currentPlan.endDate)}
+                  {dateFormatter.formatDateRange(currentPlan.startDate, currentPlan.endDate)}
                 </Badge>
-                <Badge>{currentPlan.daysCount} days</Badge>
+                <Badge>{plural("common.days", currentPlan.daysCount)}</Badge>
                 <Badge icon={<ChefHat className="h-3.5 w-3.5" />}>
-                  {plannedMealsCount} meals planned
+                  {plural("common.mealsPlanned", plannedMealsCount)}
                 </Badge>
               </div>
             ) : null}
@@ -303,7 +307,7 @@ export default async function HomePage() {
             {currentPlan ? (
               <>
                 <Link className={buttonClassName()} href={`/plan/${currentPlan.id}`}>
-                  Open plan
+                  {t("common.openPlan")}
                   <ArrowRight className="h-4 w-4" />
                 </Link>
                 <Link
@@ -311,7 +315,7 @@ export default async function HomePage() {
                   href={`/plan/${currentPlan.id}/grocery-list`}
                 >
                   <ShoppingCart className="h-4 w-4" />
-                  Grocery list
+                  {t("common.groceryList")}
                 </Link>
               </>
             ) : null}
@@ -323,7 +327,7 @@ export default async function HomePage() {
                 href="/plan/new"
               >
                 <PlusCircle className="h-4 w-4" />
-                New plan
+                {t("home.newPlan")}
               </Link>
             ) : null}
           </div>
@@ -334,9 +338,9 @@ export default async function HomePage() {
             <CurrentPlanTable dayRows={currentPlanRows} />
           ) : (
             <EmptyState
-              description="Mark one of your plans as the current plan to see it here."
+              description={t("home.noCurrentPlanDescription")}
               icon={<CalendarDays className="h-5 w-5" />}
-              title="No plan is set as current"
+              title={t("home.noCurrentPlanTitle")}
             />
           )}
         </div>
@@ -346,18 +350,18 @@ export default async function HomePage() {
         actions={
           <Link className={buttonClassName({ variant: "secondary" })} href="/plan">
             <CalendarDays className="h-4 w-4" />
-            View all plans
+            {t("home.viewAllPlans")}
           </Link>
         }
-        description="Quickly reopen weekly plans from the last four weeks."
+        description={t("home.recentPlansDescription")}
         icon={<ClipboardList className="h-4 w-4" />}
-        title="Recent plans"
+        title={t("home.recentPlansTitle")}
       >
         {recentPlans.length === 0 ? (
           <EmptyState
-            description="Plans you create will show up here for four weeks."
+            description={t("home.noRecentPlansDescription")}
             icon={<ClipboardList className="h-5 w-5" />}
-            title="No other recent plans"
+            title={t("home.noRecentPlansTitle")}
           />
         ) : (
           <ul className="grid gap-3 sm:grid-cols-2">
@@ -369,9 +373,9 @@ export default async function HomePage() {
                 <div>
                   <p className="font-semibold text-fg">{plan.name}</p>
                   <p className="mt-1 text-sm text-fg-muted">
-                    {formatDateRange(plan.startDate, plan.endDate)}
+                    {dateFormatter.formatDateRange(plan.startDate, plan.endDate)}
                     <span className="mx-1.5 text-fg-subtle">•</span>
-                    {plan.daysCount} days
+                    {plural("common.days", plan.daysCount)}
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -379,7 +383,7 @@ export default async function HomePage() {
                     className={buttonClassName({ size: "sm" })}
                     href={`/plan/${plan.id}`}
                   >
-                    Open plan
+                    {t("common.openPlan")}
                     <ArrowRight className="h-3.5 w-3.5" />
                   </Link>
                   <Link
@@ -387,7 +391,7 @@ export default async function HomePage() {
                     href={`/plan/${plan.id}/grocery-list`}
                   >
                     <ShoppingCart className="h-3.5 w-3.5" />
-                    Grocery list
+                    {t("common.groceryList")}
                   </Link>
                 </div>
               </li>

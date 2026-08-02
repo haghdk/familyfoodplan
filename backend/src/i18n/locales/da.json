@@ -1,0 +1,77 @@
+{
+  "auth": {
+    "credentialsRequired": "E-mail og adgangskode er påkrævet",
+    "invalidCredentials": "Ugyldige loginoplysninger",
+    "emailRequired": "E-mail er påkrævet.",
+    "tooManyResetRequests": "For mange anmodninger om nulstilling. Prøv igen om et par minutter.",
+    "resetAcknowledgement": "Hvis der findes en konto med den e-mailadresse, er et link til nulstilling på vej.",
+    "tokenAndPasswordRequired": "Token og adgangskode er påkrævet.",
+    "passwordTooShort": {
+      "one": "Adgangskoden skal være på mindst {count} tegn.",
+      "other": "Adgangskoden skal være på mindst {count} tegn."
+    },
+    "resetLinkInvalid": "Dette nulstillingslink er ikke længere gyldigt. Bed om et nyt."
+  },
+  "users": {
+    "credentialsRequired": "E-mail og adgangskode er påkrævet.",
+    "invalidRole": "Rollen skal være ADMIN eller VIEWER.",
+    "emailTaken": "Der findes allerede en bruger med den e-mailadresse.",
+    "invalidId": "Ugyldigt bruger-id.",
+    "emailEmpty": "E-mail må ikke være tom.",
+    "passwordEmpty": "Adgangskode må ikke være tom.",
+    "noFieldsToUpdate": "Der blev ikke angivet nogen felter at opdatere.",
+    "notFound": "Brugeren blev ikke fundet.",
+    "lastAdminDemote": "Den sidste administrator kan ikke degraderes.",
+    "updateFailed": "Kunne ikke opdatere brugeren. E-mailadressen findes måske allerede.",
+    "lastAdminDelete": "Den sidste administrator kan ikke slettes."
+  },
+  "plans": {
+    "endBeforeStart": "Slutdatoen kan ikke ligge før startdatoen.",
+    "rangeTooLong": {
+      "one": "En plan kan højst strække sig over {count} dag.",
+      "other": "En plan kan højst strække sig over {count} dage."
+    },
+    "invalidId": "Ugyldigt plan-id.",
+    "notFound": "Planen blev ikke fundet.",
+    "nameRequired": "Planens navn er påkrævet.",
+    "invalidDateFormat": "Ugyldigt datoformat. Forventede ÅÅÅÅ-MM-DD.",
+    "nameTaken": "Der findes allerede en plan med dette navn.",
+    "currentPlanUpdated": "Den aktuelle plan er opdateret."
+  },
+  "settings": {
+    "nothingToUpdate": "Angiv dinnerReminderEnabled eller language for at opdatere.",
+    "reminderMustBeBoolean": "dinnerReminderEnabled skal være en boolesk værdi.",
+    "unsupportedLanguage": "language skal være en af: {languages}.",
+    "subscriptionRequired": "Der kræves en push-tilmelding med endpoint, keys.p256dh og keys.auth.",
+    "endpointRequired": "endpoint er påkrævet.",
+    "pushNotConfigured": "Push-notifikationer er ikke konfigureret på serveren.",
+    "registrationExpired": "Denne enheds push-tilmelding var udløbet. Slå påmindelserne fra og til igen.",
+    "noDevices": "Der er endnu ikke tilmeldt nogen enheder til denne konto.",
+    "testSent": {
+      "one": "Testnotifikation sendt til {count} enhed.",
+      "other": "Testnotifikation sendt til {count} enheder."
+    }
+  },
+  "dinnerReminder": {
+    "nothingPlannedTitle": "Ingen aftensmad planlagt i dag",
+    "nothingPlannedBody": "Der er ikke planlagt aftensmad denne {weekday}. Tryk for at planlægge noget.",
+    "todaysDinnerTitle": "Dagens aftensmad"
+  },
+  "passwordResetEmail": {
+    "subject": "Nulstil din adgangskode til Family Food Planner",
+    "greeting": "Hej,",
+    "intro": "Vi har modtaget en anmodning om at nulstille adgangskoden til din Family Food Planner-konto.",
+    "openLink": "Åbn dette link for at vælge en ny adgangskode:",
+    "expiry": {
+      "one": "Linket udløber om {count} minut og kan kun bruges én gang.",
+      "other": "Linket udløber om {count} minutter og kan kun bruges én gang."
+    },
+    "ignore": "Hvis du ikke har bedt om at få nulstillet din adgangskode, kan du se bort fra denne e-mail — din adgangskode er uændret.",
+    "signature": "— Family Food Planner",
+    "brand": "Family Food Planner",
+    "heading": "Nulstil din adgangskode",
+    "htmlIntro": "Vi har modtaget en anmodning om at nulstille adgangskoden til din Family Food Planner-konto. Vælg en ny adgangskode med knappen nedenfor.",
+    "button": "Vælg en ny adgangskode",
+    "fallbackLink": "Hvis knappen ikke virker, kan du kopiere denne adresse ind i din browser:"
+  }
+}

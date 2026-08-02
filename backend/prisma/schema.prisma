@@ -28,6 +28,10 @@ model UserSettings {
   /// Whether this user wants the daily "today's dinner" push notification.
   /// Off until the user turns it on, since it needs browser permission anyway.
   dinnerReminderEnabled Boolean   @default(false)
+  /// The interface language this user picked, as a two-letter code ("en", "da").
+  /// Stored on the account rather than only in a cookie so it follows the user
+  /// to their other devices, and so reminders and emails can be written in it.
+  language              String    @default("en")
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
 }

@@ -1,5 +1,6 @@
 import { Users } from "lucide-react";
 import { adminSessionCookieName, backendApiUrl } from "../../lib/auth";
+import { getTranslations } from "../../lib/i18n/server";
 import MembersManager from "../../components/members/members-manager";
 import PageHeader from "../../components/ui/PageHeader";
 import { cookies } from "next/headers";
@@ -35,14 +36,15 @@ const getMembers = async (): Promise<Member[]> => {
 
 export default async function MembersPage() {
   const members = await getMembers();
+  const { t } = await getTranslations();
 
   return (
     <section className="space-y-6">
       <PageHeader
-        description="Manage who is included in your family meal planning. Members can be assigned to breakfast and lunch dishes."
-        eyebrow="Household"
+        description={t("members.description")}
+        eyebrow={t("members.eyebrow")}
         eyebrowIcon={<Users className="h-3.5 w-3.5" />}
-        title="Family members"
+        title={t("members.title")}
       />
       <MembersManager initialMembers={members} />
     </section>

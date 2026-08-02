@@ -2,6 +2,7 @@ import { Router } from "express";
 import { prisma } from "../lib/prisma";
 import { hashPassword } from "../auth/password";
 import { requireAdminAuth } from "../middleware/auth";
+import { requestLocale, translate } from "../i18n";
 
 const usersRouter = Router();
 
@@ -25,6 +26,7 @@ usersRouter.get("/api/users", async (_request, response) => {
 });
 
 usersRouter.post("/api/users", async (request, response) => {
+  const locale = requestLocale(request);
   const { email, password, role } = request.body as {
     email?: string;
     password?: string;
@@ -34,12 +36,14 @@ usersRouter.post("/api/users", async (request, response) => {
   const normalizedEmail = email?.toLowerCase().trim();
 
   if (!normalizedEmail || !password) {
-    response.status(400).json({ message: "Email and password are required." });
+    response
+      .status(400)
+      .json({ message: translate(locale, "users.credentialsRequired") });
     return;
   }
 
   if (role !== "ADMIN" && role !== "VIEWER") {
-    response.status(400).json({ message: "Role must be ADMIN or VIEWER." });
+    response.status(400).json({ message: translate(locale, "users.invalidRole") });
     return;
   }
 
@@ -61,15 +65,16 @@ usersRouter.post("/api/users", async (request, response) => {
 
     response.status(201).json({ user });
   } catch (_error) {
-    response.status(409).json({ message: "A user with that email already exists." });
+    response.status(409).json({ message: translate(locale, "users.emailTaken") });
   }
 });
 
 usersRouter.put("/api/users/:id", async (request, response) => {
+  const locale = requestLocale(request);
   const userId = Number(request.params.id);
 
   if (Number.isNaN(userId)) {
-    response.status(400).json({ message: "Invalid user id." });
+    response.status(400).json({ message: translate(locale, "users.invalidId") });
     return;
   }
 
@@ -89,7 +94,7 @@ usersRouter.put("/api/users/:id", async (request, response) => {
     const normalizedEmail = email.toLowerCase().trim();
 
     if (!normalizedEmail) {
-      response.status(400).json({ message: "Email cannot be empty." });
+      response.status(400).json({ message: translate(locale, "users.emailEmpty") });
       return;
     }
 
@@ -98,7 +103,7 @@ usersRouter.put("/api/users/:id", async (request, response) => {
 
   if (typeof password === "string") {
     if (!password.trim()) {
-      response.status(400).json({ message: "Password cannot be empty." });
+      response.status(400).json({ message: translate(locale, "users.passwordEmpty") });
       return;
     }
 
@@ -107,7 +112,7 @@ usersRouter.put("/api/users/:id", async (request, response) => {
 
   if (role !== undefined) {
     if (role !== "ADMIN" && role !== "VIEWER") {
-      response.status(400).json({ message: "Role must be ADMIN or VIEWER." });
+      response.status(400).json({ message: translate(locale, "users.invalidRole") });
       return;
     }
 
@@ -115,7 +120,7 @@ usersRouter.put("/api/users/:id", async (request, response) => {
   }
 
   if (Object.keys(updateData).length === 0) {
-    response.status(400).json({ message: "No fields provided to update." });
+    response.status(400).json({ message: translate(locale, "users.noFieldsToUpdate") });
     return;
   }
 
@@ -126,7 +131,7 @@ usersRouter.put("/api/users/:id", async (request, response) => {
   });
 
   if (!existingUser) {
-    response.status(404).json({ message: "User not found." });
+    response.status(404).json({ message: translate(locale, "users.notFound") });
     return;
   }
 
@@ -135,7 +140,7 @@ usersRouter.put("/api/users/:id", async (request, response) => {
     updateData.role === "VIEWER" &&
     userCount === 1
   ) {
-    response.status(400).json({ message: "Cannot demote the last admin user." });
+    response.status(400).json({ message: translate(locale, "users.lastAdminDemote") });
     return;
   }
 
@@ -154,15 +159,16 @@ usersRouter.put("/api/users/:id", async (request, response) => {
 
     response.status(200).json({ user });
   } catch (_error) {
-    response.status(409).json({ message: "Could not update user. Email may already exist." });
+    response.status(409).json({ message: translate(locale, "users.updateFailed") });
   }
 });
 
 usersRouter.delete("/api/users/:id", async (request, response) => {
+  const locale = requestLocale(request);
   const userId = Number(request.params.id);
 
   if (Number.isNaN(userId)) {
-    response.status(400).json({ message: "Invalid user id." });
+    response.status(400).json({ message: translate(locale, "users.invalidId") });
     return;
   }
 
@@ -172,7 +178,7 @@ usersRouter.delete("/api/users/:id", async (request, response) => {
   });
 
   if (!user) {
-    response.status(404).json({ message: "User not found." });
+    response.status(404).json({ message: translate(locale, "users.notFound") });
     return;
   }
 
@@ -182,7 +188,7 @@ usersRouter.delete("/api/users/:id", async (request, response) => {
     });
 
     if (adminCount <= 1) {
-      response.status(400).json({ message: "Cannot delete the last admin user." });
+      response.status(400).json({ message: translate(locale, "users.lastAdminDelete") });
       return;
     }
   }

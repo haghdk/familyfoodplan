@@ -5,6 +5,8 @@ import { FormEvent, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, CalendarPlus, PlusCircle } from "lucide-react";
 import { backendApiUrl } from "../../../lib/auth";
+import { useTranslations } from "../../../lib/i18n/client";
+import { localeHeader } from "../../../lib/i18n/requestHeaders";
 import Alert from "../../../components/ui/Alert";
 import Button, { buttonClassName } from "../../../components/ui/Button";
 import Card from "../../../components/ui/Card";
@@ -27,6 +29,7 @@ const getDefaultRange = () => {
 
 export default function NewPlanPage() {
   const router = useRouter();
+  const { locale, t } = useTranslations();
   const defaults = useMemo(() => getDefaultRange(), []);
   const [name, setName] = useState("");
   const [startDate, setStartDate] = useState(defaults.startDate);
@@ -42,7 +45,7 @@ export default function NewPlanPage() {
     try {
       const response = await fetch(`${backendApiUrl}/api/plans`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...localeHeader(locale) },
         credentials: "include",
         body: JSON.stringify({
           name: name.trim() || null,
@@ -53,7 +56,7 @@ export default function NewPlanPage() {
 
       if (!response.ok) {
         const data = (await response.json().catch(() => null)) as { message?: string } | null;
-        setErrorMessage(data?.message ?? "Could not create plan.");
+        setErrorMessage(data?.message ?? t("planNew.failed"));
         return;
       }
 
@@ -61,7 +64,7 @@ export default function NewPlanPage() {
       router.push(`/plan/${data.plan.id}`);
       router.refresh();
     } catch (_error) {
-      setErrorMessage("Could not create plan right now.");
+      setErrorMessage(t("planNew.failedNow"));
     } finally {
       setIsSubmitting(false);
     }
@@ -75,38 +78,38 @@ export default function NewPlanPage() {
           href="/plan"
         >
           <ArrowLeft className="h-4 w-4" />
-          All plans
+          {t("planNew.allPlans")}
         </Link>
       </div>
 
       <PageHeader
-        description="Choose the days your week runs from and to. A day card is created for every date in the range."
-        eyebrow="New plan"
+        description={t("planNew.description")}
+        eyebrow={t("planNew.eyebrow")}
         eyebrowIcon={<CalendarPlus className="h-3.5 w-3.5" />}
-        title="Create a plan"
+        title={t("planNew.title")}
       />
 
       <Card>
         <form className="space-y-5" onSubmit={handleSubmit}>
           <TextField
-            hint="Leave blank to let the app name the plan from its date range."
-            label="Plan name (optional)"
+            hint={t("planNew.nameHint")}
+            label={t("planNew.nameLabel")}
             onChange={(event) => setName(event.target.value)}
-            placeholder="Example: Sunday to Saturday"
+            placeholder={t("planNew.namePlaceholder")}
             type="text"
             value={name}
           />
 
           <div className="grid gap-4 sm:grid-cols-2">
             <TextField
-              label="Start date"
+              label={t("common.startDate")}
               onChange={(event) => setStartDate(event.target.value)}
               required
               type="date"
               value={startDate}
             />
             <TextField
-              label="End date"
+              label={t("common.endDate")}
               onChange={(event) => setEndDate(event.target.value)}
               required
               type="date"
@@ -119,13 +122,13 @@ export default function NewPlanPage() {
           <div className="flex flex-wrap gap-3">
             <Button disabled={isSubmitting} size="lg" type="submit">
               <PlusCircle className="h-4 w-4" />
-              {isSubmitting ? "Creating..." : "Create plan"}
+              {isSubmitting ? t("planNew.submitting") : t("planNew.submit")}
             </Button>
             <Link
               className={buttonClassName({ size: "lg", variant: "secondary" })}
               href="/plan"
             >
-              Cancel
+              {t("common.cancel")}
             </Link>
           </div>
         </form>

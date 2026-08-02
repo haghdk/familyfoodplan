@@ -11,14 +11,24 @@ import {
   type ReactNode
 } from "react";
 import { cn } from "../../lib/cn";
+import { useTranslations } from "../../lib/i18n/client";
+import type { AppTranslator } from "../../lib/i18n/dictionaries";
 
 export type SwappableMealType = "breakfast" | "lunch" | "dinner";
 
-export const mealTypeLabels: Record<SwappableMealType, string> = {
-  breakfast: "Breakfast",
-  lunch: "Lunch",
-  dinner: "Dinner"
-};
+/** The meal's name as a heading, e.g. "Dinner" / "Aftensmad". */
+export const mealTypeLabel = ({ t }: AppTranslator, mealType: SwappableMealType) =>
+  t(`meals.${mealType}`);
+
+/**
+ * The meal's name as it reads mid-sentence. Danish never capitalises these, and
+ * English only does at the start of a sentence, so the two forms are separate
+ * messages rather than a `toLowerCase()` on the heading.
+ */
+export const mealTypeLabelInSentence = (
+  { t }: AppTranslator,
+  mealType: SwappableMealType
+) => t(`mealsLowercase.${mealType}`);
 
 export type SwapDay = {
   dayKey: string;
@@ -87,6 +97,7 @@ export default function MealSwapProvider({
   onSwap,
   pendingSwap
 }: MealSwapProviderProps) {
+  const translator = useTranslations();
   const [activeDrag, setActiveDrag] = useState<ActiveDrag | null>(null);
   const [dropTargetDayKey, setDropTargetDayKey] = useState<string | null>(null);
   const [pointerPosition, setPointerPosition] = useState({ x: 0, y: 0 });
@@ -243,12 +254,15 @@ export default function MealSwapProvider({
           )}
           style={{ left: pointerPosition.x, top: pointerPosition.y }}
         >
-          {mealTypeLabels[activeDrag.mealType]} · {activeDrag.dayLabel}
+          {mealTypeLabel(translator, activeDrag.mealType)} · {activeDrag.dayLabel}
         </div>
       ) : null}
       <span aria-live="polite" className="sr-only">
         {activeDrag
-          ? `Moving ${mealTypeLabels[activeDrag.mealType].toLowerCase()} from ${activeDrag.dayLabel}.`
+          ? translator.t("mealSwap.movingAnnouncement", {
+              meal: mealTypeLabelInSentence(translator, activeDrag.mealType),
+              day: activeDrag.dayLabel
+            })
           : ""}
       </span>
     </MealSwapContext.Provider>

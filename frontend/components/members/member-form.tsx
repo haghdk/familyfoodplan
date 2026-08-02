@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useMemo, useState } from "react";
+import { useTranslations } from "../../lib/i18n/client";
 import Button from "../ui/Button";
 import { TextField } from "../ui/Field";
 
@@ -13,6 +14,7 @@ type MemberFormProps = {
 };
 
 const minNameLength = 2;
+const maxNameLength = 80;
 
 export default function MemberForm({
   initialName = "",
@@ -21,6 +23,7 @@ export default function MemberForm({
   onCancel,
   submitLabel
 }: MemberFormProps) {
+  const { t, plural } = useTranslations();
   const [name, setName] = useState(initialName);
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -28,15 +31,15 @@ export default function MemberForm({
 
   const validate = (): string => {
     if (!trimmedName) {
-      return "Name is required.";
+      return t("members.nameRequired");
     }
 
     if (trimmedName.length < minNameLength) {
-      return `Name must be at least ${minNameLength} characters.`;
+      return plural("members.nameTooShort", minNameLength);
     }
 
-    if (trimmedName.length > 80) {
-      return "Name must be 80 characters or fewer.";
+    if (trimmedName.length > maxNameLength) {
+      return plural("members.nameTooLong", maxNameLength);
     }
 
     return "";
@@ -64,21 +67,21 @@ export default function MemberForm({
       <TextField
         errorMessage={errorMessage}
         fieldClassName="flex-1"
-        label="Name"
-        maxLength={80}
+        label={t("common.name")}
+        maxLength={maxNameLength}
         onChange={(event) => setName(event.target.value)}
-        placeholder="Enter family member name"
+        placeholder={t("members.namePlaceholder")}
         value={name}
       />
 
       <div className="flex gap-2">
         <Button disabled={isSubmitting} type="submit">
-          {isSubmitting ? "Saving..." : submitLabel}
+          {isSubmitting ? t("common.saving") : submitLabel}
         </Button>
 
         {onCancel ? (
           <Button onClick={onCancel} variant="secondary">
-            Cancel
+            {t("common.cancel")}
           </Button>
         ) : null}
       </div>

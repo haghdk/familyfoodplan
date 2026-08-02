@@ -2,11 +2,13 @@
 
 import { useMemo, useState } from "react";
 import { backendApiUrl } from "../../lib/auth";
-import { formatDayLabel } from "../../lib/dates";
+import { createDateFormatter } from "../../lib/dates";
+import { useTranslations } from "../../lib/i18n/client";
+import { localeHeader } from "../../lib/i18n/requestHeaders";
 import Alert from "../ui/Alert";
 import PlanDayCard from "./PlanDayCard";
 import MealSwapProvider, {
-  mealTypeLabels,
+  mealTypeLabelInSentence,
   type SwapDay,
   type SwappableMealType
 } from "./MealSwapProvider";
@@ -67,6 +69,12 @@ export default function PlanDayBoard({
   planId,
   todayDayKey
 }: PlanDayBoardProps) {
+  const translator = useTranslations();
+  const { locale, t } = translator;
+  const { formatDayLabel } = useMemo(
+    () => createDateFormatter(translator),
+    [translator]
+  );
   const [planDays, setPlanDays] = useState(initialPlanDays);
   const [pendingSwap, setPendingSwap] = useState<{
     mealType: SwappableMealType;
@@ -91,7 +99,7 @@ export default function PlanDayBoard({
           dinner: summarizeMeal(planDay, "dinner")
         }
       })),
-    [planDays]
+    [formatDayLabel, planDays]
   );
 
   const swapMeals = async (
@@ -109,7 +117,7 @@ export default function PlanDayBoard({
     try {
       const response = await fetch(`${backendApiUrl}/api/plans/${planId}/meal-swaps`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...localeHeader(locale) },
         credentials: "include",
         body: JSON.stringify({ mealType, sourceDayKey, targetDayKey })
       });
@@ -144,12 +152,18 @@ export default function PlanDayBoard({
       }));
       setFeedback({
         tone: "success",
-        message: `Swapped ${mealTypeLabels[mealType].toLowerCase()} between ${formatDayLabel(sourceDayKey)} and ${formatDayLabel(targetDayKey)}.`
+        message: t("mealSwap.swapped", {
+          meal: mealTypeLabelInSentence(translator, mealType),
+          source: formatDayLabel(sourceDayKey),
+          target: formatDayLabel(targetDayKey)
+        })
       });
     } catch (_error) {
       setFeedback({
         tone: "error",
-        message: `Could not swap ${mealTypeLabels[mealType].toLowerCase()} between those days right now.`
+        message: t("mealSwap.swapFailed", {
+          meal: mealTypeLabelInSentence(translator, mealType)
+        })
       });
     } finally {
       setPendingSwap(null);
@@ -168,10 +182,9 @@ export default function PlanDayBoard({
         {feedback ? <Alert tone={feedback.tone}>{feedback.message}</Alert> : null}
 
         <p className="text-sm text-fg-subtle">
-          Need Tuesday&apos;s dinner on Monday? Drag a meal&apos;s{" "}
-          <span className="font-semibold text-fg-muted">Swap</span> button onto the same
-          meal of another day, or press it to pick the day from a list. Breakfast, lunch,
-          and dinner each move on their own.
+          {t("mealSwap.hintBefore")}{" "}
+          <span className="font-semibold text-fg-muted">{t("mealSwap.swap")}</span>
+          {t("mealSwap.hintAfter")}
         </p>
 
         <div className="grid items-start gap-4 lg:grid-cols-2">

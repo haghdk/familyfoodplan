@@ -1,0 +1,77 @@
+{
+  "auth": {
+    "credentialsRequired": "Email and password are required",
+    "invalidCredentials": "Invalid credentials",
+    "emailRequired": "Email is required.",
+    "tooManyResetRequests": "Too many reset requests. Please try again in a few minutes.",
+    "resetAcknowledgement": "If that email address has an account, a password reset link is on its way.",
+    "tokenAndPasswordRequired": "Token and password are required.",
+    "passwordTooShort": {
+      "one": "Password must be at least {count} character.",
+      "other": "Password must be at least {count} characters."
+    },
+    "resetLinkInvalid": "This reset link is no longer valid. Please request a new one."
+  },
+  "users": {
+    "credentialsRequired": "Email and password are required.",
+    "invalidRole": "Role must be ADMIN or VIEWER.",
+    "emailTaken": "A user with that email already exists.",
+    "invalidId": "Invalid user id.",
+    "emailEmpty": "Email cannot be empty.",
+    "passwordEmpty": "Password cannot be empty.",
+    "noFieldsToUpdate": "No fields provided to update.",
+    "notFound": "User not found.",
+    "lastAdminDemote": "Cannot demote the last admin user.",
+    "updateFailed": "Could not update user. Email may already exist.",
+    "lastAdminDelete": "Cannot delete the last admin user."
+  },
+  "plans": {
+    "endBeforeStart": "endDate cannot be before startDate.",
+    "rangeTooLong": {
+      "one": "Plan range cannot exceed {count} day.",
+      "other": "Plan range cannot exceed {count} days."
+    },
+    "invalidId": "Invalid plan id.",
+    "notFound": "Plan not found.",
+    "nameRequired": "Plan name is required.",
+    "invalidDateFormat": "Invalid date format. Expected YYYY-MM-DD.",
+    "nameTaken": "A plan with this name already exists.",
+    "currentPlanUpdated": "Current plan updated."
+  },
+  "settings": {
+    "nothingToUpdate": "Provide dinnerReminderEnabled or language to update.",
+    "reminderMustBeBoolean": "dinnerReminderEnabled must be a boolean.",
+    "unsupportedLanguage": "language must be one of: {languages}.",
+    "subscriptionRequired": "A push subscription with endpoint, keys.p256dh and keys.auth is required.",
+    "endpointRequired": "endpoint is required.",
+    "pushNotConfigured": "Push notifications are not configured on the server.",
+    "registrationExpired": "This device's push registration had expired. Turn reminders off and on again.",
+    "noDevices": "No devices are registered for this account yet.",
+    "testSent": {
+      "one": "Test notification sent to {count} device.",
+      "other": "Test notification sent to {count} devices."
+    }
+  },
+  "dinnerReminder": {
+    "nothingPlannedTitle": "No dinner planned for today",
+    "nothingPlannedBody": "Nothing is set for dinner this {weekday}. Tap to plan something.",
+    "todaysDinnerTitle": "Today's dinner"
+  },
+  "passwordResetEmail": {
+    "subject": "Reset your Family Food Planner password",
+    "greeting": "Hi,",
+    "intro": "We received a request to reset the password for your Family Food Planner account.",
+    "openLink": "Open this link to choose a new password:",
+    "expiry": {
+      "one": "The link expires in {count} minute and can only be used once.",
+      "other": "The link expires in {count} minutes and can only be used once."
+    },
+    "ignore": "If you did not request a password reset you can ignore this email — your password stays unchanged.",
+    "signature": "— Family Food Planner",
+    "brand": "Family Food Planner",
+    "heading": "Reset your password",
+    "htmlIntro": "We received a request to reset the password for your Family Food Planner account. Choose a new password with the button below.",
+    "button": "Choose a new password",
+    "fallbackLink": "If the button does not work, copy this address into your browser:"
+  }
+}

@@ -3,13 +3,14 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CheckCircle2, Star } from "lucide-react";
+import { useTranslations } from "../../lib/i18n/client";
 import { setPlanAsCurrent } from "../../lib/plans";
 import Button, { type ButtonSize } from "../ui/Button";
 
 type SetCurrentPlanButtonProps = {
   planId: number;
   isCurrent: boolean;
-  idleLabel: string;
+  /** Overrides the default "Setting as current..." where space is tight. */
   loadingLabel?: string;
   size?: ButtonSize;
 };
@@ -17,11 +18,11 @@ type SetCurrentPlanButtonProps = {
 export default function SetCurrentPlanButton({
   planId,
   isCurrent,
-  idleLabel,
-  loadingLabel = "Setting as current...",
+  loadingLabel,
   size = "md"
 }: SetCurrentPlanButtonProps) {
   const router = useRouter();
+  const { locale, t } = useTranslations();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -30,13 +31,11 @@ export default function SetCurrentPlanButton({
     setErrorMessage("");
 
     try {
-      await setPlanAsCurrent(planId);
+      await setPlanAsCurrent(planId, locale);
       router.refresh();
     } catch (error) {
-      const message = error instanceof Error
-        ? error.message
-        : "Could not set this as the current plan right now.";
-      setErrorMessage(message);
+      const message = error instanceof Error ? error.message : "";
+      setErrorMessage(message || t("common.setCurrentFailed"));
     } finally {
       setIsSubmitting(false);
     }
@@ -55,7 +54,11 @@ export default function SetCurrentPlanButton({
         ) : (
           <Star className="h-4 w-4" />
         )}
-        {isCurrent ? "Current plan" : isSubmitting ? loadingLabel : idleLabel}
+        {isCurrent
+          ? t("common.currentPlan")
+          : isSubmitting
+            ? (loadingLabel ?? t("common.settingAsCurrent"))
+            : t("common.setAsCurrent")}
       </Button>
       {errorMessage ? (
         <p className="text-xs font-medium text-danger">{errorMessage}</p>
