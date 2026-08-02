@@ -9,6 +9,13 @@ import Alert from "../ui/Alert";
 import Badge from "../ui/Badge";
 import Button from "../ui/Button";
 import { SelectField, TextAreaField, TextField } from "../ui/Field";
+import MealSwapHandle from "./MealSwapHandle";
+import {
+  mealDropZoneAttribute,
+  mealDropZoneId,
+  useMealSwap,
+  type SwappableMealType
+} from "./MealSwapProvider";
 
 type Member = {
   id: number;
@@ -75,9 +82,17 @@ type MealSectionProps = {
   addLabel: string;
   emptyText: string;
   children: ReactNode;
+  dayKey: string;
+  dayLabel: string;
+  mealType: SwappableMealType;
   onAdd?: () => void;
 };
 
+/**
+ * One meal of one day. It doubles as the drop zone for a meal dragged off
+ * another day: the section marks itself with the meal and day it stands for, and
+ * the drag looks that marker up under the pointer.
+ */
 function MealSection({
   title,
   icon,
@@ -85,11 +100,29 @@ function MealSection({
   addLabel,
   emptyText,
   children,
+  dayKey,
+  dayLabel,
+  mealType,
   onAdd
 }: MealSectionProps) {
+  const mealSwap = useMealSwap();
+  const isDraggedMeal =
+    mealSwap?.activeDrag?.mealType === mealType && mealSwap.activeDrag.dayKey === dayKey;
+  const canTakeDrop = Boolean(mealSwap?.activeDrag) && mealSwap?.activeDrag?.mealType === mealType;
+  const isDropTarget = canTakeDrop && mealSwap?.dropTargetDayKey === dayKey;
+
   return (
-    <section className="space-y-3">
-      <div className="flex items-center justify-between gap-3">
+    <section
+      className={cn(
+        "space-y-3 rounded-2xl transition",
+        canTakeDrop && !isDraggedMeal ? "outline-1 outline-dashed outline-brand-border" : null,
+        isDropTarget ? "bg-brand-soft/60 outline-2 outline-solid outline-brand" : null,
+        isDraggedMeal ? "opacity-60" : null,
+        canTakeDrop ? "outline-offset-8" : null
+      )}
+      {...{ [mealDropZoneAttribute]: mealDropZoneId(mealType, dayKey) }}
+    >
+      <div className="flex items-center justify-between gap-2">
         <h4 className="inline-flex items-center gap-2 text-sm font-semibold text-fg">
           <span
             className={cn(
@@ -101,12 +134,15 @@ function MealSection({
           </span>
           {title}
         </h4>
-        {onAdd ? (
-          <Button onClick={onAdd} size="sm" variant="ghost">
-            <Plus className="h-3.5 w-3.5" />
-            {addLabel}
-          </Button>
-        ) : null}
+        <div className="flex items-center gap-1">
+          <MealSwapHandle dayKey={dayKey} dayLabel={dayLabel} mealType={mealType} />
+          {onAdd ? (
+            <Button onClick={onAdd} size="sm" variant="ghost">
+              <Plus className="h-3.5 w-3.5" />
+              {addLabel}
+            </Button>
+          ) : null}
+        </div>
       </div>
       {children ?? (
         <p className="text-sm text-fg-subtle">{emptyText}</p>
@@ -431,9 +467,12 @@ export default function PlanDayCard({
 
         <MealSection
           addLabel="Add row"
+          dayKey={dayKey}
+          dayLabel={dayLabel}
           emptyText="No breakfasts added yet."
           icon={<Croissant className="h-4 w-4" />}
           iconClassName="bg-breakfast-soft text-breakfast"
+          mealType="breakfast"
           onAdd={() => setBreakfastRows((rows) => [...rows, createLocalMealRow()])}
           title="Breakfast"
         >
@@ -444,9 +483,12 @@ export default function PlanDayCard({
 
         <MealSection
           addLabel="Add row"
+          dayKey={dayKey}
+          dayLabel={dayLabel}
           emptyText="No lunches added yet."
           icon={<Sandwich className="h-4 w-4" />}
           iconClassName="bg-lunch-soft text-lunch"
+          mealType="lunch"
           onAdd={() => setLunchRows((rows) => [...rows, createLocalMealRow()])}
           title="Lunch"
         >
@@ -457,9 +499,12 @@ export default function PlanDayCard({
 
         <MealSection
           addLabel=""
+          dayKey={dayKey}
+          dayLabel={dayLabel}
           emptyText=""
           icon={<UtensilsCrossed className="h-4 w-4" />}
           iconClassName="bg-dinner-soft text-dinner"
+          mealType="dinner"
           title="Dinner"
         >
           <div className="space-y-3">

@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { prisma } from "../lib/prisma";
 import { requireAdminAuth, requireAuth } from "../middleware/auth";
+import { mapPlanDayMeals, planDayMealsSelect } from "../services/planDayMeals";
 import {
   PlanConflictError,
   PlanValidationError,
@@ -230,47 +231,7 @@ plansRouter.get("/api/plans/:planId", requireAuth, async (request, response) => 
       endDate: true,
       days: {
         orderBy: { date: "asc" },
-        select: {
-          id: true,
-          date: true,
-          dinnerDish: {
-            select: {
-              id: true,
-              name: true,
-              notes: true
-            }
-          },
-          breakfastDishes: {
-            orderBy: [{ createdAt: "asc" }, { id: "asc" }],
-            select: {
-              id: true,
-              name: true,
-              notes: true,
-              familyMemberId: true,
-              familyMember: {
-                select: {
-                  id: true,
-                  name: true
-                }
-              }
-            }
-          },
-          lunchDishes: {
-            orderBy: [{ createdAt: "asc" }, { id: "asc" }],
-            select: {
-              id: true,
-              name: true,
-              notes: true,
-              familyMemberId: true,
-              familyMember: {
-                select: {
-                  id: true,
-                  name: true
-                }
-              }
-            }
-          }
-        }
+        select: planDayMealsSelect
       }
     }
   });
@@ -287,35 +248,7 @@ plansRouter.get("/api/plans/:planId", requireAuth, async (request, response) => 
       isCurrent: plan.isCurrent,
       startDate: formatOptionalDateKey(plan.startDate),
       endDate: formatOptionalDateKey(plan.endDate),
-      planDays: plan.days.map((day) => ({
-        id: day.id,
-        date: formatDateKey(day.date),
-        dinnerDish: day.dinnerDish,
-        breakfastDishes: day.breakfastDishes.map((breakfastDish) => ({
-          id: breakfastDish.id,
-          name: breakfastDish.name,
-          notes: breakfastDish.notes,
-          familyMemberId: breakfastDish.familyMemberId,
-          familyMember: breakfastDish.familyMember
-            ? {
-                id: breakfastDish.familyMember.id,
-                name: breakfastDish.familyMember.name
-              }
-            : null
-        })),
-        lunchDishes: day.lunchDishes.map((lunchDish) => ({
-          id: lunchDish.id,
-          name: lunchDish.name,
-          notes: lunchDish.notes,
-          familyMemberId: lunchDish.familyMemberId,
-          familyMember: lunchDish.familyMember
-            ? {
-                id: lunchDish.familyMember.id,
-                name: lunchDish.familyMember.name
-              }
-            : null
-        }))
-      }))
+      planDays: plan.days.map(mapPlanDayMeals)
     }
   });
 });

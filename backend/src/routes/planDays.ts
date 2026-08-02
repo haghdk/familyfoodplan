@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { prisma } from "../lib/prisma";
 import { requireAdminAuth } from "../middleware/auth";
+import { isSwappableMealType, swapPlanDayMeals } from "../services/mealSwaps";
 import { parseIsoDayKey } from "../services/plans";
 
 const planDaysRouter = Router();
@@ -17,6 +18,67 @@ const findPlanDayForPlan = async (planId: number, dayDate: Date) =>
     },
     select: { id: true }
   });
+
+planDaysRouter.post("/api/plans/:planId/meal-swaps", async (request, response) => {
+  const planId = Number(request.params.planId);
+
+  if (Number.isNaN(planId)) {
+    response.status(400).json({ message: "Invalid plan id." });
+    return;
+  }
+
+  const { mealType, sourceDayKey, targetDayKey } = request.body as {
+    mealType?: unknown;
+    sourceDayKey?: unknown;
+    targetDayKey?: unknown;
+  };
+
+  if (!isSwappableMealType(mealType)) {
+    response
+      .status(400)
+      .json({ message: "mealType must be one of breakfast, lunch, or dinner." });
+    return;
+  }
+
+  if (typeof sourceDayKey !== "string" || typeof targetDayKey !== "string") {
+    response
+      .status(400)
+      .json({ message: "sourceDayKey and targetDayKey are required." });
+    return;
+  }
+
+  const sourceDayDate = parseIsoDayKey(sourceDayKey);
+  const targetDayDate = parseIsoDayKey(targetDayKey);
+
+  if (!sourceDayDate || !targetDayDate) {
+    response.status(400).json({ message: "Invalid day key. Expected YYYY-MM-DD." });
+    return;
+  }
+
+  if (sourceDayDate.getTime() === targetDayDate.getTime()) {
+    response.status(400).json({ message: "Pick two different days to swap." });
+    return;
+  }
+
+  const swapResult = await swapPlanDayMeals({
+    planId,
+    mealType,
+    sourceDayDate,
+    targetDayDate,
+    sourceDayKey,
+    targetDayKey
+  });
+
+  if (swapResult.status === "plan_days_not_found") {
+    response.status(404).json({
+      message: "Plan day not found for this plan.",
+      missingDayKeys: swapResult.missingDayKeys
+    });
+    return;
+  }
+
+  response.status(200).json({ planDays: swapResult.planDays });
+});
 
 planDaysRouter.put("/api/plans/:planId/days/:dayKey/dinner", async (request, response) => {
   const planId = Number(request.params.planId);
