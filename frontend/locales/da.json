@@ -42,6 +42,7 @@
   },
   "nav": {
     "plans": "Planer",
+    "dishes": "Retter",
     "members": "Medlemmer",
     "users": "Brugere",
     "settings": "Indstillinger",
@@ -217,7 +218,54 @@
     "someRowsFailed": "En eller flere rækker med {meal} kunne ikke gemmes.",
     "rowDeleteFailed": "Kunne ikke slette denne {meal} lige nu.",
     "deleteFailed": "Kunne ikke slette {meal}.",
-    "deleteAriaLabel": "Slet {meal}"
+    "deleteAriaLabel": "Slet {meal}",
+    "chooseSavedDish": "Vælg en gemt ret",
+    "typeItYourself": "Skriv den selv",
+    "addIngredientsToGroceryList": "Tilføj ingredienser til indkøbslisten",
+    "addingIngredients": "Tilføjer ...",
+    "ingredientsAdded": {
+      "one": "{count} ingrediens tilføjet til indkøbslisten.",
+      "other": "{count} ingredienser tilføjet til indkøbslisten."
+    },
+    "ingredientsSkippedNote": "Ingredienser, der allerede stod på listen, blev ikke rørt.",
+    "ingredientsAlreadyAdded": "Alle rettens ingredienser står allerede på indkøbslisten.",
+    "ingredientsAddFailed": "Kunne ikke tilføje rettens ingredienser til indkøbslisten lige nu."
+  },
+  "dishes": {
+    "eyebrow": "Din kogebog",
+    "title": "Retter",
+    "description": "Gem de retter, familien spiser, sammen med alt hvad de kræver. En gemt ret kan derefter vælges, når du planlægger en dag, og dens ingredienser kan tilføjes indkøbslisten med ét tryk.",
+    "addTitle": "Tilføj ret",
+    "addDescription": "Giv retten et navn, og skriv hvad der skal bruges til den.",
+    "addSubmit": "Tilføj ret",
+    "nameLabel": "Ret",
+    "namePlaceholder": "Lasagne",
+    "notesLabel": "Noter",
+    "notesPlaceholder": "Hvordan den laves, eller hvem der kan lide den (valgfrit)",
+    "ingredientsTitle": "Ingredienser",
+    "addIngredient": "Tilføj ingrediens",
+    "ingredientNameLabel": "Ingrediens",
+    "ingredientNamePlaceholder": "Hakket oksekød",
+    "ingredientUnitPlaceholder": "g",
+    "removeIngredientAriaLabel": "Fjern denne ingrediens",
+    "noIngredients": "Ingen ingredienser skrevet ind endnu.",
+    "ingredientCount": {
+      "one": "{count} ingrediens",
+      "other": "{count} ingredienser"
+    },
+    "emptyTitle": "Ingen retter gemt endnu",
+    "emptyDescription": "Tilføj de retter, I laver igen og igen, så bliver det at planlægge en uge et spørgsmål om at vælge fra en liste.",
+    "nameRequired": "Rettens navn er påkrævet.",
+    "nameTaken": "Der findes allerede en ret med det navn.",
+    "created": "{name} er gemt.",
+    "updated": "{name} er opdateret.",
+    "deleted": "{name} er slettet.",
+    "createFailed": "Kunne ikke gemme denne ret lige nu.",
+    "updateFailed": "Kunne ikke opdatere denne ret lige nu.",
+    "deleteFailed": "Kunne ikke slette denne ret lige nu.",
+    "deleteTitle": "Vil du slette {name}?",
+    "deleteDescription": "Retten og dens ingredienser fjernes. Dage, der allerede er planlagt med den, beholder deres måltid, og varer, der allerede er tilføjet indkøbslisten, bliver stående.",
+    "deleteConfirm": "Slet ret"
   },
   "mealSwap": {
     "swap": "Byt",

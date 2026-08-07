@@ -42,6 +42,7 @@
   },
   "nav": {
     "plans": "Plans",
+    "dishes": "Dishes",
     "members": "Members",
     "users": "Users",
     "settings": "Settings",
@@ -217,7 +218,54 @@
     "someRowsFailed": "One or more {meal} rows failed to save.",
     "rowDeleteFailed": "Could not delete this {meal} right now.",
     "deleteFailed": "Could not delete {meal}.",
-    "deleteAriaLabel": "Delete {meal}"
+    "deleteAriaLabel": "Delete {meal}",
+    "chooseSavedDish": "Choose a saved dish",
+    "typeItYourself": "Type it in yourself",
+    "addIngredientsToGroceryList": "Add ingredients to grocery list",
+    "addingIngredients": "Adding...",
+    "ingredientsAdded": {
+      "one": "{count} ingredient added to the grocery list.",
+      "other": "{count} ingredients added to the grocery list."
+    },
+    "ingredientsSkippedNote": "Ingredients already on the list were left as they were.",
+    "ingredientsAlreadyAdded": "Every ingredient of this dish is already on the grocery list.",
+    "ingredientsAddFailed": "Could not add this dish's ingredients to the grocery list right now."
+  },
+  "dishes": {
+    "eyebrow": "Your cookbook",
+    "title": "Dishes",
+    "description": "Save the dishes your family eats together with everything they take. A saved dish can then be picked when planning a day, and its ingredients added to the grocery list in one press.",
+    "addTitle": "Add dish",
+    "addDescription": "Give the dish a name and list what it takes to make it.",
+    "addSubmit": "Add dish",
+    "nameLabel": "Dish",
+    "namePlaceholder": "Lasagne",
+    "notesLabel": "Notes",
+    "notesPlaceholder": "How it is made, or who likes it (optional)",
+    "ingredientsTitle": "Ingredients",
+    "addIngredient": "Add ingredient",
+    "ingredientNameLabel": "Ingredient",
+    "ingredientNamePlaceholder": "Minced beef",
+    "ingredientUnitPlaceholder": "g",
+    "removeIngredientAriaLabel": "Remove this ingredient",
+    "noIngredients": "No ingredients listed yet.",
+    "ingredientCount": {
+      "one": "{count} ingredient",
+      "other": "{count} ingredients"
+    },
+    "emptyTitle": "No dishes saved yet",
+    "emptyDescription": "Add the meals you cook again and again, and planning a week becomes picking from a list.",
+    "nameRequired": "Dish name is required.",
+    "nameTaken": "A dish with that name already exists.",
+    "created": "{name} saved.",
+    "updated": "{name} updated.",
+    "deleted": "{name} deleted.",
+    "createFailed": "Could not save this dish right now.",
+    "updateFailed": "Could not update this dish right now.",
+    "deleteFailed": "Could not delete this dish right now.",
+    "deleteTitle": "Delete {name}?",
+    "deleteDescription": "The dish and its ingredients are removed. Days already planned with it keep their meal, and grocery items already added stay on their lists.",
+    "deleteConfirm": "Delete dish"
   },
   "mealSwap": {
     "swap": "Swap",

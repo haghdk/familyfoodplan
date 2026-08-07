@@ -128,15 +128,58 @@ model GroceryShareToken {
   updatedAt DateTime @updatedAt
 }
 
+/// A dish the family cooks again and again — lasagne, say — stored once with
+/// everything it takes to make it. Dishes live outside any plan, so the same
+/// dish can be picked for as many days as it is eaten on without its
+/// ingredients being typed in again.
+model Dish {
+  id              Int              @id @default(autoincrement())
+  name            String           @unique
+  notes           String?
+  ingredients     DishIngredient[]
+  dinnerDishes    DinnerDish[]
+  breakfastDishes BreakfastDish[]
+  lunchDishes     LunchDish[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+}
+
+/// One line of a dish's recipe. Deliberately shaped like `GroceryItem`, since
+/// copying these onto a plan's grocery list is what they exist for.
+model DishIngredient {
+  id        Int      @id @default(autoincrement())
+  name      String
+  quantity  Float    @default(1)
+  unit      String?
+  /// The order the ingredients are listed in on the dish, kept so the grocery
+  /// list receives them the way they were written down.
+  sortOrder Int      @default(0)
+  dishId    Int
+  dish      Dish     @relation(fields: [dishId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([dishId])
+  @@index([dishId, sortOrder])
+}
+
 model DinnerDish {
   id          Int           @id @default(autoincrement())
   name        String
   notes       String?
   planDayId   Int           @unique
+  /// Set when this meal was picked from the saved dishes rather than typed in,
+  /// which is what makes its ingredients available to the grocery list. Cleared
+  /// rather than cascading if the saved dish is later deleted, so the planned
+  /// meal survives.
+  dishId      Int?
   planDay     PlanDay       @relation(fields: [planDayId], references: [id], onDelete: Cascade)
+  dish        Dish?         @relation(fields: [dishId], references: [id], onDelete: SetNull)
   groceryItems GroceryItem[]
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
+
+  @@index([dishId])
 }
 
 model LunchDish {
@@ -145,14 +188,17 @@ model LunchDish {
   notes          String?
   planDayId      Int
   familyMemberId Int?
+  dishId         Int?
   planDay        PlanDay       @relation(fields: [planDayId], references: [id], onDelete: Cascade)
   familyMember   FamilyMember? @relation(fields: [familyMemberId], references: [id], onDelete: SetNull)
+  dish           Dish?         @relation(fields: [dishId], references: [id], onDelete: SetNull)
   groceryItems   GroceryItem[]
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
 
   @@index([planDayId])
   @@index([familyMemberId])
+  @@index([dishId])
 }
 
 model BreakfastDish {
@@ -161,14 +207,17 @@ model BreakfastDish {
   notes          String?
   planDayId      Int
   familyMemberId Int?
+  dishId         Int?
   planDay        PlanDay       @relation(fields: [planDayId], references: [id], onDelete: Cascade)
   familyMember   FamilyMember? @relation(fields: [familyMemberId], references: [id], onDelete: SetNull)
+  dish           Dish?         @relation(fields: [dishId], references: [id], onDelete: SetNull)
   groceryItems   GroceryItem[]
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
 
   @@index([planDayId])
   @@index([familyMemberId])
+  @@index([dishId])
 }
 
 enum GroceryCategory {

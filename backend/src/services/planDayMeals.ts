@@ -18,6 +18,7 @@ const mealRowSelect = {
   name: true,
   notes: true,
   familyMemberId: true,
+  dishId: true,
   familyMember: {
     select: {
       id: true,
@@ -37,7 +38,8 @@ export const planDayMealsSelect = {
     select: {
       id: true,
       name: true,
-      notes: true
+      notes: true,
+      dishId: true
     }
   },
   breakfastDishes: {
@@ -61,6 +63,7 @@ const mapMealRow = (mealRow: PlanDayWithMeals["breakfastDishes"][number]) => ({
   name: mealRow.name,
   notes: mealRow.notes,
   familyMemberId: mealRow.familyMemberId,
+  dishId: mealRow.dishId,
   familyMember: mealRow.familyMember
     ? {
         id: mealRow.familyMember.id,
