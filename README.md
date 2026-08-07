@@ -414,6 +414,11 @@ Both the admin grocery page and the shared shopper link stream changes over serv
 - Generation runs automatically from the backend's `postinstall` script, so every environment gets a client built for the Prisma version it actually installed — whether it installs with `pnpm` (as local development does) or with `npm` (as the Docker `backend` service does). A committed client cannot satisfy both, and the mismatch is not a type error but a hard crash on the first query (`TypeError: Cannot read properties of undefined (reading 'graph')`), because the generated code and the client runtime share an internal format that changes between versions.
 - `backend/prisma.config.ts` reads `DATABASE_URL` lazily so `postinstall` succeeds on a fresh checkout that has no `.env` yet. Commands that really need a database (`prisma migrate`, `prisma db seed`) still fail with a clear `Connection url is empty` error when it is unset.
 - After changing `backend/prisma/schema.prisma`, run `pnpm --dir backend prisma:generate` to refresh the client.
+- **In Docker, pulling a schema change is not enough — the backend service has to be restarted.** The service bind-mounts `./backend` and runs `tsx watch`, so new TypeScript goes live the moment it lands on disk, but `prisma generate` and `prisma migrate deploy` only run in the service's start command. Pulling a branch that changes the schema therefore leaves new source running against the *previous* client and the *previous* database, and the first query that touches a new field fails with `Unknown field <name> for select statement on model <Model>` (or a missing-column error once the client is current but the migration is not). Restart the service so both run again:
+
+  ```bash
+  docker compose restart backend
+  ```
 
 ## Local Development
 
