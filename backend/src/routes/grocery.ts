@@ -3,6 +3,7 @@ import crypto from "node:crypto";
 import { Router } from "express";
 import { prisma } from "../lib/prisma";
 import { requireAdminAuth } from "../middleware/auth";
+import { addDishIngredientsToGroceryList } from "../services/dishes";
 import {
   getMergedGroceryItemsByPlanDays,
   getNextGrocerySortOrder,
@@ -392,6 +393,126 @@ groceryRouter.post("/api/plans/:planId/grocery-items", requireAdminAuth, async (
 
   response.status(201).json({ groceryItem });
 });
+
+// Locates the planned meal a grocery item is being attached to and reports the
+// day it sits on, together with the saved dish it was picked from (when any).
+const resolveMealForPlan = async (
+  planDayIds: number[],
+  mealLink: { dinnerDishId?: number | null; breakfastDishId?: number | null; lunchDishId?: number | null }
+) => {
+  if (typeof mealLink.dinnerDishId === "number") {
+    return prisma.dinnerDish.findFirst({
+      where: { id: mealLink.dinnerDishId, planDayId: { in: planDayIds } },
+      select: { id: true, planDayId: true, dishId: true }
+    });
+  }
+
+  if (typeof mealLink.breakfastDishId === "number") {
+    return prisma.breakfastDish.findFirst({
+      where: { id: mealLink.breakfastDishId, planDayId: { in: planDayIds } },
+      select: { id: true, planDayId: true, dishId: true }
+    });
+  }
+
+  if (typeof mealLink.lunchDishId === "number") {
+    return prisma.lunchDish.findFirst({
+      where: { id: mealLink.lunchDishId, planDayId: { in: planDayIds } },
+      select: { id: true, planDayId: true, dishId: true }
+    });
+  }
+
+  return null;
+};
+
+// Copies a saved dish's ingredients onto the plan's grocery list in one go,
+// which is the whole point of writing a dish down once: the meal is picked on
+// the plan, and its shopping follows with a single press.
+groceryRouter.post(
+  "/api/plans/:planId/grocery-items/from-dish",
+  requireAdminAuth,
+  async (request, response) => {
+    const planOrPlanDayId = parsePlanId(request.params.planId);
+
+    if (!planOrPlanDayId) {
+      response.status(400).json({ message: "Invalid plan id." });
+      return;
+    }
+
+    const { dishId, dinnerDishId, breakfastDishId, lunchDishId } = request.body as {
+      dishId?: number | null;
+      dinnerDishId?: number | null;
+      breakfastDishId?: number | null;
+      lunchDishId?: number | null;
+    };
+
+    const selectedMealIds = [dinnerDishId, breakfastDishId, lunchDishId].filter(
+      (value): value is number => typeof value === "number"
+    );
+
+    if (selectedMealIds.length !== 1) {
+      response
+        .status(400)
+        .json({ message: "Name exactly one of dinnerDishId, breakfastDishId, or lunchDishId." });
+      return;
+    }
+
+    const planScope = await resolvePlanScope(planOrPlanDayId);
+
+    if (!planScope) {
+      response.status(404).json({ message: "Plan not found." });
+      return;
+    }
+
+    const mealLink = { dinnerDishId, breakfastDishId, lunchDishId };
+    const meal = await resolveMealForPlan(planScope.planDayIds, mealLink);
+
+    if (!meal) {
+      response.status(400).json({ message: "That meal does not belong to this plan." });
+      return;
+    }
+
+    // The meal remembers the dish it was picked from, so the caller normally
+    // does not have to say which dish to copy.
+    const resolvedDishId = typeof dishId === "number" ? dishId : meal.dishId;
+
+    if (typeof resolvedDishId !== "number") {
+      response
+        .status(400)
+        .json({ message: "This meal was not picked from a saved dish, so it has no ingredients." });
+      return;
+    }
+
+    const addResult = await addDishIngredientsToGroceryList({
+      dishId: resolvedDishId,
+      planDayId: meal.planDayId,
+      planDayIds: planScope.planDayIds,
+      mealLink
+    });
+
+    if (addResult.status === "dish_not_found") {
+      response.status(404).json({ message: "Dish not found." });
+      return;
+    }
+
+    if (addResult.status === "no_ingredients") {
+      response.status(400).json({ message: "That dish has no ingredients yet." });
+      return;
+    }
+
+    for (const createdItem of addResult.createdItems) {
+      await emitGroceryEvent(meal.planDayId, "grocery_item_created", {
+        item: createdItem,
+        deletedItemId: null
+      });
+    }
+
+    response.status(201).json({
+      groceryItems: addResult.createdItems,
+      addedCount: addResult.createdItems.length,
+      skippedCount: addResult.skippedCount
+    });
+  }
+);
 
 // Registered before the ":itemId" route so "order" is not parsed as an item id.
 groceryRouter.put(

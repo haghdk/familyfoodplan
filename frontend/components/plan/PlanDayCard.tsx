@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
-import { Croissant, Plus, Sandwich, Trash2, UtensilsCrossed } from "lucide-react";
+import { Croissant, Plus, Sandwich, ShoppingBasket, Trash2, UtensilsCrossed } from "lucide-react";
 import { backendApiUrl } from "../../lib/auth";
 import { cn } from "../../lib/cn";
 import { useTranslations } from "../../lib/i18n/client";
@@ -31,6 +31,7 @@ type DinnerDish = {
   id: number;
   name: string;
   notes: string | null;
+  dishId: number | null;
 };
 
 type BreakfastDish = {
@@ -38,6 +39,7 @@ type BreakfastDish = {
   name: string;
   notes: string | null;
   familyMemberId: number | null;
+  dishId: number | null;
 };
 
 type LunchDish = {
@@ -45,6 +47,14 @@ type LunchDish = {
   name: string;
   notes: string | null;
   familyMemberId: number | null;
+  dishId: number | null;
+};
+
+/** A dish saved under Dishes, with the ingredients it takes to make it. */
+type SavedDish = {
+  id: number;
+  name: string;
+  ingredients: Array<{ id: number; name: string }>;
 };
 
 type MealRow = {
@@ -53,6 +63,8 @@ type MealRow = {
   name: string;
   notes: string;
   familyMemberId: number | null;
+  /** The saved dish this meal was picked from, or null when it was typed in. */
+  dishId: number | null;
   isSaving: boolean;
   errorMessage: string;
 };
@@ -75,6 +87,7 @@ const createLocalMealRow = (meal?: BreakfastDish | LunchDish): MealRow => ({
   name: meal?.name ?? "",
   notes: meal?.notes ?? "",
   familyMemberId: meal?.familyMemberId ?? null,
+  dishId: meal?.dishId ?? null,
   isSaving: false,
   errorMessage: ""
 });
@@ -165,12 +178,18 @@ export default function PlanDayCard({
   initialLunches = []
 }: PlanDayCardProps) {
   const translator = useTranslations();
-  const { locale, t } = translator;
+  const { locale, plural, t } = translator;
   const [members, setMembers] = useState<Member[]>([]);
   const [membersErrorMessage, setMembersErrorMessage] = useState("");
+  const [savedDishes, setSavedDishes] = useState<SavedDish[]>([]);
+  const [dinnerId, setDinnerId] = useState<number | null>(initialDinner?.id ?? null);
   const [dinnerName, setDinnerName] = useState(initialDinner?.name ?? "");
   const [dinnerNotes, setDinnerNotes] = useState(initialDinner?.notes ?? "");
+  const [dinnerDishId, setDinnerDishId] = useState<number | null>(initialDinner?.dishId ?? null);
   const [isSavingDinner, setIsSavingDinner] = useState(false);
+  // Which meal is having its dish ingredients copied to the grocery list, so
+  // only that button reads as busy while it happens.
+  const [pendingIngredientsKey, setPendingIngredientsKey] = useState<string | null>(null);
   const [breakfastRows, setBreakfastRows] = useState<MealRow[]>(
     initialBreakfastes.map((breakfast) => createLocalMealRow(breakfast))
   );
@@ -200,10 +219,125 @@ export default function PlanDayCard({
     void loadMembers();
   }, [t]);
 
+  useEffect(() => {
+    const loadSavedDishes = async () => {
+      try {
+        const response = await fetch(`${backendApiUrl}/api/dishes`, {
+          credentials: "include"
+        });
+
+        if (!response.ok) {
+          throw new Error("Unable to fetch dishes.");
+        }
+
+        const data = (await response.json()) as { dishes: SavedDish[] };
+        setSavedDishes(data.dishes);
+      } catch (_error) {
+        // The picker is an optional shortcut: a meal can always be typed in, so
+        // a failed dish load hides the shortcut rather than blocking the day.
+        setSavedDishes([]);
+      }
+    };
+
+    void loadSavedDishes();
+  }, []);
+
   const memberOptions = useMemo(
     () => [{ id: null, name: t("planDay.noMemberSelected") }, ...members],
     [members, t]
   );
+
+  const savedDishesById = useMemo(
+    () => new Map(savedDishes.map((savedDish) => [savedDish.id, savedDish])),
+    [savedDishes]
+  );
+
+  const hasIngredientsToAdd = (dishId: number | null) =>
+    Boolean(dishId && (savedDishesById.get(dishId)?.ingredients.length ?? 0) > 0);
+
+  /**
+   * Copies the ingredients of the saved dish this meal was picked from onto the
+   * plan's grocery list. Ingredients the meal already carries are left alone, so
+   * pressing it again after editing the dish tops the list up instead of
+   * duplicating it.
+   */
+  const addDishIngredients = async (
+    pendingKey: string,
+    mealLink: {
+      dinnerDishId?: number;
+      breakfastDishId?: number;
+      lunchDishId?: number;
+    }
+  ) => {
+    setPendingIngredientsKey(pendingKey);
+    setFeedback(null);
+
+    try {
+      const response = await fetch(
+        `${backendApiUrl}/api/plans/${planId}/grocery-items/from-dish`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json", ...localeHeader(locale) },
+          credentials: "include",
+          body: JSON.stringify(mealLink)
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Unable to add dish ingredients.");
+      }
+
+      const data = (await response.json()) as { addedCount: number; skippedCount: number };
+
+      const addedMessage = [
+        plural("planDay.ingredientsAdded", data.addedCount),
+        ...(data.skippedCount > 0 ? [t("planDay.ingredientsSkippedNote")] : [])
+      ].join(" ");
+
+      setFeedback({
+        type: "success",
+        message: data.addedCount > 0 ? addedMessage : t("planDay.ingredientsAlreadyAdded")
+      });
+    } catch (_error) {
+      setFeedback({ type: "error", message: t("planDay.ingredientsAddFailed") });
+    } finally {
+      setPendingIngredientsKey(null);
+    }
+  };
+
+  const renderDishPicker = ({
+    selectedDishId,
+    onSelect,
+    fieldClassName
+  }: {
+    selectedDishId: number | null;
+    onSelect: (savedDish: SavedDish | null) => void;
+    fieldClassName?: string;
+  }) => {
+    if (savedDishes.length === 0) {
+      return null;
+    }
+
+    return (
+      <SelectField
+        aria-label={t("planDay.chooseSavedDish")}
+        fieldClassName={fieldClassName}
+        onChange={(event) =>
+          onSelect(
+            event.target.value ? savedDishesById.get(Number(event.target.value)) ?? null : null
+          )
+        }
+        value={selectedDishId ?? ""}
+      >
+        <option value="">{t("planDay.typeItYourself")}</option>
+        {savedDishes.map((savedDish) => (
+          <option key={savedDish.id} value={savedDish.id}>
+            {savedDish.name}
+          </option>
+        ))}
+      </SelectField>
+    );
+  };
 
   const saveDinner = async () => {
     const normalizedName = dinnerName.trim();
@@ -223,7 +357,8 @@ export default function PlanDayCard({
         credentials: "include",
         body: JSON.stringify({
           name: normalizedName,
-          notes: dinnerNotes.trim() || null
+          notes: dinnerNotes.trim() || null,
+          dishId: dinnerDishId
         })
       });
 
@@ -232,8 +367,10 @@ export default function PlanDayCard({
       }
 
       const data = (await response.json()) as { dinnerDish: DinnerDish };
+      setDinnerId(data.dinnerDish.id);
       setDinnerName(data.dinnerDish.name);
       setDinnerNotes(data.dinnerDish.notes ?? "");
+      setDinnerDishId(data.dinnerDish.dishId);
       setFeedback({ type: "success", message: t("planDay.dinnerSaved") });
     } catch (_error) {
       setFeedback({ type: "error", message: t("planDay.dinnerSaveFailed") });
@@ -280,7 +417,8 @@ export default function PlanDayCard({
         body: JSON.stringify({
           name: normalizedName,
           notes: row.notes.trim() || null,
-          familyMemberId: row.familyMemberId
+          familyMemberId: row.familyMemberId,
+          dishId: row.dishId
         })
       });
 
@@ -387,12 +525,28 @@ export default function PlanDayCard({
             key={row.localId}
           >
             <div className="grid gap-2 sm:grid-cols-2">
+              {renderDishPicker({
+                fieldClassName: "sm:col-span-2",
+                onSelect: (savedDish) =>
+                  setter((currentRows) =>
+                    updateMealRow(currentRows, row.localId, {
+                      dishId: savedDish?.id ?? null,
+                      ...(savedDish ? { name: savedDish.name } : {})
+                    })
+                  ),
+                selectedDishId: row.dishId
+              })}
               <TextField
                 aria-label={placeholder}
                 fieldClassName="sm:col-span-2"
                 onChange={(event) =>
                   setter((currentRows) =>
-                    updateMealRow(currentRows, row.localId, { name: event.target.value })
+                    // Editing the name by hand means this is no longer the saved
+                    // dish it was picked from, so the link is dropped.
+                    updateMealRow(currentRows, row.localId, {
+                      name: event.target.value,
+                      dishId: null
+                    })
                   )
                 }
                 placeholder={placeholder}
@@ -433,7 +587,7 @@ export default function PlanDayCard({
               <p className="text-xs font-medium text-danger">{row.errorMessage}</p>
             ) : null}
 
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Button
                 disabled={row.isSaving}
                 onClick={() => saveMealRow(row, mealType)}
@@ -453,6 +607,23 @@ export default function PlanDayCard({
                 <Trash2 className="h-3.5 w-3.5" />
                 {t("common.delete")}
               </Button>
+              {row.id && hasIngredientsToAdd(row.dishId) ? (
+                <Button
+                  disabled={pendingIngredientsKey === `${mealType}-${row.id}`}
+                  onClick={() =>
+                    addDishIngredients(`${mealType}-${row.id}`, {
+                      [mealType === "breakfast" ? "breakfastDishId" : "lunchDishId"]: row.id
+                    })
+                  }
+                  size="sm"
+                  variant="soft"
+                >
+                  <ShoppingBasket className="h-3.5 w-3.5" />
+                  {pendingIngredientsKey === `${mealType}-${row.id}`
+                    ? t("planDay.addingIngredients")
+                    : t("planDay.addIngredientsToGroceryList")}
+                </Button>
+              ) : null}
             </div>
           </li>
         ))}
@@ -529,9 +700,24 @@ export default function PlanDayCard({
           title={t("meals.dinner")}
         >
           <div className="space-y-3">
+            {renderDishPicker({
+              onSelect: (savedDish) => {
+                setDinnerDishId(savedDish?.id ?? null);
+
+                if (savedDish) {
+                  setDinnerName(savedDish.name);
+                }
+              },
+              selectedDishId: dinnerDishId
+            })}
             <TextField
               aria-label={t("planDay.dinnerDish")}
-              onChange={(event) => setDinnerName(event.target.value)}
+              onChange={(event) => {
+                setDinnerName(event.target.value);
+                // Typing over the name means this is no longer the saved dish it
+                // was picked from, so the link is dropped.
+                setDinnerDishId(null);
+              }}
               placeholder={t("planDay.dinnerDish")}
               type="text"
               value={dinnerName}
@@ -543,9 +729,24 @@ export default function PlanDayCard({
               rows={2}
               value={dinnerNotes}
             />
-            <Button disabled={isSavingDinner} onClick={saveDinner} size="sm">
-              {isSavingDinner ? t("common.saving") : t("planDay.saveDinner")}
-            </Button>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button disabled={isSavingDinner} onClick={saveDinner} size="sm">
+                {isSavingDinner ? t("common.saving") : t("planDay.saveDinner")}
+              </Button>
+              {dinnerId && hasIngredientsToAdd(dinnerDishId) ? (
+                <Button
+                  disabled={pendingIngredientsKey === "dinner"}
+                  onClick={() => addDishIngredients("dinner", { dinnerDishId: dinnerId })}
+                  size="sm"
+                  variant="soft"
+                >
+                  <ShoppingBasket className="h-3.5 w-3.5" />
+                  {pendingIngredientsKey === "dinner"
+                    ? t("planDay.addingIngredients")
+                    : t("planDay.addIngredientsToGroceryList")}
+                </Button>
+              ) : null}
+            </div>
           </div>
         </MealSection>
       </div>

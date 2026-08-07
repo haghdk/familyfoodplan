@@ -8,6 +8,25 @@ const planDaysRouter = Router();
 
 planDaysRouter.use(requireAdminAuth);
 
+// A meal can be picked from the saved dishes instead of being typed in, and the
+// link is what later lets the plan copy the dish's ingredients onto the grocery
+// list. Anything that is not a number means "typed in by hand", which clears an
+// earlier link when a meal is renamed away from the dish it came from.
+const resolveDishLink = async (
+  rawDishId: unknown
+): Promise<{ status: "unknown_dish" } | { status: "resolved"; dishId: number | null }> => {
+  if (typeof rawDishId !== "number") {
+    return { status: "resolved", dishId: null };
+  }
+
+  const dish = await prisma.dish.findUnique({
+    where: { id: rawDishId },
+    select: { id: true }
+  });
+
+  return dish ? { status: "resolved", dishId: dish.id } : { status: "unknown_dish" };
+};
+
 const findPlanDayForPlan = async (planId: number, dayDate: Date) =>
   prisma.planDay.findUnique({
     where: {
@@ -94,11 +113,22 @@ planDaysRouter.put("/api/plans/:planId/days/:dayKey/dinner", async (request, res
     return;
   }
 
-  const { name, notes } = request.body as { name?: string; notes?: string };
+  const { name, notes, dishId } = request.body as {
+    name?: string;
+    notes?: string;
+    dishId?: number | null;
+  };
   const normalizedName = name?.trim();
 
   if (!normalizedName) {
     response.status(400).json({ message: "Dinner name is required." });
+    return;
+  }
+
+  const dishLink = await resolveDishLink(dishId);
+
+  if (dishLink.status === "unknown_dish") {
+    response.status(400).json({ message: "Selected dish does not exist." });
     return;
   }
 
@@ -113,11 +143,13 @@ planDaysRouter.put("/api/plans/:planId/days/:dayKey/dinner", async (request, res
     where: { planDayId: planDay.id },
     update: {
       name: normalizedName,
-      notes: notes?.trim() || null
+      notes: notes?.trim() || null,
+      dishId: dishLink.dishId
     },
     create: {
       name: normalizedName,
       notes: notes?.trim() || null,
+      dishId: dishLink.dishId,
       planDayId: planDay.id
     }
   });
@@ -140,10 +172,11 @@ planDaysRouter.post("/api/plans/:planId/days/:dayKey/breakfasts", async (request
     return;
   }
 
-  const { name, notes, familyMemberId } = request.body as {
+  const { name, notes, familyMemberId, dishId } = request.body as {
     name?: string;
     notes?: string;
     familyMemberId?: number | null;
+    dishId?: number | null;
   };
   const normalizedName = name?.trim();
 
@@ -164,6 +197,13 @@ planDaysRouter.post("/api/plans/:planId/days/:dayKey/breakfasts", async (request
     }
   }
 
+  const dishLink = await resolveDishLink(dishId);
+
+  if (dishLink.status === "unknown_dish") {
+    response.status(400).json({ message: "Selected dish does not exist." });
+    return;
+  }
+
   const planDay = await findPlanDayForPlan(planId, dayDate);
 
   if (!planDay) {
@@ -176,6 +216,7 @@ planDaysRouter.post("/api/plans/:planId/days/:dayKey/breakfasts", async (request
       name: normalizedName,
       notes: notes?.trim() || null,
       familyMemberId: typeof familyMemberId === "number" ? familyMemberId : null,
+      dishId: dishLink.dishId,
       planDayId: planDay.id
     }
   });
@@ -205,10 +246,11 @@ planDaysRouter.put(
       return;
     }
 
-    const { name, notes, familyMemberId } = request.body as {
+    const { name, notes, familyMemberId, dishId } = request.body as {
       name?: string;
       notes?: string;
       familyMemberId?: number | null;
+      dishId?: number | null;
     };
     const normalizedName = name?.trim();
 
@@ -227,6 +269,13 @@ planDaysRouter.put(
         response.status(400).json({ message: "Selected member does not exist." });
         return;
       }
+    }
+
+    const dishLink = await resolveDishLink(dishId);
+
+    if (dishLink.status === "unknown_dish") {
+      response.status(400).json({ message: "Selected dish does not exist." });
+      return;
     }
 
     const existingBreakfast = await prisma.breakfastDish.findFirst({
@@ -254,7 +303,8 @@ planDaysRouter.put(
       data: {
         name: normalizedName,
         notes: notes?.trim() || null,
-        familyMemberId: typeof familyMemberId === "number" ? familyMemberId : null
+        familyMemberId: typeof familyMemberId === "number" ? familyMemberId : null,
+        dishId: dishLink.dishId
       }
     });
 
@@ -324,10 +374,11 @@ planDaysRouter.post("/api/plans/:planId/days/:dayKey/lunches", async (request, r
     return;
   }
 
-  const { name, notes, familyMemberId } = request.body as {
+  const { name, notes, familyMemberId, dishId } = request.body as {
     name?: string;
     notes?: string;
     familyMemberId?: number | null;
+    dishId?: number | null;
   };
   const normalizedName = name?.trim();
 
@@ -348,6 +399,13 @@ planDaysRouter.post("/api/plans/:planId/days/:dayKey/lunches", async (request, r
     }
   }
 
+  const dishLink = await resolveDishLink(dishId);
+
+  if (dishLink.status === "unknown_dish") {
+    response.status(400).json({ message: "Selected dish does not exist." });
+    return;
+  }
+
   const planDay = await findPlanDayForPlan(planId, dayDate);
 
   if (!planDay) {
@@ -360,6 +418,7 @@ planDaysRouter.post("/api/plans/:planId/days/:dayKey/lunches", async (request, r
       name: normalizedName,
       notes: notes?.trim() || null,
       familyMemberId: typeof familyMemberId === "number" ? familyMemberId : null,
+      dishId: dishLink.dishId,
       planDayId: planDay.id
     }
   });
@@ -389,10 +448,11 @@ planDaysRouter.put(
       return;
     }
 
-    const { name, notes, familyMemberId } = request.body as {
+    const { name, notes, familyMemberId, dishId } = request.body as {
       name?: string;
       notes?: string;
       familyMemberId?: number | null;
+      dishId?: number | null;
     };
     const normalizedName = name?.trim();
 
@@ -411,6 +471,13 @@ planDaysRouter.put(
         response.status(400).json({ message: "Selected member does not exist." });
         return;
       }
+    }
+
+    const dishLink = await resolveDishLink(dishId);
+
+    if (dishLink.status === "unknown_dish") {
+      response.status(400).json({ message: "Selected dish does not exist." });
+      return;
     }
 
     const existingLunch = await prisma.lunchDish.findFirst({
@@ -438,7 +505,8 @@ planDaysRouter.put(
       data: {
         name: normalizedName,
         notes: notes?.trim() || null,
-        familyMemberId: typeof familyMemberId === "number" ? familyMemberId : null
+        familyMemberId: typeof familyMemberId === "number" ? familyMemberId : null,
+        dishId: dishLink.dishId
       }
     });
 

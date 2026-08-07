@@ -34,18 +34,21 @@ type PlanDetailResponse = {
         id: number;
         name: string;
         notes: string | null;
+        dishId: number | null;
       } | null;
       breakfastDishes: Array<{
         id: number;
         name: string;
         notes: string | null;
         familyMemberId: number | null;
+        dishId: number | null;
       }>;
       lunchDishes: Array<{
         id: number;
         name: string;
         notes: string | null;
         familyMemberId: number | null;
+        dishId: number | null;
       }>;
     }>;
   };

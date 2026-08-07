@@ -25,6 +25,7 @@ Family Food Planner is a weekly meal-planning app for families. Admins create pl
 - **Plan-scoped plan days**: day entries are now scoped to a `Plan`, and legacy rows are migrated into a default `Legacy Plan` during database migration/seed.
 - **Plan-scoped day editing routes**: dinner, breakfast, and lunch write endpoints now require both `planId` and `dayKey` (`/api/plans/:planId/days/:dayKey/...`) so updates are validated against the selected plan before persisting.
 - **Breakfast planning support**: each plan day now supports repeatable breakfast rows with optional member assignment, matching lunch behavior in APIs/UI and allowing breakfast-linked grocery ingredients.
+- **Dishes (saved recipes) + one-press shopping**: a **Dishes** section where a dish is written down once — lasagne, with its minced beef, sheets and tomatoes — and then picked from a list when planning a day, instead of being typed in again every week. Meals can still be typed in by hand exactly as before; the picker is a shortcut, not a replacement. A day whose meal was picked from a saved dish grows an **Add ingredients to grocery list** button that copies the whole recipe onto the plan's shopping list in one press. See [Dishes and Their Ingredients](#dishes-and-their-ingredients).
 - **Swap meals between days**: weeks rarely go to plan, so any meal can be moved to another day of the week without retyping it. Drag a meal's **Swap** button onto the same meal of another day, or press it to pick the day from a list. Breakfast, lunch, and dinner each move on their own, so trading Monday's and Tuesday's dinners leaves both days' breakfasts and lunches exactly where they were, and the ingredients on the grocery list follow the meal. See [Swapping Meals Between Days](#swapping-meals-between-days).
 - **Grocery sharing**: generate tokenized public grocery links so non-admin shoppers can check off items.
 - **Drag-to-reorder grocery list**: items are still added as they come to mind (each new item lands at the bottom), and the merged shopping list can then be dragged into the order you walk the store — vegetables, bread, meat, cheeses, eggs, milk, hygiene. The manual order is stored per plan and used by the detailed item list and the shared shopper link as well. See [Grocery List Ordering](#grocery-list-ordering).
@@ -56,6 +57,7 @@ Family Food Planner is a weekly meal-planning app for families. Admins create pl
 - Responsibilities:
   - Admin authentication (login/logout/me)
   - Member CRUD and archival
+  - Saved dishes and their ingredients, and copying them onto a plan's grocery list
   - Weekly plan and meal management
   - Grocery list APIs (admin + shared token access)
   - Realtime grocery streaming (SSE)
@@ -71,6 +73,7 @@ Family Food Planner is a weekly meal-planning app for families. Admins create pl
 - Responsibilities:
   - Admin login page and protected routes
   - Member management UI
+  - Dishes screen for saving dishes with their ingredients
   - Weekly planning screens
   - Grocery list management UI
   - Shared grocery page for tokenized links
@@ -172,6 +175,12 @@ python3 frontend/scripts/generate-icons.py
 - `DELETE /api/push/subscriptions` — unregister one device. Body: `{ "endpoint": "…" }`. Only deletes endpoints belonging to the caller (authenticated users).
 - `POST /api/push/test` — send today's real reminder to the caller's own devices, ignoring their on/off setting, so push can be verified end to end. Returns `503` when the server has no VAPID keys (authenticated users).
 
+### Dishes
+- `GET /api/dishes` — list every saved dish with its ingredients, ordered by dish name (authenticated users, since the plan screens read it to build the dish picker).
+- `POST /api/dishes` — create a dish. Body: `{ "name": "Lasagne", "notes"?: string, "ingredients"?: [{ "name": "Minced beef", "quantity"?: number, "unit"?: string }] }`. Ingredient lines with a blank name are dropped rather than rejected, so the form's trailing empty row never blocks a save. Returns `409` when the name is taken (admin only).
+- `PUT /api/dishes/:dishId` — update a dish. The ingredient list is sent whole and replaces the stored one; grocery items already copied onto a plan are their own rows and are left untouched. Returns `404` for an unknown dish and `409` for a taken name (admin only).
+- `DELETE /api/dishes/:dishId` — delete a dish and its ingredients. Days already planned with it keep their meal, with the link cleared (admin only).
+
 ### Weekly Plans / Meals
 - Plan and meal endpoints under `/api/plans/...` handle week creation, day meal entries, breakfast/lunch rows, and dinner updates.
 - `POST /api/plans` — create a plan and all plan-day rows for a validated date range (admin only).
@@ -183,6 +192,7 @@ python3 frontend/scripts/generate-icons.py
 
 ### Grocery Lists
 - Admin grocery routes under `/api/plans/:id/grocery-list...` support create/update/delete and share-link management.
+- `POST /api/plans/:planId/grocery-items/from-dish` — copy a saved dish's ingredients onto the plan's grocery list. The body names exactly one planned meal (`{ "dinnerDishId": 12 }`, `{ "breakfastDishId": … }` or `{ "lunchDishId": … }`); the dish is taken from the one that meal was picked from, and an explicit `dishId` overrides it. Answers `{ groceryItems, addedCount, skippedCount }`, `400` when the meal belongs to another plan or was never picked from a saved dish, and `404` for an unknown dish (admin only). See [Dishes and Their Ingredients](#dishes-and-their-ingredients).
 - `PUT /api/plans/:planId/grocery-items/order` — store the manual shopping order for a plan; the body is `{ "itemIds": [12, 7, 3, …] }`, listing the item ids in the order they should appear (admin only).
 - Shared shopper routes under `/api/grocery/:token...` allow token-scoped reads and checkoff updates without admin login.
 - SSE stream endpoint(s) provide realtime grocery state synchronization for both admin and shared-token clients.
@@ -301,6 +311,32 @@ When the keys are missing — the default for local development — nothing is s
 - The service worker is `frontend/public/sw.js`, served at `/sw.js`. It handles the `push` and `notificationclick` events only — it deliberately does not cache or intercept requests. `frontend/middleware.ts` excludes `/sw.js` from the auth redirect, because a browser refuses to register a worker whose URL answers with anything but the script itself.
 - **On iPhone and iPad, notifications only work once the app has been added to the home screen** and opened from there. The settings screen detects this case and says so instead of failing at the permission prompt.
 - A subscription lives in the browser, so it can outlive the server-side record (a database reset, or the browser being handed to another account). The settings screen re-registers any existing subscription on load, so a toggle that reads "on" is never quietly dead.
+
+## Dishes and Their Ingredients
+
+The same dozen dishes come round week after week, and each one takes the same shopping every time. **Dishes** (`/dishes`, admins only) is where that is written down once.
+
+- A dish is a name, optional notes, and a list of ingredients — each with a quantity and a unit, the same shape a grocery item has, because copying them onto a shopping list is what they exist for. Dish names are unique, so "Lasagne" means one thing across every plan.
+- The dish form always keeps one blank ingredient row at the bottom, and blank rows are dropped on save. Adding the next ingredient never starts with a press of **Add ingredient**.
+- Editing a dish **replaces** its ingredient list. Grocery items already copied onto a plan are their own rows by then, so fixing a recipe never rewrites a shopping list somebody is mid-way through.
+- Deleting a dish removes it and its ingredients. Days already planned with it keep their meal — the meal's link to the dish is cleared, not the meal itself — and grocery items already added stay on their lists.
+
+### Planning from a saved dish
+
+Every meal on a plan's day card — breakfast, lunch and dinner alike — has a **Choose a saved dish** picker above the name field, listing the saved dishes. Picking one fills the name in and remembers which dish it was.
+
+- **Typing a meal in by hand still works exactly as before.** The picker's first option is *Type it in yourself*, and editing the name field after picking a dish drops the link, because the meal is no longer that dish. Nothing about the old flow was taken away.
+- The link is stored on the planned meal (`DinnerDish.dishId`, `BreakfastDish.dishId`, `LunchDish.dishId`) rather than on the dish, so a dish can be planned on as many days as it is eaten on.
+- Swapping meals between days carries the link with the meal, so a dinner traded to another day still knows the dish it came from.
+
+### Adding a dish's ingredients to the grocery list
+
+A meal that was picked from a saved dish which has ingredients shows an **Add ingredients to grocery list** button next to its Save and Delete buttons, once the meal itself has been saved. Pressing it copies every ingredient onto the plan's grocery list as `INGREDIENT` items attached to that meal, so each line names the meal it is for, exactly like an ingredient added by hand on the grocery page.
+
+- **Pressing it twice does not duplicate the list.** Ingredients the meal already carries under the same name and unit are skipped, so pressing it again after adding one more ingredient to the dish tops the list up rather than doubling it. The page says how many were added and notes when some were already there.
+- Copies land at the end of the manual shopping order, the same place a hand-added item lands, and are broadcast over the realtime stream so open shared shopper links pick them up without a refresh.
+- The same dish planned on two days copies onto **both** days: each copy is attached to its own meal and stored on its own day, and the merged shopping list adds the two quantities into one line, which is what a week that eats lasagne twice actually needs to buy.
+- The copies are ordinary grocery items once made. Editing or removing one on the grocery page changes only the list, never the dish.
 
 ## Swapping Meals Between Days
 

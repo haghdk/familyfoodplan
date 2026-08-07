@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { adminSessionCookieName, userRoleCookieName } from "./lib/auth";
 
 const PUBLIC_PATHS = ["/login", "/grocery", "/forgot-password", "/reset-password"];
-const ADMIN_ONLY_PATHS = ["/members", "/users", "/plan/new"];
+const ADMIN_ONLY_PATHS = ["/members", "/users", "/dishes", "/plan/new"];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;

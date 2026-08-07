@@ -133,11 +133,19 @@ const swapDinners = async (
 
   await tx.dinnerDish.update({
     where: { id: sourceDinner.id },
-    data: { name: targetDinner.name, notes: targetDinner.notes }
+    data: {
+      name: targetDinner.name,
+      notes: targetDinner.notes,
+      dishId: targetDinner.dishId
+    }
   });
   await tx.dinnerDish.update({
     where: { id: targetDinner.id },
-    data: { name: sourceDinner.name, notes: sourceDinner.notes }
+    data: {
+      name: sourceDinner.name,
+      notes: sourceDinner.notes,
+      dishId: sourceDinner.dishId
+    }
   });
 
   await tx.groceryItem.updateMany({

@@ -18,6 +18,7 @@ type MealDish = {
   name: string;
   notes: string | null;
   familyMemberId: number | null;
+  dishId: number | null;
 };
 
 export type PlanDayMeals = {
@@ -27,6 +28,7 @@ export type PlanDayMeals = {
     id: number;
     name: string;
     notes: string | null;
+    dishId: number | null;
   } | null;
   breakfastDishes: MealDish[];
   lunchDishes: MealDish[];

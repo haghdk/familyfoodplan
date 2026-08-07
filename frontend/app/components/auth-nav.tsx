@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   CalendarDays,
+  CookingPot,
   LogIn,
   LogOut,
   Settings,
@@ -74,6 +75,7 @@ export default function AuthNav({ isAuthenticated, isAdmin }: AuthNavProps) {
     { href: "/plan", label: t("nav.plans"), icon: CalendarDays },
     ...(isAdmin
       ? [
+          { href: "/dishes", label: t("nav.dishes"), icon: CookingPot },
           { href: "/members", label: t("nav.members"), icon: Users },
           { href: "/users", label: t("nav.users"), icon: ShieldUser },
         ]
