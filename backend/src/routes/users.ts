@@ -6,9 +6,14 @@ import { requestLocale, translate } from "../i18n";
 
 const usersRouter = Router();
 
-usersRouter.use(requireAdminAuth);
+// The admin guard is attached per route rather than with a path-less
+// `router.use(...)`. Every router here is mounted at the application root, so a
+// path-less guard runs on *every* request that reaches this router — including
+// requests meant for routers registered after it, which it then rejects before
+// they are ever seen. That is what once made the whole API admin-only for
+// viewers. Per-route guards cannot leak onto another router's paths.
 
-usersRouter.get("/api/users", async (_request, response) => {
+usersRouter.get("/api/users", requireAdminAuth, async (_request, response) => {
   const users = await prisma.adminUser.findMany({
     select: {
       id: true,
@@ -25,7 +30,7 @@ usersRouter.get("/api/users", async (_request, response) => {
   response.status(200).json({ users });
 });
 
-usersRouter.post("/api/users", async (request, response) => {
+usersRouter.post("/api/users", requireAdminAuth, async (request, response) => {
   const locale = requestLocale(request);
   const { email, password, role } = request.body as {
     email?: string;
@@ -69,7 +74,7 @@ usersRouter.post("/api/users", async (request, response) => {
   }
 });
 
-usersRouter.put("/api/users/:id", async (request, response) => {
+usersRouter.put("/api/users/:id", requireAdminAuth, async (request, response) => {
   const locale = requestLocale(request);
   const userId = Number(request.params.id);
 
@@ -163,7 +168,7 @@ usersRouter.put("/api/users/:id", async (request, response) => {
   }
 });
 
-usersRouter.delete("/api/users/:id", async (request, response) => {
+usersRouter.delete("/api/users/:id", requireAdminAuth, async (request, response) => {
   const locale = requestLocale(request);
   const userId = Number(request.params.id);
 

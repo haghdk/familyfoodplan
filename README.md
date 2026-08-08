@@ -7,7 +7,7 @@ Family Food Planner is a weekly meal-planning app for families. Admins create pl
 - **Admin login**: secure admin authentication with session-based access to protected pages.
 - **Forgot password / password reset by email**: users can request a reset link from the sign-in screen. The backend emails a single-use link that expires after a configurable window (60 minutes by default), and the reset screen validates the link before showing the form. See [Password Reset Behavior Notes](#password-reset-behavior-notes).
 - **User management + roles**: admins can create, edit, delete users, change admin email/password, and assign `ADMIN` or `VIEWER` role.
-- **Read-only regular users**: viewer users can sign in and view plans, but cannot access any editing APIs or admin-only screens.
+- **Read-only regular users**: viewer users can sign in and read the home page, the plans list, a plan's days and its grocery list, the saved dishes and the pantry, and can manage their own settings (language, notifications). Every write, plus the Members, Users, Dishes and Pantry management screens, stays admin-only. See [Roles and route guards](#roles-and-route-guards).
 - **Initial admin bootstrap**: Docker setup now seeds a default admin user automatically on first startup.
 - **Members management**: create, edit, list, and archive family members.
 - **Weekly plans**: define week ranges and build day-by-day meal plans (dinner + repeatable breakfast/lunch rows).
@@ -209,6 +209,27 @@ python3 frontend/scripts/generate-icons.py
 - `PUT /api/plans/:planId/grocery-items/order` — store the manual shopping order for a plan; the body is `{ "itemIds": [12, 7, 3, …] }`, listing the item ids in the order they should appear (admin only).
 - Shared shopper routes under `/api/grocery/:token...` allow token-scoped reads and checkoff updates without admin login.
 - SSE stream endpoint(s) provide realtime grocery state synchronization for both admin and shared-token clients.
+
+## Roles and route guards
+
+An account is `ADMIN` or `VIEWER`. Admins edit everything; viewers read.
+
+| Viewers can | Viewers cannot |
+| --- | --- |
+| Read the home page, plans list, plan days and grocery lists | Create, edit or delete anything |
+| Read the saved dishes and the pantry (`GET /api/dishes`, `GET /api/pantry-items`) | Open the Dishes, Pantry, Members or Users screens, which are management UIs |
+| See a plan's pantry banner | Copy dish ingredients to a grocery list, or import a pantry stocktake |
+| Change their own language and notification settings | Change anyone else's |
+
+Two layers enforce this. `frontend/middleware.ts` keeps viewers off the admin-only *screens* (`ADMIN_ONLY_PATHS`), and the backend guards each *route* — `requireAuth` for anything a viewer may read, `requireAdminAuth` for everything else. The frontend layer is convenience; the backend layer is the one that matters.
+
+### Attach guards per route, never with a path-less `router.use`
+
+**Every router in `backend/src/routes/` is mounted at the application root** (`app.use(membersRouter)`, not `app.use("/api/members", membersRouter)`), and each route carries its own full path. That makes a path-less `router.use(requireAdminAuth)` far more dangerous than it looks: it runs on **every request that reaches that router**, including requests destined for routers registered *after* it in `index.ts`, and rejects them before those routers ever see them.
+
+That is exactly what once made the entire API admin-only. `membersRouter` and `usersRouter` guarded themselves that way and are mounted before `settingsRouter`, `plansRouter`, `dishesRouter`, `pantryRouter` and `planDaysRouter`, so a viewer's request for *any* of those was answered `403` by the members router on its way past. Admins were unaffected, because for them the guard called `next()` and the request carried on — which is why the failure looked like "nothing loads, but only for some accounts".
+
+So: attach `requireAuth` / `requireAdminAuth` **as per-route middleware**, the way every router now does. A per-route guard cannot leak onto another router's paths, whatever the mount order happens to be.
 
 ## Settings
 
