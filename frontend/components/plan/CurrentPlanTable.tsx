@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { cn } from "../../lib/cn";
 import type { AppTranslator } from "../../lib/i18n/dictionaries";
 import { getTranslations } from "../../lib/i18n/server";
+import PlannedMealList, { type PlannedMeal } from "./PlannedMealList";
 
 export type CurrentPlanTableDayRow = {
   id: number;
@@ -10,9 +11,9 @@ export type CurrentPlanTableDayRow = {
   weekdayLabel: string;
   dateLabel: string;
   isToday?: boolean;
-  breakfasts?: string[];
-  lunches: string[];
-  dinners: string[];
+  breakfasts?: PlannedMeal[];
+  lunches: PlannedMeal[];
+  dinners: PlannedMeal[];
 };
 
 type CurrentPlanTableProps = {
@@ -26,6 +27,8 @@ type MealSection = {
   icon: ReactNode;
   accentClassName: string;
   iconClassName: string;
+  /** Breakfast and lunch are eaten per person; dinner is shared. */
+  isIndividualMeal: boolean;
 };
 
 const buildMealSections = (
@@ -40,7 +43,8 @@ const buildMealSections = (
           emptyText: t("meals.notPlanned"),
           icon: <Croissant className="h-4 w-4" />,
           accentClassName: "text-breakfast",
-          iconClassName: "bg-breakfast-soft text-breakfast"
+          iconClassName: "bg-breakfast-soft text-breakfast",
+          isIndividualMeal: true
         }
       ]
     : []),
@@ -50,7 +54,8 @@ const buildMealSections = (
     emptyText: t("meals.notPlanned"),
     icon: <Sandwich className="h-4 w-4" />,
     accentClassName: "text-lunch",
-    iconClassName: "bg-lunch-soft text-lunch"
+    iconClassName: "bg-lunch-soft text-lunch",
+    isIndividualMeal: true
   },
   {
     key: "dinners" as const,
@@ -58,7 +63,8 @@ const buildMealSections = (
     emptyText: t("meals.notPlanned"),
     icon: <UtensilsCrossed className="h-4 w-4" />,
     accentClassName: "text-dinner",
-    iconClassName: "bg-dinner-soft text-dinner"
+    iconClassName: "bg-dinner-soft text-dinner",
+    isIndividualMeal: false
   }
 ];
 
@@ -150,36 +156,22 @@ export default async function CurrentPlanTable({ dayRows }: CurrentPlanTableProp
                     {section.label}
                   </span>
                 </th>
-                {dayRows.map((row) => {
-                  const dishes = row[section.key] ?? [];
-
-                  return (
-                    <td
-                      className={cn(
-                        "border-l border-border px-3 py-3.5 align-top",
-                        row.isToday && "bg-brand-soft/40"
-                      )}
-                      key={row.id}
-                    >
-                      {dishes.length > 0 ? (
-                        <ul className="space-y-1">
-                          {dishes.map((dish, dishIndex) => (
-                            <li
-                              className="text-sm text-fg"
-                              key={`${row.id}-${section.key}-${dishIndex}`}
-                            >
-                              {dish}
-                            </li>
-                          ))}
-                        </ul>
-                      ) : (
-                        <span className="text-sm text-fg-subtle">
-                          {section.emptyText}
-                        </span>
-                      )}
-                    </td>
-                  );
-                })}
+                {dayRows.map((row) => (
+                  <td
+                    className={cn(
+                      "border-l border-border px-3 py-3.5 align-top",
+                      row.isToday && "bg-brand-soft/40"
+                    )}
+                    key={row.id}
+                  >
+                    <PlannedMealList
+                      emptyText={section.emptyText}
+                      meals={row[section.key] ?? []}
+                      showMemberNames={section.isIndividualMeal}
+                      unassignedLabel={t("meals.unassigned")}
+                    />
+                  </td>
+                ))}
               </tr>
             ))}
           </tbody>
@@ -209,42 +201,37 @@ export default async function CurrentPlanTable({ dayRows }: CurrentPlanTableProp
             </div>
 
             <dl className="mt-3 space-y-2.5">
-              {mealSections.map((section) => {
-                const dishes = row[section.key] ?? [];
-
-                return (
-                  <div className="flex items-start gap-3" key={section.key}>
-                    <dt
+              {mealSections.map((section) => (
+                <div className="flex items-start gap-3" key={section.key}>
+                  <dt
+                    className={cn(
+                      "flex h-7 w-7 shrink-0 items-center justify-center rounded-xl",
+                      section.iconClassName
+                    )}
+                    title={section.label}
+                  >
+                    {section.icon}
+                    <span className="sr-only">{section.label}</span>
+                  </dt>
+                  <dd className="min-w-0 flex-1 text-sm">
+                    <span
                       className={cn(
-                        "flex h-7 w-7 shrink-0 items-center justify-center rounded-xl",
-                        section.iconClassName
+                        "block text-xs font-semibold uppercase tracking-[0.1em]",
+                        section.accentClassName
                       )}
-                      title={section.label}
                     >
-                      {section.icon}
-                      <span className="sr-only">{section.label}</span>
-                    </dt>
-                    <dd className="min-w-0 flex-1 text-sm">
-                      <span
-                        className={cn(
-                          "block text-xs font-semibold uppercase tracking-[0.1em]",
-                          section.accentClassName
-                        )}
-                      >
-                        {section.label}
-                      </span>
-                      <span
-                        className={cn(
-                          "mt-0.5 block",
-                          dishes.length > 0 ? "text-fg" : "text-fg-subtle"
-                        )}
-                      >
-                        {dishes.length > 0 ? dishes.join(", ") : section.emptyText}
-                      </span>
-                    </dd>
-                  </div>
-                );
-              })}
+                      {section.label}
+                    </span>
+                    <PlannedMealList
+                      className="mt-0.5"
+                      emptyText={section.emptyText}
+                      meals={row[section.key] ?? []}
+                      showMemberNames={section.isIndividualMeal}
+                      unassignedLabel={t("meals.unassigned")}
+                    />
+                  </dd>
+                </div>
+              ))}
             </dl>
           </article>
         ))}

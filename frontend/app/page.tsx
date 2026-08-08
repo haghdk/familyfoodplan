@@ -36,6 +36,16 @@ type PlanListItem = {
   daysCount: number;
 };
 
+/** A breakfast or lunch dish, which is planned for one family member. */
+type IndividualMeal = {
+  id: number;
+  name: string;
+  familyMember: {
+    id: number;
+    name: string;
+  } | null;
+};
+
 type PlanDay = {
   id: number;
   date: string;
@@ -43,14 +53,8 @@ type PlanDay = {
     id: number;
     name: string;
   } | null;
-  breakfastDishes?: Array<{
-    id: number;
-    name: string;
-  }>;
-  lunchDishes: Array<{
-    id: number;
-    name: string;
-  }>;
+  breakfastDishes?: IndividualMeal[];
+  lunchDishes: IndividualMeal[];
 };
 
 type PlanDetailResponse = {
@@ -168,6 +172,11 @@ const getPlanById = async (planId: number): Promise<PlanDetailResponse["plan"] |
   }
 };
 
+const toIndividualMealEntry = (meal: IndividualMeal) => ({
+  name: meal.name,
+  memberName: meal.familyMember?.name ?? null
+});
+
 const buildCurrentPlanTableRows = (
   planDays: PlanDay[],
   todayDayKey: string,
@@ -184,9 +193,9 @@ const buildCurrentPlanTableRows = (
         weekdayLabel: dateFormatter.formatWeekday(dayKey),
         dateLabel: dateFormatter.formatShortDate(dayKey),
         isToday: dayKey === todayDayKey,
-        breakfasts: (planDay.breakfastDishes ?? []).map((dish) => dish.name),
-        lunches: planDay.lunchDishes.map((dish) => dish.name),
-        dinners: planDay.dinnerDish ? [planDay.dinnerDish.name] : []
+        breakfasts: (planDay.breakfastDishes ?? []).map(toIndividualMealEntry),
+        lunches: planDay.lunchDishes.map(toIndividualMealEntry),
+        dinners: planDay.dinnerDish ? [{ name: planDay.dinnerDish.name }] : []
       };
     });
 };

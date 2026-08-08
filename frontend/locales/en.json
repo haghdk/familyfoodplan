@@ -55,7 +55,8 @@
     "breakfast": "Breakfast",
     "lunch": "Lunch",
     "dinner": "Dinner",
-    "notPlanned": "Not planned"
+    "notPlanned": "Not planned",
+    "unassigned": "No member"
   },
   "mealsLowercase": {
     "breakfast": "breakfast",
