@@ -13,6 +13,7 @@ import { createDateFormatter, getTodayDayKey, toDayKey } from "../../../lib/date
 import { getTranslations } from "../../../lib/i18n/server";
 import PlanDayBoard from "../../../components/plan/PlanDayBoard";
 import PlanPantryBanner from "../../../components/plan/PlanPantryBanner";
+import PlannedMealList, { type PlannedMeal } from "../../../components/plan/PlannedMealList";
 import PlanSettingsForm from "../../../components/plan/PlanSettingsForm";
 import SetCurrentPlanButton from "../../../components/plan/SetCurrentPlanButton";
 import Alert from "../../../components/ui/Alert";
@@ -37,23 +38,29 @@ type PlanDetailResponse = {
         notes: string | null;
         dishId: number | null;
       } | null;
-      breakfastDishes: Array<{
-        id: number;
-        name: string;
-        notes: string | null;
-        familyMemberId: number | null;
-        dishId: number | null;
-      }>;
-      lunchDishes: Array<{
-        id: number;
-        name: string;
-        notes: string | null;
-        familyMemberId: number | null;
-        dishId: number | null;
-      }>;
+      breakfastDishes: IndividualMeal[];
+      lunchDishes: IndividualMeal[];
     }>;
   };
 };
+
+/** A breakfast or lunch dish, which is planned for one family member. */
+type IndividualMeal = {
+  id: number;
+  name: string;
+  notes: string | null;
+  familyMemberId: number | null;
+  familyMember: {
+    id: number;
+    name: string;
+  } | null;
+  dishId: number | null;
+};
+
+const toPlannedMeal = (meal: IndividualMeal): PlannedMeal => ({
+  name: meal.name,
+  memberName: meal.familyMember?.name ?? null
+});
 
 const getPlan = async (planId: string): Promise<PlanDetailResponse["plan"] | null> => {
   const cookieStore = await cookies();
@@ -178,19 +185,24 @@ export default async function PlanPage({
                 label: t("meals.breakfast"),
                 icon: <Croissant className="h-4 w-4" />,
                 iconClassName: "bg-breakfast-soft text-breakfast",
-                value: planDay.breakfastDishes.map((dish) => dish.name).join(", ")
+                // Breakfast and lunch are eaten per person, so each dish is
+                // labelled with who it was planned for.
+                isIndividualMeal: true,
+                dishes: planDay.breakfastDishes.map(toPlannedMeal)
               },
               {
                 label: t("meals.lunch"),
                 icon: <Sandwich className="h-4 w-4" />,
                 iconClassName: "bg-lunch-soft text-lunch",
-                value: planDay.lunchDishes.map((dish) => dish.name).join(", ")
+                isIndividualMeal: true,
+                dishes: planDay.lunchDishes.map(toPlannedMeal)
               },
               {
                 label: t("meals.dinner"),
                 icon: <UtensilsCrossed className="h-4 w-4" />,
                 iconClassName: "bg-dinner-soft text-dinner",
-                value: planDay.dinnerDish?.name ?? ""
+                isIndividualMeal: false,
+                dishes: planDay.dinnerDish ? [{ name: planDay.dinnerDish.name }] : []
               }
             ];
 
@@ -219,11 +231,13 @@ export default async function PlanPage({
                         <span className="block text-xs font-semibold uppercase tracking-[0.1em] text-fg-subtle">
                           {meal.label}
                         </span>
-                        <span
-                          className={`mt-0.5 block ${meal.value ? "text-fg" : "text-fg-subtle"}`}
-                        >
-                          {meal.value || t("meals.notPlanned")}
-                        </span>
+                        <PlannedMealList
+                          className="mt-0.5"
+                          emptyText={t("meals.notPlanned")}
+                          meals={meal.dishes}
+                          showMemberNames={meal.isIndividualMeal}
+                          unassignedLabel={t("meals.unassigned")}
+                        />
                       </dd>
                     </div>
                   ))}

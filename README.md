@@ -15,6 +15,7 @@ Family Food Planner is a weekly meal-planning app for families. Admins create pl
 - **Plan browsing APIs + UI**: admins can list plans sorted by latest start date and open a plan detail view with nested day cards (dinner + breakfasts + lunches) for in-place calendar editing.
 - **Homepage current-plan presentation component**: the home page now renders a reusable read-only `CurrentPlanTable` card with plan name/date range metadata plus responsive day/lunch/dinner layouts for desktop and small screens.
 - **Responsive weekly overview matrix**: current-plan desktop view now renders a reusable read-only meal-by-day grid (N-day columns), while mobile keeps stacked day cards with meal sections and empty-state copy for unset lunch/dinner entries.
+- **Family member shown on every breakfast and lunch**: breakfast and lunch are planned per person while dinner is shared by the whole family, so the read-only plan views name the member above each breakfast and lunch dish instead of listing dishes with no owner. This covers the home page's weekly meal-by-day matrix, its stacked mobile day cards, and the day cards a viewer sees on a plan. A dish that has not been assigned to anyone reads "No member" rather than looking like it belongs to the whole family. See [Individual Versus Shared Meals](#individual-versus-shared-meals).
 - **UI icon polish**: the homepage and plans overview now include Lucide icons on key headings, table labels, and action buttons to improve scanability and visual hierarchy.
 - **Plan creation UI**: admins can create a new plan directly from the Plans screen by choosing a name and date range, then jump straight into editing.
 - **Plan editing**: admins can update a plan's title and date range after creation, with safe regeneration of `PlanDay` rows to match the new boundaries.
@@ -457,6 +458,16 @@ The time zone is `DINNER_REMINDER_TIMEZONE`, shared with the dinner reminder —
 ### Known boundary
 
 **Deleting a planned meal does not put its ingredients back in the cabinets.** The allocation record is removed with the meal, but the quantity is not restored, because the app cannot tell whether the food was already cooked and eaten or never touched. A meal cancelled after its ingredients were taken therefore needs the pantry corrected by hand. The safer default was chosen deliberately: silently re-stocking a cabinet with food that has already been eaten would make the list untrustworthy, which is the one thing it cannot afford to be.
+
+## Individual Versus Shared Meals
+
+A family does not eat the same way at every meal. Dinner is cooked once and shared, but breakfast and lunch are each planned for one person — one child takes a packed lunch, another eats at school, an adult reheats yesterday's leftovers. The data model has always said so (`BreakfastDish` and `LunchDish` carry a `familyMemberId`; `DinnerDish` does not), and the day cards have always let an admin assign one. The read-only views now say so too.
+
+- Wherever a plan is read rather than edited, each breakfast and lunch dish is printed under the name of the family member it was planned for: the home page's meal-by-day matrix, the stacked day cards that replace it on a phone, and the day cards a `VIEWER` sees on a plan. Dinner is left unlabelled, since naming one person next to a shared dish would be a lie.
+- A breakfast or lunch nobody has been assigned to is labelled **No member** ("Intet medlem" in Danish) in italics rather than left blank, so an unassigned dish is visibly unassigned instead of looking like it belongs to the whole family.
+- The member name comes from the plan endpoints, which already return `familyMember: { id, name }` on every breakfast and lunch row through the shared `planDayMealsSelect` — no extra request, and no second lookup of the member list.
+- The list itself is one component, `frontend/components/plan/PlannedMealList.tsx`, shared by all of those views so the desktop matrix and the mobile cards cannot drift apart. It takes the meals to draw, whether that meal is individual, and the wording for both the unassigned and the nothing-planned cases; it holds no dictionary of its own, so it stays usable from any server component.
+- Meals keep the order they were written down in rather than being sorted by member, which is the order the day card shows them in and the order they were read back in before this change.
 
 ## Swapping Meals Between Days
 

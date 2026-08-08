@@ -55,7 +55,8 @@
     "breakfast": "Morgenmad",
     "lunch": "Frokost",
     "dinner": "Aftensmad",
-    "notPlanned": "Ikke planlagt"
+    "notPlanned": "Ikke planlagt",
+    "unassigned": "Intet medlem"
   },
   "mealsLowercase": {
     "breakfast": "morgenmad",
