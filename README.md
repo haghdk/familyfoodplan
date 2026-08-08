@@ -7,7 +7,8 @@ Family Food Planner is a weekly meal-planning app for families. Admins create pl
 - **Admin login**: secure admin authentication with session-based access to protected pages.
 - **Forgot password / password reset by email**: users can request a reset link from the sign-in screen. The backend emails a single-use link that expires after a configurable window (60 minutes by default), and the reset screen validates the link before showing the form. See [Password Reset Behavior Notes](#password-reset-behavior-notes).
 - **User management + roles**: admins can create, edit, delete users, change admin email/password, and assign `ADMIN` or `VIEWER` role.
-- **Read-only regular users**: viewer users can sign in and read the home page, the plans list, a plan's days and its grocery list, the saved dishes and the pantry, and can manage their own settings (language, notifications). Every write, plus the Members, Users, Dishes and Pantry management screens, stays admin-only. See [Roles and route guards](#roles-and-route-guards).
+- **Regular users**: viewer users can sign in and read the home page, the plans list, a plan's days and its grocery list, and can manage their own settings (language, notifications). Planning the week stays with admins — a viewer cannot create or edit a plan, its meals or its grocery items, and cannot reach the Members or Users screens. See [Roles and route guards](#roles-and-route-guards).
+- **The cookbook and the cabinets belong to everyone**: the Dishes and Pantry screens are open to every signed-in account, viewers included, who can add, edit and delete dishes and pantry items there. Writing down the dish you cooked, or noting that the beans are gone, is not planning work — and a pantry only stays truthful if the person who empties a cupboard can say so. The one exception is the spreadsheet import, which rewrites the whole pantry in one press and stays with admins. See [Roles and route guards](#roles-and-route-guards).
 - **Initial admin bootstrap**: Docker setup now seeds a default admin user automatically on first startup.
 - **Members management**: create, edit, list, and archive family members.
 - **Weekly plans**: define week ranges and build day-by-day meal plans (dinner + repeatable breakfast/lunch rows).
@@ -182,17 +183,17 @@ python3 frontend/scripts/generate-icons.py
 
 ### Dishes
 - `GET /api/dishes` — list every saved dish with its ingredients, ordered by dish name (authenticated users, since the plan screens read it to build the dish picker).
-- `POST /api/dishes` — create a dish. Body: `{ "name": "Lasagne", "notes"?: string, "ingredients"?: [{ "name": "Minced beef", "quantity"?: number, "unit"?: string }] }`. Ingredient lines with a blank name are dropped rather than rejected, so the form's trailing empty row never blocks a save. Returns `409` when the name is taken (admin only).
-- `PUT /api/dishes/:dishId` — update a dish. The ingredient list is sent whole and replaces the stored one; grocery items already copied onto a plan are their own rows and are left untouched. Returns `404` for an unknown dish and `409` for a taken name (admin only).
-- `DELETE /api/dishes/:dishId` — delete a dish and its ingredients. Days already planned with it keep their meal, with the link cleared (admin only).
+- `POST /api/dishes` — create a dish. Body: `{ "name": "Lasagne", "notes"?: string, "ingredients"?: [{ "name": "Minced beef", "quantity"?: number, "unit"?: string }] }`. Ingredient lines with a blank name are dropped rather than rejected, so the form's trailing empty row never blocks a save. Returns `409` when the name is taken (authenticated users).
+- `PUT /api/dishes/:dishId` — update a dish. The ingredient list is sent whole and replaces the stored one; grocery items already copied onto a plan are their own rows and are left untouched. Returns `404` for an unknown dish and `409` for a taken name (authenticated users).
+- `DELETE /api/dishes/:dishId` — delete a dish and its ingredients. Days already planned with it keep their meal, with the link cleared (authenticated users).
 
 ### Pantry
 - `GET /api/pantry-items` — everything in the cabinets, soonest to go off first and undated staples last, plus `todayDayKey` and `expiryWarningDays` so the UI can label dates without guessing the server's time zone (authenticated users).
 - `GET /api/pantry-items/expiring` — only what is expired or within the warning window, each with `daysUntilExpiration` (negative once the date has passed) (authenticated users).
-- `POST /api/pantry-items` — add an item. Body: `{ "name": "Canned beans", "quantity"?: number, "unit"?: string, "expirationDate"?: "2026-09-01", "notes"?: string }`. The date is a calendar day (`YYYY-MM-DD`); anything else is `400` (admin only).
-- `PUT /api/pantry-items/:itemId` — update an item, same body (admin only).
-- `DELETE /api/pantry-items/:itemId` — take an item off the pantry list. Grocery items and planned meals are untouched (admin only).
-- `POST /api/pantry-items/import` — import a spreadsheet stocktake. Body: `{ "csv": "<file contents>", "dryRun"?: boolean, "mode"?: "append" | "replace" }`. **`dryRun` defaults to `true`**, so a caller that forgets it parses rather than writes. Answers `{ rows, errors, importedCount, replacedCount, delimiter }`, each row carrying its source `lineNumber` and any `warnings`, plus the full `pantryItems` list on a real import. Returns `400` for an empty body, an unknown `mode`, a header with no recognisable item-name column, or a file where no line could be read (admin only). See [Importing a stocktake from a spreadsheet](#importing-a-stocktake-from-a-spreadsheet).
+- `POST /api/pantry-items` — add an item. Body: `{ "name": "Canned beans", "quantity"?: number, "unit"?: string, "expirationDate"?: "2026-09-01", "notes"?: string }`. The date is a calendar day (`YYYY-MM-DD`); anything else is `400` (authenticated users).
+- `PUT /api/pantry-items/:itemId` — update an item, same body (authenticated users).
+- `DELETE /api/pantry-items/:itemId` — take an item off the pantry list. Grocery items and planned meals are untouched (authenticated users).
+- `POST /api/pantry-items/import` — import a spreadsheet stocktake. Body: `{ "csv": "<file contents>", "dryRun"?: boolean, "mode"?: "append" | "replace" }`. **`dryRun` defaults to `true`**, so a caller that forgets it parses rather than writes. Answers `{ rows, errors, importedCount, replacedCount, delimiter }`, each row carrying its source `lineNumber` and any `warnings`, plus the full `pantryItems` list on a real import. Returns `400` for an empty body, an unknown `mode`, a header with no recognisable item-name column, or a file where no line could be read. **The one pantry write that stays admin only**, since it rewrites the shelves in a single press. See [Importing a stocktake from a spreadsheet](#importing-a-stocktake-from-a-spreadsheet).
 
 ### Weekly Plans / Meals
 - Plan and meal endpoints under `/api/plans/...` handle week creation, day meal entries, breakfast/lunch rows, and dinner updates.
@@ -213,16 +214,20 @@ python3 frontend/scripts/generate-icons.py
 
 ## Roles and route guards
 
-An account is `ADMIN` or `VIEWER`. Admins edit everything; viewers read.
+An account is `ADMIN` or `VIEWER`. Admins run the household — the plan, the members, the accounts. Viewers read the plan, and keep the cookbook and the kitchen cabinets up to date.
+
+The split is not "admins write, viewers read". It follows who the work belongs to. Deciding what the family eats on Thursday, and who else gets an account, is the planner's job. Writing down the dish you cooked last night, or noting that the beans have been used up, is everyone's — the person who empties a cupboard is rarely the person who planned the week, and a pantry only stays truthful if whoever notices can fix it.
 
 | Viewers can | Viewers cannot |
 | --- | --- |
-| Read the home page, plans list, plan days and grocery lists | Create, edit or delete anything |
-| Read the saved dishes and the pantry (`GET /api/dishes`, `GET /api/pantry-items`) | Open the Dishes, Pantry, Members or Users screens, which are management UIs |
-| See a plan's pantry banner | Copy dish ingredients to a grocery list, or import a pantry stocktake |
-| Change their own language and notification settings | Change anyone else's |
+| Read the home page, plans list, plan days and grocery lists | Create, edit or delete a plan, its meals or its grocery items |
+| Open the Dishes and Pantry screens, and add, edit and delete saved dishes and pantry items there | Import a pantry stocktake from a spreadsheet, which rewrites the shelves in one press |
+| See a plan's pantry banner | Copy a dish's ingredients onto a grocery list, since that edits a plan |
+| Change their own language and notification settings | Open the Members or Users screens, or change anyone else's account |
 
-Two layers enforce this. `frontend/middleware.ts` keeps viewers off the admin-only *screens* (`ADMIN_ONLY_PATHS`), and the backend guards each *route* — `requireAuth` for anything a viewer may read, `requireAdminAuth` for everything else. The frontend layer is convenience; the backend layer is the one that matters.
+Two layers enforce this. `frontend/middleware.ts` keeps viewers off the admin-only *screens* (`ADMIN_ONLY_PATHS`, now just Members, Users and plan creation), and the backend guards each *route* — `requireAuth` for anything any signed-in account may do, `requireAdminAuth` for the rest. The frontend layer is convenience; the backend layer is the one that matters.
+
+Where a screen is shared but one action on it is not, the action is hidden rather than the screen: `/pantry` renders for everyone, and the CSV import card is only drawn when `canImportStocktake` is set, which the page reads from the role cookie. Hiding it is cosmetic — `POST /api/pantry-items/import` still answers a viewer `403`, which is what actually stops the import.
 
 ### Attach guards per route, never with a path-less `router.use`
 

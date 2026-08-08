@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { prisma } from "../lib/prisma";
-import { requireAdminAuth, requireAuth } from "../middleware/auth";
+import { requireAuth } from "../middleware/auth";
 import {
   dishSelect,
   parseDishIngredients,
@@ -29,7 +29,7 @@ dishesRouter.get("/api/dishes", requireAuth, async (_request, response) => {
   response.status(200).json({ dishes });
 });
 
-dishesRouter.post("/api/dishes", requireAdminAuth, async (request, response) => {
+dishesRouter.post("/api/dishes", requireAuth, async (request, response) => {
   const { name, notes, ingredients } = request.body as {
     name?: unknown;
     notes?: unknown;
@@ -73,7 +73,7 @@ dishesRouter.post("/api/dishes", requireAdminAuth, async (request, response) => 
   }
 });
 
-dishesRouter.put("/api/dishes/:dishId", requireAdminAuth, async (request, response) => {
+dishesRouter.put("/api/dishes/:dishId", requireAuth, async (request, response) => {
   const dishId = parseDishId(request.params.dishId);
 
   if (dishId === null) {
@@ -143,7 +143,7 @@ dishesRouter.put("/api/dishes/:dishId", requireAdminAuth, async (request, respon
   }
 });
 
-dishesRouter.delete("/api/dishes/:dishId", requireAdminAuth, async (request, response) => {
+dishesRouter.delete("/api/dishes/:dishId", requireAuth, async (request, response) => {
   const dishId = parseDishId(request.params.dishId);
 
   if (dishId === null) {

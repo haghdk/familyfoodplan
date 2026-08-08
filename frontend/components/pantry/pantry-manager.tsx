@@ -28,6 +28,12 @@ type PantryManagerProps = {
   initialPantryItems: PantryItem[];
   todayDayKey: string;
   expiryWarningDays: number;
+  /**
+   * Whether this account may bulk import a stocktake. Everyone signed in can
+   * add, edit and remove single items; only admins can rewrite the whole
+   * pantry from a spreadsheet.
+   */
+  canImportStocktake: boolean;
 };
 
 const millisecondsPerDay = 24 * 60 * 60 * 1000;
@@ -42,7 +48,8 @@ const daysUntil = (dayKey: string, todayDayKey: string) =>
 export default function PantryManager({
   initialPantryItems,
   todayDayKey,
-  expiryWarningDays
+  expiryWarningDays,
+  canImportStocktake
 }: PantryManagerProps) {
   const { locale, t, plural } = useTranslations();
   const [pantryItems, setPantryItems] = useState(initialPantryItems);
@@ -221,13 +228,15 @@ export default function PantryManager({
         />
       </SectionCard>
 
-      <PantryImport
-        onImported={(importedItems) => {
-          setPantryItems(importedItems);
-          setErrorMessage("");
-          setFeedback("");
-        }}
-      />
+      {canImportStocktake ? (
+        <PantryImport
+          onImported={(importedItems) => {
+            setPantryItems(importedItems);
+            setErrorMessage("");
+            setFeedback("");
+          }}
+        />
+      ) : null}
 
       {errorMessage ? <Alert tone="error">{errorMessage}</Alert> : null}
       {feedback ? <Alert tone="success">{feedback}</Alert> : null}

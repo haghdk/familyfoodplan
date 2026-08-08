@@ -74,10 +74,10 @@ export default function AuthNav({ isAuthenticated, isAdmin }: AuthNavProps) {
 
   const navLinks: NavLink[] = [
     { href: "/plan", label: t("nav.plans"), icon: CalendarDays },
+    { href: "/dishes", label: t("nav.dishes"), icon: CookingPot },
+    { href: "/pantry", label: t("nav.pantry"), icon: Archive },
     ...(isAdmin
       ? [
-          { href: "/dishes", label: t("nav.dishes"), icon: CookingPot },
-          { href: "/pantry", label: t("nav.pantry"), icon: Archive },
           { href: "/members", label: t("nav.members"), icon: Users },
           { href: "/users", label: t("nav.users"), icon: ShieldUser },
         ]
