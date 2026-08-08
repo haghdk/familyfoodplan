@@ -319,7 +319,44 @@
     "deleteFailed": "Kunne ikke fjerne denne vare lige nu.",
     "deleteTitle": "Vil du fjerne {name}?",
     "deleteDescription": "Det fjerner den kun fra listen over skabene. Varer på indkøbslisten og planlagte måltider røres ikke.",
-    "deleteConfirm": "Fjern fra skabene"
+    "deleteConfirm": "Fjern fra skabene",
+    "import": {
+      "title": "Importér fra et regneark",
+      "description": "Hent en liste, I allerede har, eller en I laver i Excel, mens I gennemgår skabene. Intet gemmes, før I har set, hvad der blev læst.",
+      "fileLabel": "CSV-fil",
+      "fileHint": "Vælg en .csv-fil, eller indsæt rækkerne nedenfor.",
+      "pasteLabel": "Eller indsæt rækkerne",
+      "formatHint": "Første række navngiver kolonnerne: Madvare, Mængde, Enhed, Udløbsdato, Noter (engelske navne virker også). Både komma og semikolon virker som separator, mængder kan skrives 0,5 eller 0.5, og datoer læses med dagen først — 27-11-2026. En måned uden dag, som 01 2027, opfattes som sidste dag i den måned.",
+      "modeLabel": "Sådan importeres der",
+      "modeAppend": "Læg til det, der står i skabene",
+      "modeReplace": "Erstat alt i skabene",
+      "modeAppendHint": "Rækkerne lægges til den liste, I allerede har.",
+      "modeReplaceHint": "Skabene tømmes først. Brug den efter en fuld gennemgang af skabene.",
+      "preview": "Læs filen",
+      "previewCount": {
+        "one": "{count} række læst og klar til import.",
+        "other": "{count} rækker læst og klar til import."
+      },
+      "errorCount": {
+        "one": "{count} linje kunne ikke læses og springes over:",
+        "other": "{count} linjer kunne ikke læses og springes over:"
+      },
+      "lineLabel": "Linje {line}:",
+      "nothingReadable": "Ingen af linjerne kunne læses. Tjek, at første række navngiver kolonnerne.",
+      "submit": {
+        "one": "Importér {count} vare",
+        "other": "Importér {count} varer"
+      },
+      "added": {
+        "one": "{count} vare tilføjet skabene.",
+        "other": "{count} varer tilføjet skabene."
+      },
+      "replaced": "Skabene er erstattet: {removed} fjernet, {imported} importeret.",
+      "replaceTitle": "Vil du erstatte hele indholdet af skabene?",
+      "replaceDescription": "Det fjerner alle {removed} varer, der står i skabene nu, og importerer {imported} i stedet. Handlingen kan ikke fortrydes.",
+      "replaceConfirm": "Erstat skabene",
+      "failed": "Kunne ikke importere listen lige nu."
+    }
   },
   "mealSwap": {
     "swap": "Byt",

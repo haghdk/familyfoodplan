@@ -7,6 +7,7 @@ import { cn } from "../../lib/cn";
 import { useTranslations } from "../../lib/i18n/client";
 import { localeHeader } from "../../lib/i18n/requestHeaders";
 import PantryForm, { type PantryFormValues } from "./pantry-form";
+import PantryImport from "./pantry-import";
 import Alert from "../ui/Alert";
 import Badge from "../ui/Badge";
 import Button from "../ui/Button";
@@ -219,6 +220,14 @@ export default function PantryManager({
           submitLabel={t("pantry.addSubmit")}
         />
       </SectionCard>
+
+      <PantryImport
+        onImported={(importedItems) => {
+          setPantryItems(importedItems);
+          setErrorMessage("");
+          setFeedback("");
+        }}
+      />
 
       {errorMessage ? <Alert tone="error">{errorMessage}</Alert> : null}
       {feedback ? <Alert tone="success">{feedback}</Alert> : null}

@@ -7,6 +7,7 @@ import {
 } from "../services/pantryExpiryReminder";
 import { getLocalDayKey } from "../lib/localTime";
 import { pantryItemSelect } from "../services/pantry";
+import { parsePantryCsv } from "../services/pantryImport";
 import { reminderTimeZone } from "../services/dinnerReminder";
 
 const pantryRouter = Router();
@@ -126,6 +127,113 @@ pantryRouter.post("/api/pantry-items", requireAdminAuth, async (request, respons
   });
 
   response.status(201).json({ pantryItem: mapPantryItem(pantryItem) });
+});
+
+/**
+ * Bulk import from a spreadsheet stocktake.
+ *
+ * `dryRun` parses and reports without writing, which is what the screen does
+ * first: thirty lines of cabinet contents deserve a look before they land, and
+ * a mistyped date should be visible rather than silently dropped.
+ *
+ * `mode` is "append" by default. "replace" empties the pantry first, which is
+ * what a full cabinet check-up actually means — the list in hand *is* the new
+ * state of the shelves.
+ */
+pantryRouter.post("/api/pantry-items/import", requireAdminAuth, async (request, response) => {
+  const { csv, dryRun, mode } = request.body as {
+    csv?: unknown;
+    dryRun?: unknown;
+    mode?: unknown;
+  };
+
+  if (typeof csv !== "string" || !csv.trim()) {
+    response.status(400).json({ message: "A CSV body is required." });
+    return;
+  }
+
+  if (mode !== undefined && mode !== "append" && mode !== "replace") {
+    response.status(400).json({ message: 'mode must be "append" or "replace".' });
+    return;
+  }
+
+  const parseResult = parsePantryCsv(csv);
+
+  if (parseResult.status === "empty") {
+    response.status(400).json({ message: "That file has no rows." });
+    return;
+  }
+
+  if (parseResult.status === "missing_name_column") {
+    response.status(400).json({
+      message:
+        "No item-name column found. The first row must name the columns, for example: Madvare,Mængde,Enhed,Udløbsdato,Noter",
+      foundHeaders: parseResult.foundHeaders
+    });
+    return;
+  }
+
+  const importMode = mode === "replace" ? "replace" : "append";
+  const isDryRun = dryRun !== false;
+
+  if (isDryRun) {
+    response.status(200).json({
+      dryRun: true,
+      mode: importMode,
+      delimiter: parseResult.delimiter,
+      rows: parseResult.rows,
+      errors: parseResult.errors,
+      importedCount: 0,
+      replacedCount:
+        importMode === "replace" ? await prisma.pantryItem.count() : 0
+    });
+    return;
+  }
+
+  if (parseResult.rows.length === 0) {
+    response.status(400).json({
+      message: "None of the lines could be read, so nothing was imported.",
+      errors: parseResult.errors
+    });
+    return;
+  }
+
+  // One transaction, so a replace that fails part way through cannot leave the
+  // cabinets emptied with nothing written back.
+  const { replacedCount } = await prisma.$transaction(async (tx) => {
+    const replacedCount =
+      importMode === "replace" ? (await tx.pantryItem.deleteMany({})).count : 0;
+
+    await tx.pantryItem.createMany({
+      data: parseResult.rows.map((row) => ({
+        name: row.name,
+        quantity: row.quantity,
+        unit: row.unit,
+        expirationDate: row.expirationDate
+          ? new Date(`${row.expirationDate}T00:00:00.000Z`)
+          : null,
+        notes: row.notes
+      }))
+    });
+
+    return { replacedCount };
+  });
+
+  const pantryItems = await prisma.pantryItem.findMany({
+    orderBy: [{ expirationDate: { sort: "asc", nulls: "last" } }, { name: "asc" }],
+    select: pantryItemSelect
+  });
+
+  response.status(201).json({
+    dryRun: false,
+    mode: importMode,
+    delimiter: parseResult.delimiter,
+    rows: parseResult.rows,
+    errors: parseResult.errors,
+    importedCount: parseResult.rows.length,
+    replacedCount,
+    pantryItems: pantryItems.map(mapPantryItem)
+  });
 });
 
 pantryRouter.put("/api/pantry-items/:itemId", requireAdminAuth, async (request, response) => {

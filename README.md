@@ -27,6 +27,7 @@ Family Food Planner is a weekly meal-planning app for families. Admins create pl
 - **Breakfast planning support**: each plan day now supports repeatable breakfast rows with optional member assignment, matching lunch behavior in APIs/UI and allowing breakfast-linked grocery ingredients.
 - **Dishes (saved recipes) + one-press shopping**: a **Dishes** section where a dish is written down once — lasagne, with its minced beef, sheets and tomatoes — and then picked from a list when planning a day, instead of being typed in again every week. Meals can still be typed in by hand exactly as before; the picker is a shortcut, not a replacement. A day whose meal was picked from a saved dish grows an **Add ingredients to grocery list** button that copies the whole recipe onto the plan's shopping list in one press. See [Dishes and Their Ingredients](#dishes-and-their-ingredients).
 - **Pantry (kitchen cabinets) with expiry tracking**: a **Pantry** section listing what is already on the shelves — 2 cans of beans, 1 pack of tacos — each with an optional expiry date. It is wired into the rest of the app rather than being a list on its own: copying a dish's ingredients to the grocery list **takes what the cabinets already hold off the shelf instead of onto the list**, and subtracts it from the pantry; the plan screen shows a banner naming what this week's dishes can take from the cabinets before anyone shops; and a daily push notification calls out anything expired or going off soon, so three cans of beans are never discovered a year past their date. See [The Pantry](#the-pantry).
+- **CSV import for the pantry**: a stocktake made in Excel while going through the cupboards can be imported straight into the pantry, with a preview before anything is written. Built for what a Danish spreadsheet actually exports — semicolon or comma separators, `0,5` decimal commas, day-first dates, and month-only best-before dates — and reporting bad lines individually instead of refusing the file. See [Importing a stocktake from a spreadsheet](#importing-a-stocktake-from-a-spreadsheet).
 - **Swap meals between days**: weeks rarely go to plan, so any meal can be moved to another day of the week without retyping it. Drag a meal's **Swap** button onto the same meal of another day, or press it to pick the day from a list. Breakfast, lunch, and dinner each move on their own, so trading Monday's and Tuesday's dinners leaves both days' breakfasts and lunches exactly where they were, and the ingredients on the grocery list follow the meal. See [Swapping Meals Between Days](#swapping-meals-between-days).
 - **Grocery sharing**: generate tokenized public grocery links so non-admin shoppers can check off items.
 - **Drag-to-reorder grocery list**: items are still added as they come to mind (each new item lands at the bottom), and the merged shopping list can then be dragged into the order you walk the store — vegetables, bread, meat, cheeses, eggs, milk, hygiene. The manual order is stored per plan and used by the detailed item list and the shared shopper link as well. See [Grocery List Ordering](#grocery-list-ordering).
@@ -190,6 +191,7 @@ python3 frontend/scripts/generate-icons.py
 - `POST /api/pantry-items` — add an item. Body: `{ "name": "Canned beans", "quantity"?: number, "unit"?: string, "expirationDate"?: "2026-09-01", "notes"?: string }`. The date is a calendar day (`YYYY-MM-DD`); anything else is `400` (admin only).
 - `PUT /api/pantry-items/:itemId` — update an item, same body (admin only).
 - `DELETE /api/pantry-items/:itemId` — take an item off the pantry list. Grocery items and planned meals are untouched (admin only).
+- `POST /api/pantry-items/import` — import a spreadsheet stocktake. Body: `{ "csv": "<file contents>", "dryRun"?: boolean, "mode"?: "append" | "replace" }`. **`dryRun` defaults to `true`**, so a caller that forgets it parses rather than writes. Answers `{ rows, errors, importedCount, replacedCount, delimiter }`, each row carrying its source `lineNumber` and any `warnings`, plus the full `pantryItems` list on a real import. Returns `400` for an empty body, an unknown `mode`, a header with no recognisable item-name column, or a file where no line could be read (admin only). See [Importing a stocktake from a spreadsheet](#importing-a-stocktake-from-a-spreadsheet).
 
 ### Weekly Plans / Meals
 - Plan and meal endpoints under `/api/plans/...` handle week creation, day meal entries, breakfast/lunch rows, and dinner updates.
@@ -354,6 +356,39 @@ A meal that was picked from a saved dish which has ingredients shows an **Add in
 Cabinets are easy to forget. The tins at the back get bought again because nobody remembered they were there, and then get thrown out at the next clear-out because nobody remembered either. `/pantry` (admins only) is the list that fixes both halves of that.
 
 An entry is a name, a quantity, an optional unit, an optional expiry date and optional notes ("2 cans of beans, 9 Aug, back of the cupboard"). The list is ordered by what goes off soonest, with undated staples last, so the thing that needs eating is at the top of the screen.
+
+### Importing a stocktake from a spreadsheet
+
+Typing thirty tins into a form one at a time is nobody's idea of a Saturday, and most households already have the list somewhere — or make one in Excel while going through the cupboards. The pantry screen takes that file directly.
+
+**Nothing is written until you have seen what was read.** Choosing a file (or pasting the rows) parses it and shows a table of what will be imported, with per-line problems listed separately; only then does the Import button appear. A stocktake is thirty lines typed in a hurry, and a mistyped date is far easier to fix in the file than in the pantry afterwards.
+
+The expected shape is one header row naming the columns, then one row per item:
+
+```csv
+Madvare,Mængde,Enhed,Udløbsdato,Noter
+dåse majs,3,,,
+Kondenseret mælk,1,,01-09-2025,
+Honning flydende,"0,5",flaske,,
+Preboiled rice,3,poser,,
+```
+
+The parser is built for what a Danish Excel export actually looks like rather than for an idealised CSV:
+
+- **Column names in Danish or English.** `Madvare` / `Mængde` / `Enhed` / `Udløbsdato` / `Noter`, or `Name` / `Quantity` / `Unit` / `Expiration date` / `Notes`, plus common variants (`Vare`, `Antal`, `Navn`, `Expiry`, …). Only the name column is required; extra columns are ignored. Order does not matter.
+- **Comma or semicolon separated.** Danish Excel switches to semicolons precisely because the comma is busy being a decimal separator, so the delimiter is detected from the header rather than assumed. Tabs work too.
+- **Decimal commas.** `"0,5"` is half a bottle. When both separators appear, `1.000,5` is read the European way — dots are thousands, the comma is the decimal point.
+- **Dates are read day first.** `27-11-2026` is 27 November, matching how the whole of Denmark writes a date; `/` and `.` work as separators too. A four-digit leading group is read as ISO instead, since `2026-11-27` cannot mean anything else. Impossible dates like `31-02-2026` are rejected rather than rolled over into March.
+- **A month with no day becomes the end of that month.** `01 2027` is stored as 31 January 2027, which is what "best before 01/2027" means on a packet. Reading it as the 1st would mark the tin expired for a month it is still perfectly good. The preview flags each row this happened to.
+- **A missing quantity is 1, not an error.** Stocktakes leave the count off things kept by the packet rather than by the number. The preview flags those rows too.
+- Byte-order marks, CRLF line endings, quoted fields containing the delimiter, doubled quotes, blank lines, and stray leading/trailing spaces are all handled.
+
+**One bad line costs that line, not the file.** A row with no name, an unreadable quantity, or an unparseable date is reported with its line number and skipped; everything else still imports.
+
+Two import modes:
+
+- **Add to what is in the pantry** (default) — rows are appended to the existing list.
+- **Replace everything in the pantry** — the pantry is emptied first, which is what a full cabinet check-up actually means: the list in hand *is* the new state of the shelves. It asks for confirmation, naming how many items it will remove, and runs in one transaction so a failure part way through cannot leave the cabinets emptied with nothing written back.
 
 ### Taking ingredients off the shelf instead of onto the list
 
