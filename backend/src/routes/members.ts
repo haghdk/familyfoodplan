@@ -4,9 +4,14 @@ import { requireAdminAuth } from "../middleware/auth";
 
 const membersRouter = Router();
 
-membersRouter.use(requireAdminAuth);
+// The admin guard is attached per route rather than with a path-less
+// `router.use(...)`. Every router here is mounted at the application root, so a
+// path-less guard runs on *every* request that reaches this router — including
+// requests meant for routers registered after it, which it then rejects before
+// they are ever seen. That is what once made the whole API admin-only for
+// viewers. Per-route guards cannot leak onto another router's paths.
 
-membersRouter.get("/api/members", async (_request, response) => {
+membersRouter.get("/api/members", requireAdminAuth, async (_request, response) => {
   const members = await prisma.familyMember.findMany({
     orderBy: [{ isActive: "desc" }, { name: "asc" }]
   });
@@ -14,7 +19,7 @@ membersRouter.get("/api/members", async (_request, response) => {
   response.status(200).json({ members });
 });
 
-membersRouter.post("/api/members", async (request, response) => {
+membersRouter.post("/api/members", requireAdminAuth, async (request, response) => {
   const { name } = request.body as { name?: string };
   const normalizedName = name?.trim();
 
@@ -33,7 +38,7 @@ membersRouter.post("/api/members", async (request, response) => {
   response.status(201).json({ member });
 });
 
-membersRouter.put("/api/members/:id", async (request, response) => {
+membersRouter.put("/api/members/:id", requireAdminAuth, async (request, response) => {
   const memberId = Number(request.params.id);
 
   if (Number.isNaN(memberId)) {
@@ -66,7 +71,7 @@ membersRouter.put("/api/members/:id", async (request, response) => {
   response.status(200).json({ member });
 });
 
-membersRouter.patch("/api/members/:id/archive", async (request, response) => {
+membersRouter.patch("/api/members/:id/archive", requireAdminAuth, async (request, response) => {
   const memberId = Number(request.params.id);
 
   if (Number.isNaN(memberId)) {

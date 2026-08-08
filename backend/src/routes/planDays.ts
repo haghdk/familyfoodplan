@@ -6,7 +6,12 @@ import { parseIsoDayKey } from "../services/plans";
 
 const planDaysRouter = Router();
 
-planDaysRouter.use(requireAdminAuth);
+// The admin guard is attached per route rather than with a path-less
+// `router.use(...)`. Every router here is mounted at the application root, so a
+// path-less guard runs on *every* request that reaches this router — including
+// requests meant for routers registered after it, which it then rejects before
+// they are ever seen. That is what once made the whole API admin-only for
+// viewers. Per-route guards cannot leak onto another router's paths.
 
 // A meal can be picked from the saved dishes instead of being typed in, and the
 // link is what later lets the plan copy the dish's ingredients onto the grocery
@@ -38,7 +43,7 @@ const findPlanDayForPlan = async (planId: number, dayDate: Date) =>
     select: { id: true }
   });
 
-planDaysRouter.post("/api/plans/:planId/meal-swaps", async (request, response) => {
+planDaysRouter.post("/api/plans/:planId/meal-swaps", requireAdminAuth, async (request, response) => {
   const planId = Number(request.params.planId);
 
   if (Number.isNaN(planId)) {
@@ -99,7 +104,7 @@ planDaysRouter.post("/api/plans/:planId/meal-swaps", async (request, response) =
   response.status(200).json({ planDays: swapResult.planDays });
 });
 
-planDaysRouter.put("/api/plans/:planId/days/:dayKey/dinner", async (request, response) => {
+planDaysRouter.put("/api/plans/:planId/days/:dayKey/dinner", requireAdminAuth, async (request, response) => {
   const planId = Number(request.params.planId);
   const dayDate = parseIsoDayKey(request.params.dayKey);
 
@@ -158,7 +163,7 @@ planDaysRouter.put("/api/plans/:planId/days/:dayKey/dinner", async (request, res
 });
 
 
-planDaysRouter.post("/api/plans/:planId/days/:dayKey/breakfasts", async (request, response) => {
+planDaysRouter.post("/api/plans/:planId/days/:dayKey/breakfasts", requireAdminAuth, async (request, response) => {
   const planId = Number(request.params.planId);
   const dayDate = parseIsoDayKey(request.params.dayKey);
 
@@ -224,8 +229,7 @@ planDaysRouter.post("/api/plans/:planId/days/:dayKey/breakfasts", async (request
   response.status(201).json({ breakfastDish });
 });
 
-planDaysRouter.put(
-  "/api/plans/:planId/days/:dayKey/breakfasts/:breakfastId",
+planDaysRouter.put("/api/plans/:planId/days/:dayKey/breakfasts/:breakfastId", requireAdminAuth,
   async (request, response) => {
     const planId = Number(request.params.planId);
     const dayDate = parseIsoDayKey(request.params.dayKey);
@@ -312,8 +316,7 @@ planDaysRouter.put(
   }
 );
 
-planDaysRouter.delete(
-  "/api/plans/:planId/days/:dayKey/breakfasts/:breakfastId",
+planDaysRouter.delete("/api/plans/:planId/days/:dayKey/breakfasts/:breakfastId", requireAdminAuth,
   async (request, response) => {
     const planId = Number(request.params.planId);
     const dayDate = parseIsoDayKey(request.params.dayKey);
@@ -360,7 +363,7 @@ planDaysRouter.delete(
   }
 );
 
-planDaysRouter.post("/api/plans/:planId/days/:dayKey/lunches", async (request, response) => {
+planDaysRouter.post("/api/plans/:planId/days/:dayKey/lunches", requireAdminAuth, async (request, response) => {
   const planId = Number(request.params.planId);
   const dayDate = parseIsoDayKey(request.params.dayKey);
 
@@ -426,8 +429,7 @@ planDaysRouter.post("/api/plans/:planId/days/:dayKey/lunches", async (request, r
   response.status(201).json({ lunchDish });
 });
 
-planDaysRouter.put(
-  "/api/plans/:planId/days/:dayKey/lunches/:lunchId",
+planDaysRouter.put("/api/plans/:planId/days/:dayKey/lunches/:lunchId", requireAdminAuth,
   async (request, response) => {
     const planId = Number(request.params.planId);
     const dayDate = parseIsoDayKey(request.params.dayKey);
@@ -514,8 +516,7 @@ planDaysRouter.put(
   }
 );
 
-planDaysRouter.delete(
-  "/api/plans/:planId/days/:dayKey/lunches/:lunchId",
+planDaysRouter.delete("/api/plans/:planId/days/:dayKey/lunches/:lunchId", requireAdminAuth,
   async (request, response) => {
     const planId = Number(request.params.planId);
     const dayDate = parseIsoDayKey(request.params.dayKey);
