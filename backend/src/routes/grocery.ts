@@ -509,7 +509,8 @@ groceryRouter.post(
     response.status(201).json({
       groceryItems: addResult.createdItems,
       addedCount: addResult.createdItems.length,
-      skippedCount: addResult.skippedCount
+      skippedCount: addResult.skippedCount,
+      pantryPickups: addResult.pantryPickups
     });
   }
 );

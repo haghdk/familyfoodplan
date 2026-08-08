@@ -43,6 +43,7 @@
   "nav": {
     "plans": "Plans",
     "dishes": "Dishes",
+    "pantry": "Pantry",
     "members": "Members",
     "users": "Users",
     "settings": "Settings",
@@ -229,7 +230,20 @@
     },
     "ingredientsSkippedNote": "Ingredients already on the list were left as they were.",
     "ingredientsAlreadyAdded": "Every ingredient of this dish is already on the grocery list.",
+    "ingredientsAllFromPantry": "Nothing to buy — the cabinets covered this dish.",
+    "ingredientsFromPantry": "Taken from the cabinets: {items}.",
     "ingredientsAddFailed": "Could not add this dish's ingredients to the grocery list right now."
+  },
+  "planPantry": {
+    "title": {
+      "one": "{count} ingredient this week is already in your cabinets",
+      "other": "{count} ingredients this week are already in your cabinets"
+    },
+    "description": "These are on the shelf now. Adding a dish's ingredients to the grocery list takes them out of the cabinets instead of putting them on the list.",
+    "openPantry": "Open pantry",
+    "haveOfNeeded": "{have} in the cabinets, {needed} needed",
+    "covered": "Enough",
+    "partiallyCovered": "Some of it"
   },
   "dishes": {
     "eyebrow": "Your cookbook",
@@ -266,6 +280,46 @@
     "deleteTitle": "Delete {name}?",
     "deleteDescription": "The dish and its ingredients are removed. Days already planned with it keep their meal, and grocery items already added stay on their lists.",
     "deleteConfirm": "Delete dish"
+  },
+  "pantry": {
+    "eyebrow": "Kitchen cabinets",
+    "title": "Pantry",
+    "description": "What is on the shelves right now, and when it goes off. A dish's ingredients are taken from here before they are put on a grocery list, so nothing is bought twice and nothing quietly expires at the back of a cupboard.",
+    "addTitle": "Add to the pantry",
+    "addDescription": "Write down what you put away — two cans of beans, a pack of tacos — and the date on the packaging.",
+    "addSubmit": "Add to pantry",
+    "namePlaceholder": "Canned beans",
+    "unitPlaceholder": "cans",
+    "expirationLabel": "Expiration date",
+    "expirationHint": "Leave blank for staples with no date worth tracking.",
+    "notesLabel": "Notes",
+    "notesPlaceholder": "Which cupboard it is in (optional)",
+    "noDate": "No date",
+    "expiresToday": "Expires today",
+    "expiresInDays": {
+      "one": "Expires in {count} day",
+      "other": "Expires in {count} days"
+    },
+    "expiredDaysAgo": {
+      "one": "Expired {count} day ago",
+      "other": "Expired {count} days ago"
+    },
+    "expiringSoonBanner": {
+      "one": "{count} item is expired or goes off within {days} days. Plan a meal around it.",
+      "other": "{count} items are expired or go off within {days} days. Plan a meal around them."
+    },
+    "emptyTitle": "The pantry is empty",
+    "emptyDescription": "Add what is in your cabinets and the planner will use it before it puts anything on a shopping list.",
+    "nameRequired": "Item name is required.",
+    "created": "{name} added to the pantry.",
+    "updated": "{name} updated.",
+    "deleted": "{name} removed from the pantry.",
+    "createFailed": "Could not add this to the pantry right now.",
+    "updateFailed": "Could not update this pantry item right now.",
+    "deleteFailed": "Could not remove this pantry item right now.",
+    "deleteTitle": "Remove {name}?",
+    "deleteDescription": "This only takes it off the pantry list. Grocery items and meals already planned are untouched.",
+    "deleteConfirm": "Remove from pantry"
   },
   "mealSwap": {
     "swap": "Swap",
@@ -456,6 +510,8 @@
       "homeScreen": "On iPhone and iPad, notifications only work once the app is added to the home screen. Tap Share, then “Add to Home Screen”, and open the app from there.",
       "toggleLabel": "Daily dinner reminder",
       "toggleDescription": "Get a push notification each morning with today's dinner.",
+      "pantryExpiryLabel": "Pantry expiry reminder",
+      "pantryExpiryDescription": "Get a push notification when something in your cabinets has expired or goes off within {days} days.",
       "deviceRegistered": "This device is registered",
       "deviceNotRegistered": "This device is not registered yet",
       "devicesOnAccount": {

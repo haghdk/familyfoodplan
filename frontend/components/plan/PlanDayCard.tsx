@@ -287,17 +287,37 @@ export default function PlanDayCard({
         throw new Error("Unable to add dish ingredients.");
       }
 
-      const data = (await response.json()) as { addedCount: number; skippedCount: number };
+      const data = (await response.json()) as {
+        addedCount: number;
+        skippedCount: number;
+        pantryPickups: Array<{ name: string; quantity: number; unit: string | null }>;
+      };
 
-      const addedMessage = [
-        plural("planDay.ingredientsAdded", data.addedCount),
-        ...(data.skippedCount > 0 ? [t("planDay.ingredientsSkippedNote")] : [])
+      // What came off the shelf is the part worth spelling out, since it is the
+      // shopping the family no longer has to do.
+      const pantryNote =
+        data.pantryPickups.length > 0
+          ? t("planDay.ingredientsFromPantry", {
+              items: data.pantryPickups
+                .map(
+                  (pickup) =>
+                    `${pickup.name} (${pickup.quantity}${pickup.unit ? ` ${pickup.unit}` : ""})`
+                )
+                .join(", ")
+            })
+          : "";
+
+      const message = [
+        data.addedCount > 0
+          ? plural("planDay.ingredientsAdded", data.addedCount)
+          : data.pantryPickups.length > 0
+            ? t("planDay.ingredientsAllFromPantry")
+            : t("planDay.ingredientsAlreadyAdded"),
+        ...(data.skippedCount > 0 ? [t("planDay.ingredientsSkippedNote")] : []),
+        ...(pantryNote ? [pantryNote] : [])
       ].join(" ");
 
-      setFeedback({
-        type: "success",
-        message: data.addedCount > 0 ? addedMessage : t("planDay.ingredientsAlreadyAdded")
-      });
+      setFeedback({ type: "success", message });
     } catch (_error) {
       setFeedback({ type: "error", message: t("planDay.ingredientsAddFailed") });
     } finally {

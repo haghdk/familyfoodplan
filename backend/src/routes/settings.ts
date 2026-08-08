@@ -3,6 +3,7 @@ import { prisma } from "../lib/prisma";
 import { requireAuth } from "../middleware/auth";
 import { isPushConfigured, pushPublicKey } from "../lib/webPush";
 import { reminderTimeZone, sendDinnerReminderToUser } from "../services/dinnerReminder";
+import { expiryWarningDays } from "../services/pantryExpiryReminder";
 import {
   defaultLocale,
   isLocale,
@@ -27,13 +28,20 @@ const getSessionUser = (response: Response): SessionUser =>
 /** Users who have never opened the settings screen have no row yet. */
 const defaultSettings = {
   dinnerReminderEnabled: false,
+  pantryExpiryReminderEnabled: false,
   language: defaultLocale as string
 };
+
+const settingsSelect = {
+  dinnerReminderEnabled: true,
+  pantryExpiryReminderEnabled: true,
+  language: true
+} as const;
 
 const readSettings = async (userId: number) => {
   const settings = await prisma.userSettings.findUnique({
     where: { userId },
-    select: { dinnerReminderEnabled: true, language: true }
+    select: settingsSelect
   });
 
   return settings ?? defaultSettings;
@@ -55,7 +63,8 @@ settingsRouter.get("/api/settings", requireAuth, async (_request, response) => {
       configured: isPushConfigured,
       publicKey: pushPublicKey || null,
       deviceCount,
-      reminderTimeZone
+      reminderTimeZone,
+      pantryExpiryWarningDays: expiryWarningDays
     }
   });
 });
@@ -68,12 +77,18 @@ settingsRouter.get("/api/settings", requireAuth, async (_request, response) => {
 settingsRouter.put("/api/settings", requireAuth, async (request, response) => {
   const locale = requestLocale(request);
   const user = getSessionUser(response);
-  const { dinnerReminderEnabled, language } = request.body as {
-    dinnerReminderEnabled?: unknown;
-    language?: unknown;
-  };
+  const { dinnerReminderEnabled, pantryExpiryReminderEnabled, language } =
+    request.body as {
+      dinnerReminderEnabled?: unknown;
+      pantryExpiryReminderEnabled?: unknown;
+      language?: unknown;
+    };
 
-  if (dinnerReminderEnabled === undefined && language === undefined) {
+  if (
+    dinnerReminderEnabled === undefined &&
+    pantryExpiryReminderEnabled === undefined &&
+    language === undefined
+  ) {
     response
       .status(400)
       .json({ message: translate(locale, "settings.nothingToUpdate") });
@@ -81,8 +96,10 @@ settingsRouter.put("/api/settings", requireAuth, async (request, response) => {
   }
 
   if (
-    dinnerReminderEnabled !== undefined &&
-    typeof dinnerReminderEnabled !== "boolean"
+    (dinnerReminderEnabled !== undefined &&
+      typeof dinnerReminderEnabled !== "boolean") ||
+    (pantryExpiryReminderEnabled !== undefined &&
+      typeof pantryExpiryReminderEnabled !== "boolean")
   ) {
     response
       .status(400)
@@ -101,6 +118,9 @@ settingsRouter.put("/api/settings", requireAuth, async (request, response) => {
 
   const updates = {
     ...(dinnerReminderEnabled === undefined ? {} : { dinnerReminderEnabled }),
+    ...(pantryExpiryReminderEnabled === undefined
+      ? {}
+      : { pantryExpiryReminderEnabled }),
     ...(language === undefined ? {} : { language })
   };
 
@@ -112,7 +132,7 @@ settingsRouter.put("/api/settings", requireAuth, async (request, response) => {
       ...updates
     },
     update: updates,
-    select: { dinnerReminderEnabled: true, language: true }
+    select: settingsSelect
   });
 
   response.status(200).json({ settings });

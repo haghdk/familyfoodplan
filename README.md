@@ -26,6 +26,7 @@ Family Food Planner is a weekly meal-planning app for families. Admins create pl
 - **Plan-scoped day editing routes**: dinner, breakfast, and lunch write endpoints now require both `planId` and `dayKey` (`/api/plans/:planId/days/:dayKey/...`) so updates are validated against the selected plan before persisting.
 - **Breakfast planning support**: each plan day now supports repeatable breakfast rows with optional member assignment, matching lunch behavior in APIs/UI and allowing breakfast-linked grocery ingredients.
 - **Dishes (saved recipes) + one-press shopping**: a **Dishes** section where a dish is written down once — lasagne, with its minced beef, sheets and tomatoes — and then picked from a list when planning a day, instead of being typed in again every week. Meals can still be typed in by hand exactly as before; the picker is a shortcut, not a replacement. A day whose meal was picked from a saved dish grows an **Add ingredients to grocery list** button that copies the whole recipe onto the plan's shopping list in one press. See [Dishes and Their Ingredients](#dishes-and-their-ingredients).
+- **Pantry (kitchen cabinets) with expiry tracking**: a **Pantry** section listing what is already on the shelves — 2 cans of beans, 1 pack of tacos — each with an optional expiry date. It is wired into the rest of the app rather than being a list on its own: copying a dish's ingredients to the grocery list **takes what the cabinets already hold off the shelf instead of onto the list**, and subtracts it from the pantry; the plan screen shows a banner naming what this week's dishes can take from the cabinets before anyone shops; and a daily push notification calls out anything expired or going off soon, so three cans of beans are never discovered a year past their date. See [The Pantry](#the-pantry).
 - **Swap meals between days**: weeks rarely go to plan, so any meal can be moved to another day of the week without retyping it. Drag a meal's **Swap** button onto the same meal of another day, or press it to pick the day from a list. Breakfast, lunch, and dinner each move on their own, so trading Monday's and Tuesday's dinners leaves both days' breakfasts and lunches exactly where they were, and the ingredients on the grocery list follow the meal. See [Swapping Meals Between Days](#swapping-meals-between-days).
 - **Grocery sharing**: generate tokenized public grocery links so non-admin shoppers can check off items.
 - **Drag-to-reorder grocery list**: items are still added as they come to mind (each new item lands at the bottom), and the merged shopping list can then be dragged into the order you walk the store — vegetables, bread, meat, cheeses, eggs, milk, hygiene. The manual order is stored per plan and used by the detailed item list and the shared shopper link as well. See [Grocery List Ordering](#grocery-list-ordering).
@@ -58,6 +59,7 @@ Family Food Planner is a weekly meal-planning app for families. Admins create pl
   - Admin authentication (login/logout/me)
   - Member CRUD and archival
   - Saved dishes and their ingredients, and copying them onto a plan's grocery list
+  - The pantry: what is in the cabinets, drawing on it before the shopping list, and its expiry reminder
   - Weekly plan and meal management
   - Grocery list APIs (admin + shared token access)
   - Realtime grocery streaming (SSE)
@@ -74,6 +76,7 @@ Family Food Planner is a weekly meal-planning app for families. Admins create pl
   - Admin login page and protected routes
   - Member management UI
   - Dishes screen for saving dishes with their ingredients
+  - Pantry screen for what is in the cabinets, with expiry labelling
   - Weekly planning screens
   - Grocery list management UI
   - Shared grocery page for tokenized links
@@ -181,6 +184,13 @@ python3 frontend/scripts/generate-icons.py
 - `PUT /api/dishes/:dishId` — update a dish. The ingredient list is sent whole and replaces the stored one; grocery items already copied onto a plan are their own rows and are left untouched. Returns `404` for an unknown dish and `409` for a taken name (admin only).
 - `DELETE /api/dishes/:dishId` — delete a dish and its ingredients. Days already planned with it keep their meal, with the link cleared (admin only).
 
+### Pantry
+- `GET /api/pantry-items` — everything in the cabinets, soonest to go off first and undated staples last, plus `todayDayKey` and `expiryWarningDays` so the UI can label dates without guessing the server's time zone (authenticated users).
+- `GET /api/pantry-items/expiring` — only what is expired or within the warning window, each with `daysUntilExpiration` (negative once the date has passed) (authenticated users).
+- `POST /api/pantry-items` — add an item. Body: `{ "name": "Canned beans", "quantity"?: number, "unit"?: string, "expirationDate"?: "2026-09-01", "notes"?: string }`. The date is a calendar day (`YYYY-MM-DD`); anything else is `400` (admin only).
+- `PUT /api/pantry-items/:itemId` — update an item, same body (admin only).
+- `DELETE /api/pantry-items/:itemId` — take an item off the pantry list. Grocery items and planned meals are untouched (admin only).
+
 ### Weekly Plans / Meals
 - Plan and meal endpoints under `/api/plans/...` handle week creation, day meal entries, breakfast/lunch rows, and dinner updates.
 - `POST /api/plans` — create a plan and all plan-day rows for a validated date range (admin only).
@@ -188,11 +198,12 @@ python3 frontend/scripts/generate-icons.py
 - `GET /api/plans/:planId` — fetch one plan with nested `planDays`, `dinnerDish`, `breakfastDishes`, and `lunchDishes` (authenticated users).
 - `PUT /api/plans/:planId` — update plan name and date range; the backend adds/removes `PlanDay` rows to keep data aligned with the new range (admin only).
 - `DELETE /api/plans/:planId` — delete a plan by id; returns `404` when the plan does not exist and cascades removal of related plan-day and grocery data (admin only).
+- `GET /api/plans/:planId/pantry-matches` — what this plan's dishes could take out of the cabinets. Each entry gives the ingredient, how much the plan needs, how much is on the shelf, whether that covers it, the soonest expiry date, and the meals asking for it. Ingredients a meal has already resolved — put on the grocery list, or already taken from the pantry — are left out (authenticated users). See [The Pantry](#the-pantry).
 - `POST /api/plans/:planId/meal-swaps` — trade one meal of the day between two days of the plan. The body is `{ "mealType": "breakfast" | "lunch" | "dinner", "sourceDayKey": "2026-08-03", "targetDayKey": "2026-08-04" }`, and the response returns both days in the same shape as `GET /api/plans/:planId` so the caller can redraw them without refetching the plan. Returns `400` for an unknown meal type, a malformed day key, or two identical days, and `404` when a day key is not part of the plan (admin only). See [Swapping Meals Between Days](#swapping-meals-between-days).
 
 ### Grocery Lists
 - Admin grocery routes under `/api/plans/:id/grocery-list...` support create/update/delete and share-link management.
-- `POST /api/plans/:planId/grocery-items/from-dish` — copy a saved dish's ingredients onto the plan's grocery list. The body names exactly one planned meal (`{ "dinnerDishId": 12 }`, `{ "breakfastDishId": … }` or `{ "lunchDishId": … }`); the dish is taken from the one that meal was picked from, and an explicit `dishId` overrides it. Answers `{ groceryItems, addedCount, skippedCount }`, `400` when the meal belongs to another plan or was never picked from a saved dish, and `404` for an unknown dish (admin only). See [Dishes and Their Ingredients](#dishes-and-their-ingredients).
+- `POST /api/plans/:planId/grocery-items/from-dish` — copy a saved dish's ingredients onto the plan's grocery list, drawing on the pantry first. The body names exactly one planned meal (`{ "dinnerDishId": 12 }`, `{ "breakfastDishId": … }` or `{ "lunchDishId": … }`); the dish is taken from the one that meal was picked from, and an explicit `dishId` overrides it. Answers `{ groceryItems, addedCount, skippedCount, pantryPickups }`, where `pantryPickups` names what came out of the cabinets instead of onto the list. Returns `400` when the meal belongs to another plan or was never picked from a saved dish, and `404` for an unknown dish (admin only). See [Dishes and Their Ingredients](#dishes-and-their-ingredients) and [The Pantry](#the-pantry).
 - `PUT /api/plans/:planId/grocery-items/order` — store the manual shopping order for a plan; the body is `{ "itemIds": [12, 7, 3, …] }`, listing the item ids in the order they should appear (admin only).
 - Shared shopper routes under `/api/grocery/:token...` allow token-scoped reads and checkoff updates without admin login.
 - SSE stream endpoint(s) provide realtime grocery state synchronization for both admin and shared-token clients.
@@ -204,14 +215,14 @@ python3 frontend/scripts/generate-icons.py
 It holds two sections:
 
 - **Language** — English or Danish, applied to the whole app the moment it is picked. See [Internationalisation (i18n)](#internationalisation-i18n).
-- **Notifications** — the **Daily dinner reminder** toggle, plus a **Send a test notification** button that delivers today's actual reminder to your own devices so you can see what the 10:00 message will look like.
+- **Notifications** — the **Daily dinner reminder** and **Pantry expiry reminder** toggles, plus a **Send a test notification** button that delivers today's actual dinner reminder to your own devices so you can see what the 10:00 message will look like.
 
-The toggle does two things at once, because both are needed before a notification can arrive:
+Each toggle does two things at once, because both are needed before a notification can arrive:
 
 1. **This browser** is subscribed to push (permission prompt → service worker → `PushSubscription` sent to the backend).
-2. **Your account** is marked as wanting the reminder (`UserSettings.dinnerReminderEnabled`).
+2. **Your account** is marked as wanting that reminder (`UserSettings.dinnerReminderEnabled` / `UserSettings.pantryExpiryReminderEnabled`).
 
-Turning it off reverses both: the device is unregistered and the account-level flag goes to `false`, which silences every other device on the account too. The row underneath the toggle shows whether *this* device is registered and how many devices the account has in total, so a phone and a laptop are easy to tell apart.
+Turning one off clears its account-level flag, which silences every other device on the account too. The device registration is shared by both reminders, so it is only unregistered once neither reminder wants it — switching the dinner reminder off does not silence the expiry one. The row underneath the toggles shows whether *this* device is registered and how many devices the account has in total, so a phone and a laptop are easy to tell apart.
 
 ## Internationalisation (i18n)
 
@@ -337,6 +348,59 @@ A meal that was picked from a saved dish which has ingredients shows an **Add in
 - Copies land at the end of the manual shopping order, the same place a hand-added item lands, and are broadcast over the realtime stream so open shared shopper links pick them up without a refresh.
 - The same dish planned on two days copies onto **both** days: each copy is attached to its own meal and stored on its own day, and the merged shopping list adds the two quantities into one line, which is what a week that eats lasagne twice actually needs to buy.
 - The copies are ordinary grocery items once made. Editing or removing one on the grocery page changes only the list, never the dish.
+
+## The Pantry
+
+Cabinets are easy to forget. The tins at the back get bought again because nobody remembered they were there, and then get thrown out at the next clear-out because nobody remembered either. `/pantry` (admins only) is the list that fixes both halves of that.
+
+An entry is a name, a quantity, an optional unit, an optional expiry date and optional notes ("2 cans of beans, 9 Aug, back of the cupboard"). The list is ordered by what goes off soonest, with undated staples last, so the thing that needs eating is at the top of the screen.
+
+### Taking ingredients off the shelf instead of onto the list
+
+This is what makes the pantry more than a second inventory to keep up to date. When a meal's **Add ingredients to grocery list** button is pressed, each ingredient is looked for in the cabinets first:
+
+- **Fully covered** — the corn the dish needs is on the shelf, so nothing is added to the grocery list at all and the pantry is decremented.
+- **Partly covered** — the dish needs 2 cans of beans and there is 1, so 1 comes off the shelf and the grocery list gets a line for the remaining 1.
+- **Not there** — the ingredient goes on the list exactly as before.
+
+The page then says what came out of the cabinets, so the pantry is never debited silently.
+
+**Rows are drawn on soonest-expiry-first.** Two pots of yoghurt dated August and December are not interchangeable: the August one is what this week's breakfast should use, and it is the one taken. A row emptied to zero is removed from the list rather than left as an empty shelf entry.
+
+**Names and units have to match; nothing is converted.** "Corn / can" matches "Corn / can", case and spacing aside, but *not* "Corn / 400 g" — there is no honest conversion between a can and a weight without knowing the can. Two entries meaning the same thing in different units are treated as different things, which errs towards buying a spare rather than towards a missing ingredient at six o'clock.
+
+**Pressing the button twice does not empty the cabinet twice.** A covered ingredient leaves no grocery item behind to recognise it by, so the claim is recorded separately (`PantryAllocation`) and checked on the next press alongside the grocery list. Adding one more ingredient to the dish and pressing again tops up the list and takes only the new ingredient from the shelf. The whole copy runs in one transaction, so a failure part-way through cannot debit the cabinets for shopping that was never written down.
+
+### The banner on the plan screen
+
+Every plan page carries a panel above the week naming what its dishes could take from the cabinets — "Corn: 1 can in the cabinets, 1 can needed", with the meals asking for it and the expiry date. It is computed live rather than from anything stored, and it leaves out ingredients a meal has already dealt with, so it shrinks as the week is worked through instead of repeating itself. With nothing matching it renders nothing at all rather than an empty box.
+
+### The expiry notification
+
+A second daily push notification, alongside the dinner reminder and switched on separately under **Settings → Notifications**:
+
+- It fires at **09:00** by default — earlier than the dinner reminder, so the two do not arrive as one indistinguishable buzz and "use the yoghurt today" lands before the day is planned around something else.
+- It covers anything **already expired** as well as anything going off within `PANTRY_EXPIRY_WARNING_DAYS` (3 by default). The title distinguishes the two, because they need different actions: one is "use this up this week", the other is "go and look at this now".
+- The body names up to three items and counts the rest, so it stays readable on a lock screen.
+- **A quiet cupboard sends nothing.** A day with nothing close to its date is still claimed and logged, so it is not re-checked every minute for the length of the catch-up window, but no notification goes out.
+- It reuses the dinner reminder's machinery throughout: the same per-minute tick, the same 2 hour catch-up window, the same per-language dispatch, and its own `PantryExpiryLog` day claim so a restart cannot notify the family twice.
+
+Both reminders ride on the same device registration, so turning one off leaves the device registered while the other is still on, and only unregisters it once neither wants it.
+
+### Configuration
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `PANTRY_EXPIRY_REMINDER_ENABLED` | `true` | Set to `false` to stop the expiry scheduler entirely. |
+| `PANTRY_EXPIRY_REMINDER_HOUR` | `9` | Hour of day (0–23) to send at. |
+| `PANTRY_EXPIRY_REMINDER_MINUTE` | `0` | Minute of the hour to send at. |
+| `PANTRY_EXPIRY_WARNING_DAYS` | `3` | How far ahead counts as "going off soon". |
+
+The time zone is `DINNER_REMINDER_TIMEZONE`, shared with the dinner reminder — a household lives in one time zone.
+
+### Known boundary
+
+**Deleting a planned meal does not put its ingredients back in the cabinets.** The allocation record is removed with the meal, but the quantity is not restored, because the app cannot tell whether the food was already cooked and eaten or never touched. A meal cancelled after its ingredients were taken therefore needs the pantry corrected by hand. The safer default was chosen deliberately: silently re-stocking a cabinet with food that has already been eaten would make the list untrustworthy, which is the one thing it cannot afford to be.
 
 ## Swapping Meals Between Days
 

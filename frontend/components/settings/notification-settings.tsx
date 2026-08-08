@@ -15,12 +15,18 @@ export type PushConfig = {
   publicKey: string | null;
   deviceCount: number;
   reminderTimeZone: string;
+  /** How many days ahead the pantry expiry reminder looks. */
+  pantryExpiryWarningDays: number;
 };
 
 type NotificationSettingsProps = {
   initialDinnerReminderEnabled: boolean;
+  initialPantryExpiryReminderEnabled: boolean;
   push: PushConfig;
 };
+
+/** Which of the two daily notifications a toggle stands for. */
+type ReminderKind = "dinner" | "pantryExpiry";
 
 /** The browser wants the VAPID key as raw bytes, not as the base64url string. */
 const urlBase64ToUint8Array = (base64String: string): Uint8Array<ArrayBuffer> => {
@@ -69,10 +75,14 @@ const registerServiceWorker = async (): Promise<ServiceWorkerRegistration> => {
 
 export default function NotificationSettings({
   initialDinnerReminderEnabled,
+  initialPantryExpiryReminderEnabled,
   push
 }: NotificationSettingsProps) {
   const { locale, t, plural } = useTranslations();
-  const [isEnabled, setIsEnabled] = useState(initialDinnerReminderEnabled);
+  const [isDinnerEnabled, setIsDinnerEnabled] = useState(initialDinnerReminderEnabled);
+  const [isPantryExpiryEnabled, setIsPantryExpiryEnabled] = useState(
+    initialPantryExpiryReminderEnabled
+  );
   const [deviceCount, setDeviceCount] = useState(push.deviceCount);
   const [isThisDeviceRegistered, setIsThisDeviceRegistered] = useState(false);
   const [isSupported, setIsSupported] = useState(true);
@@ -130,7 +140,7 @@ export default function NotificationSettings({
 
         setIsThisDeviceRegistered(true);
 
-        if (initialDinnerReminderEnabled) {
+        if (initialDinnerReminderEnabled || initialPantryExpiryReminderEnabled) {
           await saveSubscription(subscription);
         }
       } catch (_error) {
@@ -144,14 +154,22 @@ export default function NotificationSettings({
     return () => {
       isActive = false;
     };
-  }, [initialDinnerReminderEnabled, saveSubscription]);
+  }, [
+    initialDinnerReminderEnabled,
+    initialPantryExpiryReminderEnabled,
+    saveSubscription
+  ]);
 
-  const saveSetting = async (dinnerReminderEnabled: boolean) => {
+  const saveSetting = async (kind: ReminderKind, isOn: boolean) => {
     const response = await fetch(`${backendApiUrl}/api/settings`, {
       method: "PUT",
       headers: { "Content-Type": "application/json", ...localeHeader(locale) },
       credentials: "include",
-      body: JSON.stringify({ dinnerReminderEnabled })
+      body: JSON.stringify(
+        kind === "dinner"
+          ? { dinnerReminderEnabled: isOn }
+          : { pantryExpiryReminderEnabled: isOn }
+      )
     });
 
     if (!response.ok) {
@@ -230,7 +248,7 @@ export default function NotificationSettings({
     setIsThisDeviceRegistered(false);
   };
 
-  const handleToggle = async (nextEnabled: boolean) => {
+  const handleToggle = async (kind: ReminderKind, nextEnabled: boolean) => {
     setErrorMessage("");
     setStatusMessage("");
     setIsBusy(true);
@@ -239,11 +257,24 @@ export default function NotificationSettings({
       if (nextEnabled) {
         await subscribeThisDevice();
       } else {
-        await unsubscribeThisDevice();
+        // Both reminders ride on the same device registration, so the device is
+        // only unregistered once nothing is left to deliver to it.
+        const otherReminderStaysOn =
+          kind === "dinner" ? isPantryExpiryEnabled : isDinnerEnabled;
+
+        if (!otherReminderStaysOn) {
+          await unsubscribeThisDevice();
+        }
       }
 
-      await saveSetting(nextEnabled);
-      setIsEnabled(nextEnabled);
+      await saveSetting(kind, nextEnabled);
+
+      if (kind === "dinner") {
+        setIsDinnerEnabled(nextEnabled);
+      } else {
+        setIsPantryExpiryEnabled(nextEnabled);
+      }
+
       setStatusMessage(
         nextEnabled
           ? t("settings.notifications.enabled")
@@ -320,8 +351,20 @@ export default function NotificationSettings({
         ) : null}
 
         <ToggleSetting
-          checked={isEnabled}
+          checked={isDinnerEnabled}
           description={t("settings.notifications.toggleDescription")}
+          disabled={isBusy || !isSupported || !push.configured}
+          label={t("settings.notifications.toggleLabel")}
+          onChange={(nextEnabled) => {
+            void handleToggle("dinner", nextEnabled);
+          }}
+        />
+
+        <ToggleSetting
+          checked={isPantryExpiryEnabled}
+          description={t("settings.notifications.pantryExpiryDescription", {
+            days: push.pantryExpiryWarningDays
+          })}
           disabled={isBusy || !isSupported || !push.configured}
           footer={
             <p className="flex items-center gap-1.5 text-xs text-fg-subtle">
@@ -333,9 +376,9 @@ export default function NotificationSettings({
               {plural("settings.notifications.devicesOnAccount", deviceCount)}
             </p>
           }
-          label={t("settings.notifications.toggleLabel")}
+          label={t("settings.notifications.pantryExpiryLabel")}
           onChange={(nextEnabled) => {
-            void handleToggle(nextEnabled);
+            void handleToggle("pantryExpiry", nextEnabled);
           }}
         />
 
@@ -344,7 +387,11 @@ export default function NotificationSettings({
 
         <div>
           <Button
-            disabled={isBusy || !isEnabled || !isThisDeviceRegistered}
+            disabled={
+              isBusy ||
+              !(isDinnerEnabled || isPantryExpiryEnabled) ||
+              !isThisDeviceRegistered
+            }
             onClick={() => {
               void sendTestNotification();
             }}

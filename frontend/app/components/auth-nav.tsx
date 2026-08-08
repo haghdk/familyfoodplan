@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
+  Archive,
   CalendarDays,
   CookingPot,
   LogIn,
@@ -76,6 +77,7 @@ export default function AuthNav({ isAuthenticated, isAdmin }: AuthNavProps) {
     ...(isAdmin
       ? [
           { href: "/dishes", label: t("nav.dishes"), icon: CookingPot },
+          { href: "/pantry", label: t("nav.pantry"), icon: Archive },
           { href: "/members", label: t("nav.members"), icon: Users },
           { href: "/users", label: t("nav.users"), icon: ShieldUser },
         ]

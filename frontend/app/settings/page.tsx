@@ -13,6 +13,7 @@ import PageHeader from "../../components/ui/PageHeader";
 type SettingsResponse = {
   settings: {
     dinnerReminderEnabled: boolean;
+    pantryExpiryReminderEnabled: boolean;
     language?: string;
   };
   push: PushConfig;
@@ -20,13 +21,15 @@ type SettingsResponse = {
 
 const fallbackSettings: SettingsResponse = {
   settings: {
-    dinnerReminderEnabled: false
+    dinnerReminderEnabled: false,
+    pantryExpiryReminderEnabled: false
   },
   push: {
     configured: false,
     publicKey: null,
     deviceCount: 0,
-    reminderTimeZone: "UTC"
+    reminderTimeZone: "UTC",
+    pantryExpiryWarningDays: 3
   }
 };
 
@@ -73,6 +76,7 @@ export default async function SettingsPage() {
       />
       <NotificationSettings
         initialDinnerReminderEnabled={settings.dinnerReminderEnabled}
+        initialPantryExpiryReminderEnabled={settings.pantryExpiryReminderEnabled}
         push={push}
       />
     </section>

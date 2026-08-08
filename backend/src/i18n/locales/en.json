@@ -57,6 +57,22 @@
     "nothingPlannedBody": "Nothing is set for dinner this {weekday}. Tap to plan something.",
     "todaysDinnerTitle": "Today's dinner"
   },
+  "pantryExpiry": {
+    "expiredTitle": {
+      "one": "{count} thing in the cabinets has expired",
+      "other": "{count} things in the cabinets have expired"
+    },
+    "soonTitle": {
+      "one": "{count} thing in the cabinets is going off soon",
+      "other": "{count} things in the cabinets are going off soon"
+    },
+    "body": "{items}",
+    "bodyWithMore": {
+      "one": "{items} and {count} more",
+      "other": "{items} and {count} more"
+    },
+    "nothingExpiring": "Nothing in the cabinets is close to its date."
+  },
   "passwordResetEmail": {
     "subject": "Reset your Family Food Planner password",
     "greeting": "Hi,",

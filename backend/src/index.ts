@@ -4,6 +4,7 @@ import healthRouter from "./routes/health";
 import authRouter from "./routes/auth";
 import membersRouter from "./routes/members";
 import dishesRouter from "./routes/dishes";
+import pantryRouter from "./routes/pantry";
 import plansRouter from "./routes/plans";
 import planDaysRouter from "./routes/planDays";
 import usersRouter from "./routes/users";
@@ -11,6 +12,7 @@ import groceryRouter from "./routes/grocery";
 import settingsRouter from "./routes/settings";
 import realtimeRouter from "./realtime/router";
 import { startDinnerReminderScheduler } from "./scheduler/dinnerReminderScheduler";
+import { startPantryExpiryScheduler } from "./scheduler/pantryExpiryScheduler";
 
 const app = express();
 const port = Number(process.env.PORT) || 3001;
@@ -37,6 +39,7 @@ app.use(groceryRouter);
 app.use(realtimeRouter);
 app.use(membersRouter);
 app.use(dishesRouter);
+app.use(pantryRouter);
 app.use(usersRouter);
 app.use(settingsRouter);
 app.use(plansRouter);
@@ -50,4 +53,5 @@ app.listen(port, () => {
   console.log(`Build metadata: commit=${commitSha} buildTime=${buildTime}`);
 
   startDinnerReminderScheduler();
+  startPantryExpiryScheduler();
 });

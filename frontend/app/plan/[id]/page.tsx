@@ -12,6 +12,7 @@ import { adminSessionCookieName, backendApiUrl, userRoleCookieName } from "../..
 import { createDateFormatter, getTodayDayKey, toDayKey } from "../../../lib/dates";
 import { getTranslations } from "../../../lib/i18n/server";
 import PlanDayBoard from "../../../components/plan/PlanDayBoard";
+import PlanPantryBanner from "../../../components/plan/PlanPantryBanner";
 import PlanSettingsForm from "../../../components/plan/PlanSettingsForm";
 import SetCurrentPlanButton from "../../../components/plan/SetCurrentPlanButton";
 import Alert from "../../../components/ui/Alert";
@@ -143,6 +144,8 @@ export default async function PlanPage({
           <Badge tone="accent">{t("common.currentPlan")}</Badge>
         ) : null}
       </div>
+
+      <PlanPantryBanner planId={plan.id} />
 
       {isAdmin ? (
         <>
