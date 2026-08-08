@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { prisma } from "../lib/prisma";
 import { requireAdminAuth, requireAuth } from "../middleware/auth";
+import { getPlanPantryMatches } from "../services/pantry";
 import { mapPlanDayMeals, planDayMealsSelect } from "../services/planDayMeals";
 import {
   PlanConflictError,
@@ -254,6 +255,32 @@ plansRouter.get("/api/plans/:planId", requireAuth, async (request, response) => 
       planDays: plan.days.map(mapPlanDayMeals)
     }
   });
+});
+
+/**
+ * What this plan could take out of the kitchen cabinets, so the plan screen can
+ * say "you already have the corn" before anyone writes it on a shopping list.
+ */
+plansRouter.get("/api/plans/:planId/pantry-matches", requireAuth, async (request, response) => {
+  const locale = requestLocale(request);
+  const planId = Number(request.params.planId);
+
+  if (Number.isNaN(planId)) {
+    response.status(400).json({ message: translate(locale, "plans.invalidId") });
+    return;
+  }
+
+  const plan = await prisma.plan.findUnique({
+    where: { id: planId },
+    select: { id: true }
+  });
+
+  if (!plan) {
+    response.status(404).json({ message: translate(locale, "plans.notFound") });
+    return;
+  }
+
+  response.status(200).json({ matches: await getPlanPantryMatches(planId) });
 });
 
 plansRouter.post("/api/plans/:planId/set-current", requireAdminAuth, async (request, response) => {

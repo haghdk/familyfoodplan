@@ -28,6 +28,10 @@ model UserSettings {
   /// Whether this user wants the daily "today's dinner" push notification.
   /// Off until the user turns it on, since it needs browser permission anyway.
   dinnerReminderEnabled Boolean   @default(false)
+  /// Whether this user wants the daily "these are going off soon" notification
+  /// about the pantry. Its own flag rather than a share of the dinner one, so a
+  /// household can have the shopping reminder without the expiry one.
+  pantryExpiryReminderEnabled Boolean @default(false)
   /// The interface language this user picked, as a two-letter code ("en", "da").
   /// Stored on the account rather than only in a cookie so it follows the user
   /// to their other devices, and so reminders and emails can be written in it.
@@ -58,6 +62,17 @@ model DinnerReminderLog {
   id             Int      @id @default(autoincrement())
   dayKey         String   @unique
   recipientCount Int      @default(0)
+  sentAt         DateTime @default(now())
+}
+
+/// The same claim marker for the daily pantry expiry reminder, kept separate so
+/// the two notifications can be sent, skipped and caught up independently.
+model PantryExpiryLog {
+  id             Int      @id @default(autoincrement())
+  dayKey         String   @unique
+  recipientCount Int      @default(0)
+  /// How many pantry items the notification was about, for the log line.
+  itemCount      Int      @default(0)
   sentAt         DateTime @default(now())
 }
 
@@ -128,6 +143,55 @@ model GroceryShareToken {
   updatedAt DateTime @updatedAt
 }
 
+/// Something the family already has in a kitchen cabinet. It is kept as its own
+/// list rather than as grocery items, because it outlives any one plan: a can of
+/// beans bought in March is still on the shelf in June, and the point of the
+/// list is to notice that before it goes off unopened.
+model PantryItem {
+  id             Int                @id @default(autoincrement())
+  name           String
+  quantity       Float              @default(1)
+  unit           String?
+  /// When the packaging says it goes off. Optional, since plenty of staples
+  /// carry no date worth tracking.
+  expirationDate DateTime?
+  notes          String?
+  allocations    PantryAllocation[]
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  @@index([expirationDate])
+}
+
+/// A record that a planned meal took an ingredient out of the cabinets instead
+/// of putting it on the shopping list.
+///
+/// It exists because the pantry is decremented when the ingredients are copied:
+/// without a record of what a meal has already claimed, a second press of "add
+/// ingredients to grocery list" would empty the cabinet a second time. The
+/// ingredient is stored by name rather than only by pantry row, so the claim
+/// survives the row being used up and deleted.
+model PantryAllocation {
+  id              Int            @id @default(autoincrement())
+  ingredientName  String
+  unit            String?
+  quantity        Float
+  pantryItemId    Int?
+  dinnerDishId    Int?
+  breakfastDishId Int?
+  lunchDishId     Int?
+  pantryItem      PantryItem?    @relation(fields: [pantryItemId], references: [id], onDelete: SetNull)
+  dinnerDish      DinnerDish?    @relation(fields: [dinnerDishId], references: [id], onDelete: Cascade)
+  breakfastDish   BreakfastDish? @relation(fields: [breakfastDishId], references: [id], onDelete: Cascade)
+  lunchDish       LunchDish?     @relation(fields: [lunchDishId], references: [id], onDelete: Cascade)
+  createdAt       DateTime       @default(now())
+
+  @@index([pantryItemId])
+  @@index([dinnerDishId])
+  @@index([breakfastDishId])
+  @@index([lunchDishId])
+}
+
 /// A dish the family cooks again and again — lasagne, say — stored once with
 /// everything it takes to make it. Dishes live outside any plan, so the same
 /// dish can be picked for as many days as it is eaten on without its
@@ -176,6 +240,7 @@ model DinnerDish {
   planDay     PlanDay       @relation(fields: [planDayId], references: [id], onDelete: Cascade)
   dish        Dish?         @relation(fields: [dishId], references: [id], onDelete: SetNull)
   groceryItems GroceryItem[]
+  pantryAllocations PantryAllocation[]
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
 
@@ -193,6 +258,7 @@ model LunchDish {
   familyMember   FamilyMember? @relation(fields: [familyMemberId], references: [id], onDelete: SetNull)
   dish           Dish?         @relation(fields: [dishId], references: [id], onDelete: SetNull)
   groceryItems   GroceryItem[]
+  pantryAllocations PantryAllocation[]
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
 
@@ -212,6 +278,7 @@ model BreakfastDish {
   familyMember   FamilyMember? @relation(fields: [familyMemberId], references: [id], onDelete: SetNull)
   dish           Dish?         @relation(fields: [dishId], references: [id], onDelete: SetNull)
   groceryItems   GroceryItem[]
+  pantryAllocations PantryAllocation[]
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
 

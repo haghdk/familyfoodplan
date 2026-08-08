@@ -43,6 +43,7 @@
   "nav": {
     "plans": "Planer",
     "dishes": "Retter",
+    "pantry": "Skabe",
     "members": "Medlemmer",
     "users": "Brugere",
     "settings": "Indstillinger",
@@ -229,7 +230,20 @@
     },
     "ingredientsSkippedNote": "Ingredienser, der allerede stod på listen, blev ikke rørt.",
     "ingredientsAlreadyAdded": "Alle rettens ingredienser står allerede på indkøbslisten.",
+    "ingredientsAllFromPantry": "Intet at købe — skabene dækkede hele retten.",
+    "ingredientsFromPantry": "Taget fra skabene: {items}.",
     "ingredientsAddFailed": "Kunne ikke tilføje rettens ingredienser til indkøbslisten lige nu."
+  },
+  "planPantry": {
+    "title": {
+      "one": "{count} ingrediens i denne uge står allerede i skabene",
+      "other": "{count} ingredienser i denne uge står allerede i skabene"
+    },
+    "description": "De står på hylden nu. Når en rets ingredienser tilføjes indkøbslisten, tages de fra skabene i stedet for at havne på listen.",
+    "openPantry": "Åbn skabene",
+    "haveOfNeeded": "{have} i skabene, {needed} skal bruges",
+    "covered": "Nok",
+    "partiallyCovered": "En del af det"
   },
   "dishes": {
     "eyebrow": "Din kogebog",
@@ -266,6 +280,46 @@
     "deleteTitle": "Vil du slette {name}?",
     "deleteDescription": "Retten og dens ingredienser fjernes. Dage, der allerede er planlagt med den, beholder deres måltid, og varer, der allerede er tilføjet indkøbslisten, bliver stående.",
     "deleteConfirm": "Slet ret"
+  },
+  "pantry": {
+    "eyebrow": "Køkkenskabe",
+    "title": "Skabe",
+    "description": "Hvad der står på hylderne lige nu, og hvornår det udløber. En rets ingredienser tages herfra, før de havner på en indkøbsliste, så I hverken køber det samme to gange eller opdager for sent, at noget er udløbet bagerst i skabet.",
+    "addTitle": "Tilføj til skabene",
+    "addDescription": "Skriv ned, hvad I stiller på plads — to dåser bønner, en pakke tacos — og datoen på emballagen.",
+    "addSubmit": "Tilføj til skabene",
+    "namePlaceholder": "Dåsebønner",
+    "unitPlaceholder": "dåser",
+    "expirationLabel": "Udløbsdato",
+    "expirationHint": "Lad feltet stå tomt for varer uden en dato, der er værd at holde øje med.",
+    "notesLabel": "Noter",
+    "notesPlaceholder": "Hvilket skab den står i (valgfrit)",
+    "noDate": "Ingen dato",
+    "expiresToday": "Udløber i dag",
+    "expiresInDays": {
+      "one": "Udløber om {count} dag",
+      "other": "Udløber om {count} dage"
+    },
+    "expiredDaysAgo": {
+      "one": "Udløb for {count} dag siden",
+      "other": "Udløb for {count} dage siden"
+    },
+    "expiringSoonBanner": {
+      "one": "{count} vare er udløbet eller udløber inden for {days} dage. Planlæg et måltid med den.",
+      "other": "{count} varer er udløbet eller udløber inden for {days} dage. Planlæg et måltid med dem."
+    },
+    "emptyTitle": "Skabene er tomme",
+    "emptyDescription": "Tilføj hvad I har i skabene, så bruger planlæggeren det, før den sætter noget på en indkøbsliste.",
+    "nameRequired": "Varens navn er påkrævet.",
+    "created": "{name} er tilføjet skabene.",
+    "updated": "{name} er opdateret.",
+    "deleted": "{name} er fjernet fra skabene.",
+    "createFailed": "Kunne ikke tilføje denne vare til skabene lige nu.",
+    "updateFailed": "Kunne ikke opdatere denne vare lige nu.",
+    "deleteFailed": "Kunne ikke fjerne denne vare lige nu.",
+    "deleteTitle": "Vil du fjerne {name}?",
+    "deleteDescription": "Det fjerner den kun fra listen over skabene. Varer på indkøbslisten og planlagte måltider røres ikke.",
+    "deleteConfirm": "Fjern fra skabene"
   },
   "mealSwap": {
     "swap": "Byt",
@@ -456,6 +510,8 @@
       "homeScreen": "På iPhone og iPad virker notifikationer først, når appen er lagt på hjemmeskærmen. Tryk på Del, derefter „Føj til hjemmeskærm“, og åbn appen derfra.",
       "toggleLabel": "Daglig påmindelse om aftensmad",
       "toggleDescription": "Få en notifikation hver morgen med dagens aftensmad.",
+      "pantryExpiryLabel": "Påmindelse om udløb i skabene",
+      "pantryExpiryDescription": "Få en notifikation, når noget i skabene er udløbet eller udløber inden for {days} dage.",
       "deviceRegistered": "Denne enhed er tilmeldt",
       "deviceNotRegistered": "Denne enhed er ikke tilmeldt endnu",
       "devicesOnAccount": {

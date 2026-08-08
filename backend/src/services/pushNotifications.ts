@@ -98,9 +98,14 @@ export const sendPushToUser = async (
   return dispatchToSubscriptions(subscriptions, payload);
 };
 
+/** The per-user opt-in flags a scheduled notification can be gated on. */
+export type ReminderSetting =
+  | "dinnerReminderEnabled"
+  | "pantryExpiryReminderEnabled";
+
 /**
- * Notifies every registered device whose owner has the daily dinner reminder
- * switched on. Turning the reminder on is what registers a device in the first
+ * Notifies every registered device whose owner has one particular reminder
+ * switched on. Turning a reminder on is what registers a device in the first
  * place, so a user without a settings row has nothing to notify anyway.
  *
  * Passing a `locale` narrows the send to the users reading in that language, so
@@ -108,7 +113,8 @@ export const sendPushToUser = async (
  * default language also picks up any account whose stored value is not a
  * language we ship, so an unexpected value never silences someone's reminder.
  */
-export const sendPushToDinnerReminderSubscribers = async (
+export const dispatchToSubscriptionsOfSetting = async (
+  setting: ReminderSetting,
   payload: PushNotificationPayload,
   locale?: Locale
 ): Promise<PushDispatchSummary> => {
@@ -127,7 +133,7 @@ export const sendPushToDinnerReminderSubscribers = async (
     where: {
       user: {
         settings: {
-          dinnerReminderEnabled: true,
+          [setting]: true,
           ...languageFilter
         }
       }
@@ -137,3 +143,9 @@ export const sendPushToDinnerReminderSubscribers = async (
 
   return dispatchToSubscriptions(subscriptions, payload);
 };
+
+export const sendPushToDinnerReminderSubscribers = (
+  payload: PushNotificationPayload,
+  locale?: Locale
+): Promise<PushDispatchSummary> =>
+  dispatchToSubscriptionsOfSetting("dinnerReminderEnabled", payload, locale);

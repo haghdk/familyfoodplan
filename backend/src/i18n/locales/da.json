@@ -57,6 +57,22 @@
     "nothingPlannedBody": "Der er ikke planlagt aftensmad denne {weekday}. Tryk for at planlægge noget.",
     "todaysDinnerTitle": "Dagens aftensmad"
   },
+  "pantryExpiry": {
+    "expiredTitle": {
+      "one": "{count} vare i skabene er udløbet",
+      "other": "{count} varer i skabene er udløbet"
+    },
+    "soonTitle": {
+      "one": "{count} vare i skabene udløber snart",
+      "other": "{count} varer i skabene udløber snart"
+    },
+    "body": "{items}",
+    "bodyWithMore": {
+      "one": "{items} og {count} mere",
+      "other": "{items} og {count} mere"
+    },
+    "nothingExpiring": "Ingen varer i skabene er tæt på deres dato."
+  },
   "passwordResetEmail": {
     "subject": "Nulstil din adgangskode til Family Food Planner",
     "greeting": "Hej,",

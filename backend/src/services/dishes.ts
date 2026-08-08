@@ -2,6 +2,9 @@ import { Prisma } from "../generated/prisma/client";
 import { GroceryCategory } from "../generated/prisma/enums";
 import { prisma } from "../lib/prisma";
 import { getNextGrocerySortOrder } from "./grocery";
+import { mealLinkWhere, pantryMatchKey, takeFromPantry, type MealLink } from "./pantry";
+
+export type { MealLink };
 
 // Ingredients are read back in the order they were written down on the dish,
 // falling back to insertion order for lines that share a position.
@@ -95,10 +98,13 @@ export const toIngredientCreateData = (ingredients: DishIngredientInput[]) =>
     sortOrder: position
   }));
 
-export type MealLink = {
-  dinnerDishId?: number | null;
-  breakfastDishId?: number | null;
-  lunchDishId?: number | null;
+export type PantryPickup = {
+  name: string;
+  unit: string | null;
+  /** How much of the ingredient came off the shelf. */
+  quantity: number;
+  /** True when the cabinets covered the whole amount and nothing was bought. */
+  coversWholeIngredient: boolean;
 };
 
 export type AddDishIngredientsResult =
@@ -106,8 +112,9 @@ export type AddDishIngredientsResult =
   | { status: "no_ingredients" }
   | {
       status: "added";
-      createdItems: Awaited<ReturnType<typeof createGroceryItemsForDish>>;
+      createdItems: GroceryItemWithMeals[];
       skippedCount: number;
+      pantryPickups: PantryPickup[];
     };
 
 const groceryItemInclude = {
@@ -116,30 +123,23 @@ const groceryItemInclude = {
   lunchDish: { select: { id: true, name: true } }
 } satisfies Prisma.GroceryItemInclude;
 
-const createGroceryItemsForDish = async (
-  itemsToCreate: Array<Prisma.GroceryItemUncheckedCreateInput>
-) => {
-  const createdItems = [];
-
-  for (const itemToCreate of itemsToCreate) {
-    createdItems.push(
-      await prisma.groceryItem.create({ data: itemToCreate, include: groceryItemInclude })
-    );
-  }
-
-  return createdItems;
-};
-
-const mergeKeyOf = (name: string, unit: string | null) =>
-  `${name.trim().toLowerCase()}::${unit?.trim().toLowerCase() ?? ""}`;
+type GroceryItemWithMeals = Prisma.GroceryItemGetPayload<{
+  include: typeof groceryItemInclude;
+}>;
 
 /**
  * Copies a saved dish's ingredients onto a plan's grocery list, attached to the
- * planned meal they were added for.
+ * planned meal they were added for — but takes whatever the kitchen cabinets
+ * already hold off the shelf instead of onto the list.
  *
- * Ingredients the meal already carries under the same name and unit are left
- * alone, so pressing the button twice — or pressing it again after adding one
- * more ingredient to the dish — tops the list up instead of duplicating it.
+ * Two things keep a second press honest. Ingredients the meal already carries on
+ * the list are skipped, and so are ingredients it has already claimed from the
+ * pantry, which is what the allocation rows record. Without the second check a
+ * repeat press would empty the cabinet all over again, since a covered
+ * ingredient leaves no grocery item behind to recognise it by.
+ *
+ * The whole thing runs in one transaction: a failure half way through must not
+ * leave the cabinets debited for shopping that was never written down.
  */
 export const addDishIngredientsToGroceryList = async (params: {
   dishId: number;
@@ -160,52 +160,111 @@ export const addDishIngredientsToGroceryList = async (params: {
     return { status: "no_ingredients" };
   }
 
-  const existingItems = await prisma.groceryItem.findMany({
-    where: {
-      planDayId: { in: params.planDayIds },
-      ...(typeof params.mealLink.dinnerDishId === "number"
-        ? { dinnerDishId: params.mealLink.dinnerDishId }
-        : {}),
-      ...(typeof params.mealLink.breakfastDishId === "number"
-        ? { breakfastDishId: params.mealLink.breakfastDishId }
-        : {}),
-      ...(typeof params.mealLink.lunchDishId === "number"
-        ? { lunchDishId: params.mealLink.lunchDishId }
-        : {})
-    },
-    select: { name: true, unit: true }
-  });
+  const mealWhere = mealLinkWhere(params.mealLink);
 
-  const existingKeys = new Set(
-    existingItems.map((existingItem) => mergeKeyOf(existingItem.name, existingItem.unit))
-  );
-  const ingredientsToAdd = dish.ingredients.filter(
-    (ingredient) => !existingKeys.has(mergeKeyOf(ingredient.name, ingredient.unit))
+  const [existingItems, existingAllocations] = await Promise.all([
+    prisma.groceryItem.findMany({
+      where: { planDayId: { in: params.planDayIds }, ...mealWhere },
+      select: { name: true, unit: true }
+    }),
+    prisma.pantryAllocation.findMany({
+      where: mealWhere,
+      select: { ingredientName: true, unit: true }
+    })
+  ]);
+
+  const resolvedKeys = new Set([
+    ...existingItems.map((existingItem) =>
+      pantryMatchKey(existingItem.name, existingItem.unit)
+    ),
+    ...existingAllocations.map((allocation) =>
+      pantryMatchKey(allocation.ingredientName, allocation.unit)
+    )
+  ]);
+
+  const ingredientsToResolve = dish.ingredients.filter(
+    (ingredient) => !resolvedKeys.has(pantryMatchKey(ingredient.name, ingredient.unit))
   );
 
-  if (ingredientsToAdd.length === 0) {
-    return { status: "added", createdItems: [], skippedCount: dish.ingredients.length };
+  if (ingredientsToResolve.length === 0) {
+    return {
+      status: "added",
+      createdItems: [],
+      skippedCount: dish.ingredients.length,
+      pantryPickups: []
+    };
   }
 
   const nextSortOrder = await getNextGrocerySortOrder(params.planDayIds);
 
-  const createdItems = await createGroceryItemsForDish(
-    ingredientsToAdd.map((ingredient, position) => ({
-      name: ingredient.name,
-      quantity: ingredient.quantity,
-      unit: ingredient.unit,
-      category: GroceryCategory.INGREDIENT,
-      sortOrder: nextSortOrder + position,
-      planDayId: params.planDayId,
-      dinnerDishId: params.mealLink.dinnerDishId ?? null,
-      breakfastDishId: params.mealLink.breakfastDishId ?? null,
-      lunchDishId: params.mealLink.lunchDishId ?? null
-    }))
-  );
+  const { createdItems, pantryPickups } = await prisma.$transaction(async (tx) => {
+    const createdItems: GroceryItemWithMeals[] = [];
+    const pantryPickups: PantryPickup[] = [];
+    let sortOrder = nextSortOrder;
+
+    for (const ingredient of ingredientsToResolve) {
+      const takes = await takeFromPantry(tx, ingredient, ingredient.quantity);
+      const takenQuantity = takes.reduce((total, take) => total + take.quantity, 0);
+
+      for (const take of takes) {
+        await tx.pantryAllocation.create({
+          data: {
+            ingredientName: ingredient.name,
+            unit: ingredient.unit,
+            quantity: take.quantity,
+            // The row may already be gone if this take emptied it, and the
+            // claim has to outlive it either way.
+            pantryItemId: take.emptied ? null : take.pantryItemId,
+            dinnerDishId: params.mealLink.dinnerDishId ?? null,
+            breakfastDishId: params.mealLink.breakfastDishId ?? null,
+            lunchDishId: params.mealLink.lunchDishId ?? null
+          }
+        });
+      }
+
+      const remainingToBuy = ingredient.quantity - takenQuantity;
+
+      if (takenQuantity > 0) {
+        pantryPickups.push({
+          name: ingredient.name,
+          unit: ingredient.unit,
+          quantity: takenQuantity,
+          coversWholeIngredient: remainingToBuy <= 0
+        });
+      }
+
+      // Fully covered by the cabinets, so there is nothing to shop for.
+      if (remainingToBuy <= 0) {
+        continue;
+      }
+
+      createdItems.push(
+        await tx.groceryItem.create({
+          data: {
+            name: ingredient.name,
+            quantity: remainingToBuy,
+            unit: ingredient.unit,
+            category: GroceryCategory.INGREDIENT,
+            sortOrder: sortOrder,
+            planDayId: params.planDayId,
+            dinnerDishId: params.mealLink.dinnerDishId ?? null,
+            breakfastDishId: params.mealLink.breakfastDishId ?? null,
+            lunchDishId: params.mealLink.lunchDishId ?? null
+          },
+          include: groceryItemInclude
+        })
+      );
+
+      sortOrder += 1;
+    }
+
+    return { createdItems, pantryPickups };
+  });
 
   return {
     status: "added",
     createdItems,
-    skippedCount: dish.ingredients.length - createdItems.length
+    skippedCount: dish.ingredients.length - ingredientsToResolve.length,
+    pantryPickups
   };
 };
