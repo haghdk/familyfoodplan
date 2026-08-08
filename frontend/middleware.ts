@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { adminSessionCookieName, userRoleCookieName } from "./lib/auth";
 
 const PUBLIC_PATHS = ["/login", "/grocery", "/forgot-password", "/reset-password"];
-const ADMIN_ONLY_PATHS = ["/members", "/users", "/dishes", "/pantry", "/plan/new"];
+// Dishes and the pantry are everyday household screens rather than management
+// ones, so viewers reach them too; what a viewer cannot do there (the pantry
+// CSV import) is guarded on its own rather than by hiding the whole screen.
+const ADMIN_ONLY_PATHS = ["/members", "/users", "/plan/new"];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;

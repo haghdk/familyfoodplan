@@ -1,6 +1,6 @@
 import { Archive } from "lucide-react";
 import { cookies } from "next/headers";
-import { adminSessionCookieName, backendApiUrl } from "../../lib/auth";
+import { adminSessionCookieName, backendApiUrl, userRoleCookieName } from "../../lib/auth";
 import { getTranslations } from "../../lib/i18n/server";
 import PantryManager, { type PantryItem } from "../../components/pantry/pantry-manager";
 import PageHeader from "../../components/ui/PageHeader";
@@ -41,6 +41,8 @@ const getPantry = async (): Promise<PantryResponse> => {
 
 export default async function PantryPage() {
   const { pantryItems, todayDayKey, expiryWarningDays } = await getPantry();
+  const cookieStore = await cookies();
+  const isAdmin = cookieStore.get(userRoleCookieName)?.value === "ADMIN";
   const { t } = await getTranslations();
 
   return (
@@ -52,6 +54,7 @@ export default async function PantryPage() {
         title={t("pantry.title")}
       />
       <PantryManager
+        canImportStocktake={isAdmin}
         expiryWarningDays={expiryWarningDays}
         initialPantryItems={pantryItems}
         todayDayKey={todayDayKey}

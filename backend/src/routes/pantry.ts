@@ -90,7 +90,7 @@ pantryRouter.get("/api/pantry-items/expiring", requireAuth, async (_request, res
   });
 });
 
-pantryRouter.post("/api/pantry-items", requireAdminAuth, async (request, response) => {
+pantryRouter.post("/api/pantry-items", requireAuth, async (request, response) => {
   const { name, quantity, unit, expirationDate, notes } = request.body as {
     name?: unknown;
     quantity?: unknown;
@@ -139,6 +139,11 @@ pantryRouter.post("/api/pantry-items", requireAdminAuth, async (request, respons
  * `mode` is "append" by default. "replace" empties the pantry first, which is
  * what a full cabinet check-up actually means — the list in hand *is* the new
  * state of the shelves.
+ *
+ * This is the one pantry write that stays admin-only. Adding or correcting a
+ * single item is everyday household work, but an import rewrites the shelves in
+ * one press — in "replace" mode it empties them first — so it stays with the
+ * accounts that manage the household.
  */
 pantryRouter.post("/api/pantry-items/import", requireAdminAuth, async (request, response) => {
   const { csv, dryRun, mode } = request.body as {
@@ -236,7 +241,7 @@ pantryRouter.post("/api/pantry-items/import", requireAdminAuth, async (request, 
   });
 });
 
-pantryRouter.put("/api/pantry-items/:itemId", requireAdminAuth, async (request, response) => {
+pantryRouter.put("/api/pantry-items/:itemId", requireAuth, async (request, response) => {
   const itemId = parsePantryItemId(request.params.itemId);
 
   if (itemId === null) {
@@ -295,7 +300,7 @@ pantryRouter.put("/api/pantry-items/:itemId", requireAdminAuth, async (request, 
 
 pantryRouter.delete(
   "/api/pantry-items/:itemId",
-  requireAdminAuth,
+  requireAuth,
   async (request, response) => {
     const itemId = parsePantryItemId(request.params.itemId);
 
