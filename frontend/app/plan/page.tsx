@@ -18,6 +18,7 @@ type PlanListItem = {
   startDate: string | null;
   endDate: string | null;
   daysCount: number;
+  hasEnded: boolean;
 };
 
 const getPlans = async (): Promise<PlanListItem[]> => {
@@ -125,6 +126,7 @@ export default async function PlansPage() {
                 </Link>
                 {isAdmin && !plan.isCurrent ? (
                   <SetCurrentPlanButton
+                    hasEnded={plan.hasEnded}
                     isCurrent={plan.isCurrent}
                     loadingLabel={t("common.settingAsCurrentShort")}
                     planId={plan.id}

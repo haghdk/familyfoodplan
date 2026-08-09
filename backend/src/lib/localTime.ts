@@ -34,6 +34,16 @@ export const resolveTimeZone = (timeZone: string | undefined): string => {
   return normalizedTimeZone;
 };
 
+/**
+ * The zone the household's calendar runs in, for the questions that are not a
+ * reminder's — "has this plan's last day passed?" among them. Read from
+ * `APP_TIMEZONE`, falling back to the reminder zone so a deployment that has
+ * already said where the family lives does not have to say it twice.
+ */
+export const appTimeZone = resolveTimeZone(
+  process.env.APP_TIMEZONE || process.env.DINNER_REMINDER_TIMEZONE || "Europe/Copenhagen"
+);
+
 /** The calendar day in `timeZone` as a `YYYY-MM-DD` key. */
 export const getLocalDayKey = (timeZone: string, date: Date = new Date()): string =>
   new Intl.DateTimeFormat("en-CA", {

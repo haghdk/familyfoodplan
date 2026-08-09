@@ -29,6 +29,7 @@ type PlanDetailResponse = {
     isCurrent: boolean;
     startDate: string | null;
     endDate: string | null;
+    hasEnded: boolean;
     planDays: Array<{
       id: number;
       date: string;
@@ -128,7 +129,11 @@ export default async function PlanPage({
         actions={
           <>
             {isAdmin ? (
-              <SetCurrentPlanButton isCurrent={plan.isCurrent} planId={plan.id} />
+              <SetCurrentPlanButton
+                hasEnded={plan.hasEnded}
+                isCurrent={plan.isCurrent}
+                planId={plan.id}
+              />
             ) : null}
             <Link
               className={buttonClassName()}

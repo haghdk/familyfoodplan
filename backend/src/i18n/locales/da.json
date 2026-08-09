@@ -36,6 +36,7 @@
     "nameRequired": "Planens navn er påkrævet.",
     "invalidDateFormat": "Ugyldigt datoformat. Forventede ÅÅÅÅ-MM-DD.",
     "nameTaken": "Der findes allerede en plan med dette navn.",
+    "endedCannotBeCurrent": "Denne plan sluttede før i dag, så den kan ikke vælges som den aktuelle plan.",
     "currentPlanUpdated": "Den aktuelle plan er opdateret."
   },
   "settings": {

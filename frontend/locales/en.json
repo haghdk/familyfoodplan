@@ -30,6 +30,8 @@
     "setAsCurrent": "Set as current",
     "settingAsCurrentShort": "Setting...",
     "settingAsCurrent": "Setting as current...",
+    "planEnded": "Plan has ended",
+    "planEndedHint": "A plan whose last day has passed cannot be made the current plan.",
     "setCurrentFailed": "Could not set this as the current plan right now.",
     "days": {
       "one": "{count} day",

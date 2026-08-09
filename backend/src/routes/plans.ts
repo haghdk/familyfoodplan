@@ -8,6 +8,7 @@ import {
   PlanValidationError,
   buildDateRange,
   createPlanWithDays,
+  hasPlanEnded,
   parseIsoDayKey
 } from "../services/plans";
 import { requestLocale, translate, translatePlural } from "../i18n";
@@ -211,7 +212,8 @@ plansRouter.get("/api/plans", requireAuth, async (_request, response) => {
       isCurrent: plan.isCurrent,
       startDate: formatOptionalDateKey(plan.startDate),
       endDate: formatOptionalDateKey(plan.endDate),
-      daysCount: plan._count.days
+      daysCount: plan._count.days,
+      hasEnded: hasPlanEnded(plan.endDate)
     }))
   });
 });
@@ -252,6 +254,7 @@ plansRouter.get("/api/plans/:planId", requireAuth, async (request, response) => 
       isCurrent: plan.isCurrent,
       startDate: formatOptionalDateKey(plan.startDate),
       endDate: formatOptionalDateKey(plan.endDate),
+      hasEnded: hasPlanEnded(plan.endDate),
       planDays: plan.days.map(mapPlanDayMeals)
     }
   });
@@ -295,12 +298,23 @@ plansRouter.post("/api/plans/:planId/set-current", requireAdminAuth, async (requ
   const plan = await prisma.plan.findUnique({
     where: { id: planId },
     select: {
-      id: true
+      id: true,
+      isCurrent: true,
+      endDate: true
     }
   });
 
   if (!plan) {
     response.status(404).json({ message: translate(locale, "plans.notFound") });
+    return;
+  }
+
+  // A week that finished yesterday is not the week the family is eating, so it
+  // cannot be picked as the current plan. The plan that already holds the flag
+  // is exempt: it keeps it as its last day passes, rather than the household
+  // being left with no current plan until someone makes a new one.
+  if (!plan.isCurrent && hasPlanEnded(plan.endDate)) {
+    response.status(409).json({ message: translate(locale, "plans.endedCannotBeCurrent") });
     return;
   }
 
