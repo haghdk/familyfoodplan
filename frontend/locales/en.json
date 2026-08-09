@@ -283,6 +283,7 @@
     "created": "{name} saved.",
     "updated": "{name} updated.",
     "deleted": "{name} deleted.",
+    "loadFailed": "Could not load your dishes right now. They have not been lost — try again in a moment, and check the backend is running and up to date.",
     "createFailed": "Could not save this dish right now.",
     "updateFailed": "Could not update this dish right now.",
     "deleteFailed": "Could not delete this dish right now.",

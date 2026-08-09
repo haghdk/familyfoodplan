@@ -374,8 +374,10 @@ A cookbook of a dozen dishes reads fine as one alphabetical list. At fifty it do
 - A category is added, renamed and deleted in place, beside the dish list rather than on a screen of its own: a category is only ever named because a dish needs one, and naming it two clicks away would be the slower path. A category added there is immediately pickable on the dish form above it, with no reload.
 - **Deleting a category is deleting a shelf, not what was on it.** `Dish.categoryId` is nullable and clears on delete (`ON DELETE SET NULL`), so its dishes stay and fall back to uncategorised. A mistyped category name must never be a way to lose a recipe.
 - The list is drawn a shelf at a time: categories alphabetically, the dishes inside each alphabetically, and everything with no category under **Without a category** at the end — it is the leftovers pile, not the headline. Empty categories are left out of the dish list but still shown in the Categories subsection, which is where an empty one is renamed or removed.
+- **Existing dishes need no migrating.** Every dish starts uncategorised, and while *no* category exists the heading is dropped entirely, so the screen is the same plain alphabetical list it was before the feature landed. The first category you add is what starts the grouping.
 - Sorting is `localeCompare` in the reader's own language, so Danish files *Æbletærte* after *Z* while English files it near *A* — the same cookbook, ordered the way each reader expects to scan it.
 - Category counts on the subsection rows are counted from the dishes on screen rather than trusted from the server's copy, so moving a dish from one shelf to another corrects both badges at once without a refetch.
+- **A failed read is reported, not drawn as an empty cookbook.** The Dishes screen reads dishes and categories separately and says when either could not be fetched, instead of folding the failure into an empty list and claiming "No dishes saved yet" over a cookbook with fifty dishes in it. Whatever did arrive is still shown. See [Deploying a schema change](#deploying-a-schema-change).
 - The dish picker on a plan's day card stays one flat alphabetical list. `GET /api/dishes` is ordered by name for that reason, and the Dishes screen does its own grouping — one ordering serves both, and the picker does not grow headings it has no use for.
 
 ### Planning from a saved dish
@@ -559,6 +561,18 @@ Both the admin grocery page and the shared shopper link stream changes over serv
 - **A keepalive comment is sent every 15 seconds**, so idle proxy timeouts (commonly 30-60 seconds) do not drop the stream.
 - **Reconnects are automatic.** A browser retries a stream that merely dropped, but not one that was closed by an error status or refused by a proxy, so the pages open a new stream themselves with exponential backoff (1s up to 30s). Every successful reconnect refetches the whole list, since anything that changed while the stream was down was never delivered.
 - **Live updates are the fast path, not the only path.** While a page has no stream it refetches every 15 seconds, so two people shopping from the same link still converge even where server-sent events cannot get through at all. Checkoffs are always written to the server, independent of the stream.
+
+## Deploying a schema change
+
+The backend container runs `prisma generate` and `prisma migrate deploy` **once, at startup**, and then `tsx watch` for the app itself:
+
+```
+npm install && npm run prisma:generate && npx prisma migrate deploy && npx prisma db seed && npm run dev
+```
+
+`./backend` is a volume mount, so new code landing on the host is picked up by `tsx watch` **immediately** — while the generate and migrate steps stay unrun until the container is next started. A release that adds a column therefore has a window where the running API selects a column the database does not have.
+
+**So a release carrying a migration needs the backend container restarted, not just the files updated** (`docker compose up -d --force-recreate backend`, or a plain restart — either re-runs the whole command). Symptoms of skipping it are a `ColumnNotFound` in the backend log and screens that come back empty, since the failing read is answered as "nothing here". Prisma's `ColumnNotFound` arrives as a rejected promise inside an async Express handler, which Express 4 does not catch, so it takes the process down; `restart: unless-stopped` then restarts the container, which re-runs `migrate deploy` and heals it. Restarting on purpose is the quicker route.
 
 ## Prisma Client generation
 

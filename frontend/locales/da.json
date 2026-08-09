@@ -283,6 +283,7 @@
     "created": "{name} er gemt.",
     "updated": "{name} er opdateret.",
     "deleted": "{name} er slettet.",
+    "loadFailed": "Kunne ikke hente dine retter lige nu. De er ikke gået tabt — prøv igen om lidt, og tjek at backend kører og er opdateret.",
     "createFailed": "Kunne ikke gemme denne ret lige nu.",
     "updateFailed": "Kunne ikke opdatere denne ret lige nu.",
     "deleteFailed": "Kunne ikke slette denne ret lige nu.",
