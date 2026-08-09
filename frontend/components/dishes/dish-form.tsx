@@ -4,7 +4,8 @@ import { FormEvent, useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { useTranslations } from "../../lib/i18n/client";
 import Button from "../ui/Button";
-import { TextAreaField, TextField } from "../ui/Field";
+import { SelectField, TextAreaField, TextField } from "../ui/Field";
+import type { DishCategory } from "./dish-categories-manager";
 
 export type DishIngredientInput = {
   name: string;
@@ -15,6 +16,7 @@ export type DishIngredientInput = {
 export type DishFormValues = {
   name: string;
   notes: string | null;
+  categoryId: number | null;
   ingredients: DishIngredientInput[];
 };
 
@@ -28,7 +30,9 @@ type IngredientRow = {
 type DishFormProps = {
   initialName?: string;
   initialNotes?: string;
+  initialCategoryId?: number | null;
   initialIngredients?: DishIngredientInput[];
+  categories: DishCategory[];
   isSubmitting: boolean;
   onSubmit: (values: DishFormValues) => Promise<void>;
   onCancel?: () => void;
@@ -53,7 +57,9 @@ const createInitialRows = (ingredients: DishIngredientInput[]) =>
 export default function DishForm({
   initialName = "",
   initialNotes = "",
+  initialCategoryId = null,
   initialIngredients = [],
+  categories,
   isSubmitting,
   onSubmit,
   onCancel,
@@ -62,6 +68,7 @@ export default function DishForm({
   const { t } = useTranslations();
   const [name, setName] = useState(initialName);
   const [notes, setNotes] = useState(initialNotes);
+  const [categoryId, setCategoryId] = useState<number | null>(initialCategoryId);
   const [ingredientRows, setIngredientRows] = useState<IngredientRow[]>(() =>
     createInitialRows(initialIngredients)
   );
@@ -104,12 +111,14 @@ export default function DishForm({
     await onSubmit({
       name: trimmedName,
       notes: notes.trim() || null,
+      categoryId,
       ingredients
     });
 
     if (!initialName) {
       setName("");
       setNotes("");
+      setCategoryId(null);
       setIngredientRows([createIngredientRow()]);
     }
   };
@@ -124,7 +133,25 @@ export default function DishForm({
           placeholder={t("dishes.namePlaceholder")}
           value={name}
         />
+        <SelectField
+          hint={
+            categories.length === 0 ? t("dishes.categoryHintNoCategories") : undefined
+          }
+          label={t("dishes.categoryLabel")}
+          onChange={(event) =>
+            setCategoryId(event.target.value ? Number(event.target.value) : null)
+          }
+          value={categoryId ?? ""}
+        >
+          <option value="">{t("dishes.noCategory")}</option>
+          {categories.map((category) => (
+            <option key={category.id} value={category.id}>
+              {category.name}
+            </option>
+          ))}
+        </SelectField>
         <TextAreaField
+          fieldClassName="sm:col-span-2"
           label={t("dishes.notesLabel")}
           onChange={(event) => setNotes(event.target.value)}
           placeholder={t("dishes.notesPlaceholder")}

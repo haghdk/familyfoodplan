@@ -28,6 +28,7 @@ Family Food Planner is a weekly meal-planning app for families. Admins create pl
 - **Plan-scoped day editing routes**: dinner, breakfast, and lunch write endpoints now require both `planId` and `dayKey` (`/api/plans/:planId/days/:dayKey/...`) so updates are validated against the selected plan before persisting.
 - **Breakfast planning support**: each plan day now supports repeatable breakfast rows with optional member assignment, matching lunch behavior in APIs/UI and allowing breakfast-linked grocery ingredients.
 - **Dishes (saved recipes) + one-press shopping**: a **Dishes** section where a dish is written down once — lasagne, with its minced beef, sheets and tomatoes — and then picked from a list when planning a day, instead of being typed in again every week. Meals can still be typed in by hand exactly as before; the picker is a shortcut, not a replacement. A day whose meal was picked from a saved dish grows an **Add ingredients to grocery list** button that copies the whole recipe onto the plan's shopping list in one press. See [Dishes and Their Ingredients](#dishes-and-their-ingredients).
+- **Dish categories**: the cookbook can be split into shelves — soups, pasta, baking — managed in a **Categories** subsection on the Dishes screen, where a category is added, renamed and deleted in place. Each dish picks one from a dropdown, and the dish list is then read a shelf at a time: categories in alphabetical order, the dishes inside each one alphabetical too, and anything without a category last. Categories are optional and deleting one keeps its dishes. See [Categories](#categories).
 - **Pantry (kitchen cabinets) with expiry tracking**: a **Pantry** section listing what is already on the shelves — 2 cans of beans, 1 pack of tacos — each with an optional expiry date. It is wired into the rest of the app rather than being a list on its own: copying a dish's ingredients to the grocery list **takes what the cabinets already hold off the shelf instead of onto the list**, and subtracts it from the pantry; the plan screen shows a banner naming what this week's dishes can take from the cabinets before anyone shops; and a daily push notification calls out anything expired or going off soon, so three cans of beans are never discovered a year past their date. See [The Pantry](#the-pantry).
 - **CSV import for the pantry**: a stocktake made in Excel while going through the cupboards can be imported straight into the pantry, with a preview before anything is written. Built for what a Danish spreadsheet actually exports — semicolon or comma separators, `0,5` decimal commas, day-first dates, and month-only best-before dates — and reporting bad lines individually instead of refusing the file. See [Importing a stocktake from a spreadsheet](#importing-a-stocktake-from-a-spreadsheet).
 - **Swap meals between days**: weeks rarely go to plan, so any meal can be moved to another day of the week without retyping it. Drag a meal's **Swap** button onto the same meal of another day, or press it to pick the day from a list. Breakfast, lunch, and dinner each move on their own, so trading Monday's and Tuesday's dinners leaves both days' breakfasts and lunches exactly where they were, and the ingredients on the grocery list follow the meal. See [Swapping Meals Between Days](#swapping-meals-between-days).
@@ -182,10 +183,14 @@ python3 frontend/scripts/generate-icons.py
 - `POST /api/push/test` — send today's real reminder to the caller's own devices, ignoring their on/off setting, so push can be verified end to end. Returns `503` when the server has no VAPID keys (authenticated users).
 
 ### Dishes
-- `GET /api/dishes` — list every saved dish with its ingredients, ordered by dish name (authenticated users, since the plan screens read it to build the dish picker).
-- `POST /api/dishes` — create a dish. Body: `{ "name": "Lasagne", "notes"?: string, "ingredients"?: [{ "name": "Minced beef", "quantity"?: number, "unit"?: string }] }`. Ingredient lines with a blank name are dropped rather than rejected, so the form's trailing empty row never blocks a save. Returns `409` when the name is taken (authenticated users).
-- `PUT /api/dishes/:dishId` — update a dish. The ingredient list is sent whole and replaces the stored one; grocery items already copied onto a plan are their own rows and are left untouched. Returns `404` for an unknown dish and `409` for a taken name (authenticated users).
+- `GET /api/dishes` — list every saved dish with its ingredients and its `category` (authenticated users, since the plan screens read it to build the dish picker). Ordered by dish name, which is what the picker wants; the Dishes screen groups by category itself.
+- `POST /api/dishes` — create a dish. Body: `{ "name": "Lasagne", "notes"?: string, "categoryId"?: number | null, "ingredients"?: [{ "name": "Minced beef", "quantity"?: number, "unit"?: string }] }`. An absent `categoryId` and an explicit `null` both mean "no category", and an id naming no category is `400`. Ingredient lines with a blank name are dropped rather than rejected, so the form's trailing empty row never blocks a save. Returns `409` when the name is taken (authenticated users).
+- `PUT /api/dishes/:dishId` — update a dish, `categoryId` included, so this is also how a dish is moved between categories. The ingredient list is sent whole and replaces the stored one; grocery items already copied onto a plan are their own rows and are left untouched. Returns `404` for an unknown dish and `409` for a taken name (authenticated users).
 - `DELETE /api/dishes/:dishId` — delete a dish and its ingredients. Days already planned with it keep their meal, with the link cleared (authenticated users).
+- `GET /api/dish-categories` — list the categories alphabetically, each with the `dishCount` of dishes filed under it (authenticated users).
+- `POST /api/dish-categories` — create a category. Body: `{ "name": "Soups" }`. Returns `409` when the name is taken (authenticated users).
+- `PUT /api/dish-categories/:categoryId` — rename a category. Returns `404` for an unknown category and `409` for a taken name (authenticated users).
+- `DELETE /api/dish-categories/:categoryId` — delete a category. Its dishes are kept and become uncategorised (authenticated users). See [Categories](#categories).
 
 ### Pantry
 - `GET /api/pantry-items` — everything in the cabinets, soonest to go off first and undated staples last, plus `todayDayKey` and `expiryWarningDays` so the UI can label dates without guessing the server's time zone (authenticated users).
@@ -354,12 +359,24 @@ When the keys are missing — the default for local development — nothing is s
 
 ## Dishes and Their Ingredients
 
-The same dozen dishes come round week after week, and each one takes the same shopping every time. **Dishes** (`/dishes`, admins only) is where that is written down once.
+The same dozen dishes come round week after week, and each one takes the same shopping every time. **Dishes** (`/dishes`, open to every signed-in account) is where that is written down once.
 
 - A dish is a name, optional notes, and a list of ingredients — each with a quantity and a unit, the same shape a grocery item has, because copying them onto a shopping list is what they exist for. Dish names are unique, so "Lasagne" means one thing across every plan.
 - The dish form always keeps one blank ingredient row at the bottom, and blank rows are dropped on save. Adding the next ingredient never starts with a press of **Add ingredient**.
 - Editing a dish **replaces** its ingredient list. Grocery items already copied onto a plan are their own rows by then, so fixing a recipe never rewrites a shopping list somebody is mid-way through.
 - Deleting a dish removes it and its ingredients. Days already planned with it keep their meal — the meal's link to the dish is cleared, not the meal itself — and grocery items already added stay on their lists.
+
+### Categories
+
+A cookbook of a dozen dishes reads fine as one alphabetical list. At fifty it does not, so dishes can be filed under a category — *Soups*, *Pasta*, *Baking* — managed in a **Categories** subsection on the same screen as the dishes themselves.
+
+- Categories are rows (`DishCategory`), not a fixed enum. What a family cooks is not a list anyone can write down in advance, so the names are the household's to invent, rename and drop.
+- A category is added, renamed and deleted in place, beside the dish list rather than on a screen of its own: a category is only ever named because a dish needs one, and naming it two clicks away would be the slower path. A category added there is immediately pickable on the dish form above it, with no reload.
+- **Deleting a category is deleting a shelf, not what was on it.** `Dish.categoryId` is nullable and clears on delete (`ON DELETE SET NULL`), so its dishes stay and fall back to uncategorised. A mistyped category name must never be a way to lose a recipe.
+- The list is drawn a shelf at a time: categories alphabetically, the dishes inside each alphabetically, and everything with no category under **Without a category** at the end — it is the leftovers pile, not the headline. Empty categories are left out of the dish list but still shown in the Categories subsection, which is where an empty one is renamed or removed.
+- Sorting is `localeCompare` in the reader's own language, so Danish files *Æbletærte* after *Z* while English files it near *A* — the same cookbook, ordered the way each reader expects to scan it.
+- Category counts on the subsection rows are counted from the dishes on screen rather than trusted from the server's copy, so moving a dish from one shelf to another corrects both badges at once without a refetch.
+- The dish picker on a plan's day card stays one flat alphabetical list. `GET /api/dishes` is ordered by name for that reason, and the Dishes screen does its own grouping — one ordering serves both, and the picker does not grow headings it has no use for.
 
 ### Planning from a saved dish
 

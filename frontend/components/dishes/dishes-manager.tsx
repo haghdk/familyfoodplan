@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { ChefHat, CookingPot, Pencil, Plus, Trash2 } from "lucide-react";
 import { backendApiUrl } from "../../lib/auth";
 import { useTranslations } from "../../lib/i18n/client";
 import { localeHeader } from "../../lib/i18n/requestHeaders";
+import DishCategoriesManager, { type DishCategory } from "./dish-categories-manager";
 import DishForm, { type DishFormValues } from "./dish-form";
 import Alert from "../ui/Alert";
 import Badge from "../ui/Badge";
@@ -24,19 +25,37 @@ export type Dish = {
   id: number;
   name: string;
   notes: string | null;
+  categoryId: number | null;
   ingredients: DishIngredient[];
 };
 
 type DishesManagerProps = {
   initialDishes: Dish[];
+  initialCategories: DishCategory[];
 };
+
+/** One shelf of the cookbook as the list draws it: a heading and its dishes. */
+type DishGroup = {
+  key: string;
+  label: string;
+  dishes: Dish[];
+};
+
+const sortDishesByName = (dishes: Dish[], locale: string) =>
+  [...dishes].sort((firstDish, secondDish) =>
+    firstDish.name.localeCompare(secondDish.name, locale)
+  );
 
 const formatIngredient = (ingredient: DishIngredient) =>
   `${ingredient.name} · ${ingredient.quantity}${ingredient.unit ? ` ${ingredient.unit}` : ""}`;
 
-export default function DishesManager({ initialDishes }: DishesManagerProps) {
+export default function DishesManager({
+  initialDishes,
+  initialCategories
+}: DishesManagerProps) {
   const { locale, t, plural } = useTranslations();
   const [dishes, setDishes] = useState(initialDishes);
+  const [categories, setCategories] = useState(initialCategories);
   const [isCreating, setIsCreating] = useState(false);
   const [editingDishId, setEditingDishId] = useState<number | null>(null);
   const [savingDishId, setSavingDishId] = useState<number | null>(null);
@@ -44,10 +63,55 @@ export default function DishesManager({ initialDishes }: DishesManagerProps) {
   const [errorMessage, setErrorMessage] = useState("");
   const [feedback, setFeedback] = useState("");
 
-  const sortDishes = (nextDishes: Dish[]) =>
-    [...nextDishes].sort((firstDish, secondDish) =>
-      firstDish.name.localeCompare(secondDish.name, locale)
-    );
+  const sortDishes = (nextDishes: Dish[]) => sortDishesByName(nextDishes, locale);
+
+  // The counts on the category rows are worked out from the dishes on screen
+  // rather than taken from the server's copy, so moving a dish between shelves
+  // corrects both badges without a refetch.
+  const categoriesWithCounts = useMemo(
+    () =>
+      categories.map((category) => ({
+        ...category,
+        dishCount: dishes.filter((dish) => dish.categoryId === category.id).length
+      })),
+    [categories, dishes]
+  );
+
+  // Dishes are read a shelf at a time: categories in alphabetical order, the
+  // dishes inside each one alphabetical too, and whatever has not been given a
+  // category last rather than first, since it is the leftovers pile.
+  const dishGroups = useMemo<DishGroup[]>(() => {
+    const sortedDishes = sortDishesByName(dishes, locale);
+    const categorisedGroups = categories
+      .map((category) => ({
+        key: `category-${category.id}`,
+        label: category.name,
+        dishes: sortedDishes.filter((dish) => dish.categoryId === category.id)
+      }))
+      .filter((group) => group.dishes.length > 0);
+
+    const uncategorisedDishes = sortedDishes.filter((dish) => {
+      if (dish.categoryId === null) {
+        return true;
+      }
+
+      // A dish whose category was deleted in another tab would otherwise vanish
+      // from the list entirely, so anything pointing at a category we do not
+      // have falls back to the uncategorised shelf.
+      return !categories.some((category) => category.id === dish.categoryId);
+    });
+
+    return uncategorisedDishes.length > 0
+      ? [
+          ...categorisedGroups,
+          {
+            key: "uncategorised",
+            label: t("dishes.uncategorised"),
+            dishes: uncategorisedDishes
+          }
+        ]
+      : categorisedGroups;
+  }, [categories, dishes, locale, t]);
 
   const createDish = async (values: DishFormValues) => {
     setIsCreating(true);
@@ -154,11 +218,24 @@ export default function DishesManager({ initialDishes }: DishesManagerProps) {
         title={t("dishes.addTitle")}
       >
         <DishForm
+          categories={categoriesWithCounts}
           isSubmitting={isCreating}
           onSubmit={createDish}
           submitLabel={t("dishes.addSubmit")}
         />
       </SectionCard>
+
+      <DishCategoriesManager
+        categories={categoriesWithCounts}
+        onCategoriesChange={setCategories}
+        onCategoryDeleted={(categoryId) =>
+          setDishes((currentDishes) =>
+            currentDishes.map((dish) =>
+              dish.categoryId === categoryId ? { ...dish, categoryId: null } : dish
+            )
+          )
+        }
+      />
 
       {errorMessage ? <Alert tone="error">{errorMessage}</Alert> : null}
       {feedback ? <Alert tone="success">{feedback}</Alert> : null}
@@ -170,12 +247,24 @@ export default function DishesManager({ initialDishes }: DishesManagerProps) {
           title={t("dishes.emptyTitle")}
         />
       ) : (
-        <ul className="space-y-3">
-          {dishes.map((dish) => (
+        <div className="space-y-6">
+          {dishGroups.map((group) => (
+            <section className="space-y-3" key={group.key}>
+              <h2 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-fg-subtle">
+                {group.label}
+                <span className="text-fg-subtle/70">
+                  {plural("dishes.dishCount", group.dishes.length)}
+                </span>
+              </h2>
+
+              <ul className="space-y-3">
+                {group.dishes.map((dish) => (
             <li key={dish.id}>
               <Card>
                 {editingDishId === dish.id ? (
                   <DishForm
+                    categories={categoriesWithCounts}
+                    initialCategoryId={dish.categoryId}
                     initialIngredients={dish.ingredients}
                     initialName={dish.name}
                     initialNotes={dish.notes ?? ""}
@@ -242,8 +331,11 @@ export default function DishesManager({ initialDishes }: DishesManagerProps) {
                 )}
               </Card>
             </li>
+                ))}
+              </ul>
+            </section>
           ))}
-        </ul>
+        </div>
       )}
 
       <ConfirmModal

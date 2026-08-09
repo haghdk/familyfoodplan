@@ -254,6 +254,14 @@
     "addDescription": "Giv retten et navn, og skriv hvad der skal bruges til den.",
     "addSubmit": "Tilføj ret",
     "nameLabel": "Ret",
+    "categoryLabel": "Kategori",
+    "categoryHintNoCategories": "Tilføj en kategori nedenfor for at gruppere dine retter.",
+    "noCategory": "Ingen kategori",
+    "uncategorised": "Uden kategori",
+    "dishCount": {
+      "one": "{count} ret",
+      "other": "{count} retter"
+    },
     "namePlaceholder": "Lasagne",
     "notesLabel": "Noter",
     "notesPlaceholder": "Hvordan den laves, eller hvem der kan lide den (valgfrit)",
@@ -281,6 +289,23 @@
     "deleteTitle": "Vil du slette {name}?",
     "deleteDescription": "Retten og dens ingredienser fjernes. Dage, der allerede er planlagt med den, beholder deres måltid, og varer, der allerede er tilføjet indkøbslisten, bliver stående.",
     "deleteConfirm": "Slet ret"
+  },
+  "dishCategories": {
+    "title": "Kategorier",
+    "description": "Inddel kogebogen i hylder — supper, pasta, bagværk — så en lang liste af retter kan læses en sektion ad gangen. En kategori kan altid omdøbes, og sletter du en, bliver dens retter stående.",
+    "nameLabel": "Kategorinavn",
+    "namePlaceholder": "Supper",
+    "addSubmit": "Tilføj kategori",
+    "empty": "Ingen kategorier endnu. Retterne står i én alfabetisk liste, indtil du tilføjer en.",
+    "dishCount": "{count} i denne kategori",
+    "nameRequired": "Kategorinavn er påkrævet.",
+    "nameTaken": "Der findes allerede en kategori med det navn.",
+    "createFailed": "Kunne ikke tilføje kategorien lige nu.",
+    "updateFailed": "Kunne ikke omdøbe kategorien lige nu.",
+    "deleteFailed": "Kunne ikke slette kategorien lige nu.",
+    "deleteTitle": "Slet {name}?",
+    "deleteDescription": "Kategorien fjernes. Dens retter bevares og bliver uden kategori.",
+    "deleteConfirm": "Slet kategori"
   },
   "pantry": {
     "eyebrow": "Køkkenskabe",

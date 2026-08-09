@@ -254,6 +254,14 @@
     "addDescription": "Give the dish a name and list what it takes to make it.",
     "addSubmit": "Add dish",
     "nameLabel": "Dish",
+    "categoryLabel": "Category",
+    "categoryHintNoCategories": "Add a category below to group your dishes.",
+    "noCategory": "No category",
+    "uncategorised": "Without a category",
+    "dishCount": {
+      "one": "{count} dish",
+      "other": "{count} dishes"
+    },
     "namePlaceholder": "Lasagne",
     "notesLabel": "Notes",
     "notesPlaceholder": "How it is made, or who likes it (optional)",
@@ -281,6 +289,23 @@
     "deleteTitle": "Delete {name}?",
     "deleteDescription": "The dish and its ingredients are removed. Days already planned with it keep their meal, and grocery items already added stay on their lists.",
     "deleteConfirm": "Delete dish"
+  },
+  "dishCategories": {
+    "title": "Categories",
+    "description": "Group the cookbook into shelves — soups, pasta, baking — so a long list of dishes can be read a section at a time. A category can be renamed at any time, and deleting one leaves its dishes in place.",
+    "nameLabel": "Category name",
+    "namePlaceholder": "Soups",
+    "addSubmit": "Add category",
+    "empty": "No categories yet. Dishes stay in one alphabetical list until you add one.",
+    "dishCount": "{count} in this category",
+    "nameRequired": "Category name is required.",
+    "nameTaken": "A category with that name already exists.",
+    "createFailed": "Could not add this category right now.",
+    "updateFailed": "Could not rename this category right now.",
+    "deleteFailed": "Could not delete this category right now.",
+    "deleteTitle": "Delete {name}?",
+    "deleteDescription": "The category is removed. Its dishes are kept and become uncategorised.",
+    "deleteConfirm": "Delete category"
   },
   "pantry": {
     "eyebrow": "Kitchen cabinets",
