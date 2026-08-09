@@ -32,6 +32,11 @@ export type Dish = {
 type DishesManagerProps = {
   initialDishes: Dish[];
   initialCategories: DishCategory[];
+  /**
+   * Set when the screen could not read the cookbook, so an outage is reported
+   * as one instead of being drawn as an empty shelf.
+   */
+  hasLoadFailure: boolean;
 };
 
 /** One shelf of the cookbook as the list draws it: a heading and its dishes. */
@@ -51,7 +56,8 @@ const formatIngredient = (ingredient: DishIngredient) =>
 
 export default function DishesManager({
   initialDishes,
-  initialCategories
+  initialCategories,
+  hasLoadFailure
 }: DishesManagerProps) {
   const { locale, t, plural } = useTranslations();
   const [dishes, setDishes] = useState(initialDishes);
@@ -101,16 +107,21 @@ export default function DishesManager({
       return !categories.some((category) => category.id === dish.categoryId);
     });
 
-    return uncategorisedDishes.length > 0
-      ? [
-          ...categorisedGroups,
-          {
-            key: "uncategorised",
-            label: t("dishes.uncategorised"),
-            dishes: uncategorisedDishes
-          }
-        ]
-      : categorisedGroups;
+    if (uncategorisedDishes.length === 0) {
+      return categorisedGroups;
+    }
+
+    return [
+      ...categorisedGroups,
+      {
+        key: "uncategorised",
+        // Left unlabelled while nothing else is categorised: a lone "Without a
+        // category" heading over the whole cookbook names a distinction that is
+        // not being drawn yet.
+        label: categorisedGroups.length > 0 ? t("dishes.uncategorised") : "",
+        dishes: uncategorisedDishes
+      }
+    ];
   }, [categories, dishes, locale, t]);
 
   const createDish = async (values: DishFormValues) => {
@@ -237,10 +248,11 @@ export default function DishesManager({
         }
       />
 
+      {hasLoadFailure ? <Alert tone="error">{t("dishes.loadFailed")}</Alert> : null}
       {errorMessage ? <Alert tone="error">{errorMessage}</Alert> : null}
       {feedback ? <Alert tone="success">{feedback}</Alert> : null}
 
-      {dishes.length === 0 ? (
+      {dishes.length === 0 && !hasLoadFailure ? (
         <EmptyState
           description={t("dishes.emptyDescription")}
           icon={<CookingPot className="h-5 w-5" />}
@@ -250,12 +262,14 @@ export default function DishesManager({
         <div className="space-y-6">
           {dishGroups.map((group) => (
             <section className="space-y-3" key={group.key}>
-              <h2 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-fg-subtle">
-                {group.label}
-                <span className="text-fg-subtle/70">
-                  {plural("dishes.dishCount", group.dishes.length)}
-                </span>
-              </h2>
+              {group.label ? (
+                <h2 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-fg-subtle">
+                  {group.label}
+                  <span className="text-fg-subtle/70">
+                    {plural("dishes.dishCount", group.dishes.length)}
+                  </span>
+                </h2>
+              ) : null}
 
               <ul className="space-y-3">
                 {group.dishes.map((dish) => (
