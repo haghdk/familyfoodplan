@@ -192,6 +192,17 @@ model PantryAllocation {
   @@index([lunchDishId])
 }
 
+/// A shelf of the cookbook — "Soups", "Pasta". Categories are their own rows
+/// rather than a fixed enum because what a family cooks is not a list anyone
+/// can write down in advance, and it changes as the cookbook grows.
+model DishCategory {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  dishes    Dish[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 /// A dish the family cooks again and again — lasagne, say — stored once with
 /// everything it takes to make it. Dishes live outside any plan, so the same
 /// dish can be picked for as many days as it is eaten on without its
@@ -200,12 +211,19 @@ model Dish {
   id              Int              @id @default(autoincrement())
   name            String           @unique
   notes           String?
+  /// Which shelf of the cookbook this dish sits on. Optional, so a dish can be
+  /// written down before anyone has decided what to call the group it belongs
+  /// to, and so deleting a category leaves its dishes alone.
+  categoryId      Int?
+  category        DishCategory?    @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   ingredients     DishIngredient[]
   dinnerDishes    DinnerDish[]
   breakfastDishes BreakfastDish[]
   lunchDishes     LunchDish[]
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
+
+  @@index([categoryId])
 }
 
 /// One line of a dish's recipe. Deliberately shaped like `GroceryItem`, since

@@ -2,7 +2,9 @@ import { Router } from "express";
 import { prisma } from "../lib/prisma";
 import { requireAuth } from "../middleware/auth";
 import {
+  dishCategoryExists,
   dishSelect,
+  parseDishCategoryId,
   parseDishIngredients,
   toIngredientCreateData
 } from "../services/dishes";
@@ -20,6 +22,10 @@ const isUniqueNameConflict = (error: unknown) =>
   "code" in error &&
   (error as { code?: string }).code === "P2002";
 
+// Dishes come back alphabetically, which is the order the dish picker on a plan
+// day shows them in. The Dishes screen groups them under their category itself,
+// so one ordering serves both without the picker growing headings it has no use
+// for.
 dishesRouter.get("/api/dishes", requireAuth, async (_request, response) => {
   const dishes = await prisma.dish.findMany({
     orderBy: { name: "asc" },
@@ -30,10 +36,11 @@ dishesRouter.get("/api/dishes", requireAuth, async (_request, response) => {
 });
 
 dishesRouter.post("/api/dishes", requireAuth, async (request, response) => {
-  const { name, notes, ingredients } = request.body as {
+  const { name, notes, ingredients, categoryId } = request.body as {
     name?: unknown;
     notes?: unknown;
     ingredients?: unknown;
+    categoryId?: unknown;
   };
 
   const normalizedName = typeof name === "string" ? name.trim() : "";
@@ -50,11 +57,27 @@ dishesRouter.post("/api/dishes", requireAuth, async (request, response) => {
     return;
   }
 
+  const parsedCategoryId = parseDishCategoryId(categoryId);
+
+  if (parsedCategoryId.status === "invalid") {
+    response.status(400).json({ message: parsedCategoryId.message });
+    return;
+  }
+
+  if (
+    parsedCategoryId.categoryId !== null &&
+    !(await dishCategoryExists(parsedCategoryId.categoryId))
+  ) {
+    response.status(400).json({ message: "Unknown dish category." });
+    return;
+  }
+
   try {
     const dish = await prisma.dish.create({
       data: {
         name: normalizedName,
         notes: typeof notes === "string" ? notes.trim() || null : null,
+        categoryId: parsedCategoryId.categoryId,
         ingredients: {
           create: toIngredientCreateData(parsedIngredients.ingredients)
         }
@@ -81,10 +104,11 @@ dishesRouter.put("/api/dishes/:dishId", requireAuth, async (request, response) =
     return;
   }
 
-  const { name, notes, ingredients } = request.body as {
+  const { name, notes, ingredients, categoryId } = request.body as {
     name?: unknown;
     notes?: unknown;
     ingredients?: unknown;
+    categoryId?: unknown;
   };
 
   const normalizedName = typeof name === "string" ? name.trim() : "";
@@ -98,6 +122,21 @@ dishesRouter.put("/api/dishes/:dishId", requireAuth, async (request, response) =
 
   if (parsedIngredients.status === "invalid") {
     response.status(400).json({ message: parsedIngredients.message });
+    return;
+  }
+
+  const parsedCategoryId = parseDishCategoryId(categoryId);
+
+  if (parsedCategoryId.status === "invalid") {
+    response.status(400).json({ message: parsedCategoryId.message });
+    return;
+  }
+
+  if (
+    parsedCategoryId.categoryId !== null &&
+    !(await dishCategoryExists(parsedCategoryId.categoryId))
+  ) {
+    response.status(400).json({ message: "Unknown dish category." });
     return;
   }
 
@@ -124,6 +163,7 @@ dishesRouter.put("/api/dishes/:dishId", requireAuth, async (request, response) =
         data: {
           name: normalizedName,
           notes: typeof notes === "string" ? notes.trim() || null : null,
+          categoryId: parsedCategoryId.categoryId,
           ingredients: {
             create: toIngredientCreateData(parsedIngredients.ingredients)
           }

@@ -21,6 +21,13 @@ export const dishSelect = {
   id: true,
   name: true,
   notes: true,
+  categoryId: true,
+  category: {
+    select: {
+      id: true,
+      name: true
+    }
+  },
   ingredients: {
     orderBy: dishIngredientOrderBy,
     select: {
@@ -37,6 +44,33 @@ export type DishIngredientInput = {
   quantity: number;
   unit: string | null;
 };
+
+export type ParsedDishCategoryId =
+  | { status: "invalid"; message: string }
+  | { status: "parsed"; categoryId: number | null };
+
+/**
+ * Reads the category off a request body. An absent field and an explicit `null`
+ * both mean "no category", so a client that does not know about categories
+ * keeps working and one that does can clear the field.
+ */
+export const parseDishCategoryId = (rawCategoryId: unknown): ParsedDishCategoryId => {
+  if (rawCategoryId === undefined || rawCategoryId === null || rawCategoryId === "") {
+    return { status: "parsed", categoryId: null };
+  }
+
+  const parsedCategoryId = Number(rawCategoryId);
+
+  if (!Number.isInteger(parsedCategoryId)) {
+    return { status: "invalid", message: "categoryId must be a whole number or null." };
+  }
+
+  return { status: "parsed", categoryId: parsedCategoryId };
+};
+
+/** Whether a category id names a category that exists. */
+export const dishCategoryExists = async (categoryId: number) =>
+  (await prisma.dishCategory.count({ where: { id: categoryId } })) > 0;
 
 export type ParsedDishIngredients =
   | { status: "invalid"; message: string }
