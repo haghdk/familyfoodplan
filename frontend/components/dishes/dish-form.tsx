@@ -161,17 +161,7 @@ export default function DishForm({
       </div>
 
       <div className="space-y-3">
-        <div className="flex items-center justify-between gap-2">
-          <h3 className="text-sm font-semibold text-fg">{t("dishes.ingredientsTitle")}</h3>
-          <Button
-            onClick={() => setIngredientRows((currentRows) => [...currentRows, createIngredientRow()])}
-            size="sm"
-            variant="ghost"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            {t("dishes.addIngredient")}
-          </Button>
-        </div>
+        <h3 className="text-sm font-semibold text-fg">{t("dishes.ingredientsTitle")}</h3>
 
         <ul className="space-y-2">
           {ingredientRows.map((row) => (
@@ -211,6 +201,15 @@ export default function DishForm({
             </li>
           ))}
         </ul>
+
+        <Button
+          onClick={() => setIngredientRows((currentRows) => [...currentRows, createIngredientRow()])}
+          size="sm"
+          variant="ghost"
+        >
+          <Plus className="h-3.5 w-3.5" />
+          {t("dishes.addIngredient")}
+        </Button>
       </div>
 
       <div className="flex gap-2">
