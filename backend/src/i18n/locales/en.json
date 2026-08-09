@@ -36,6 +36,7 @@
     "nameRequired": "Plan name is required.",
     "invalidDateFormat": "Invalid date format. Expected YYYY-MM-DD.",
     "nameTaken": "A plan with this name already exists.",
+    "endedCannotBeCurrent": "This plan ended before today, so it cannot be set as the current plan.",
     "currentPlanUpdated": "Current plan updated."
   },
   "settings": {

@@ -21,6 +21,7 @@ Family Food Planner is a weekly meal-planning app for families. Admins create pl
 - **Plan creation UI**: admins can create a new plan directly from the Plans screen by choosing a name and date range, then jump straight into editing.
 - **Plan editing**: admins can update a plan's title and date range after creation, with safe regeneration of `PlanDay` rows to match the new boundaries.
 - **Set current plan controls**: admins can mark any plan as the current plan from both the plans list and individual plan detail pages, with immediate UI refresh across homepage and plan views.
+- **A finished week cannot be made the current plan**: once a plan's last day is behind us, it can no longer be picked as the current plan — the current plan is what the family is eating now, and last week's is not. The end date itself still counts as running, so a week ending Saturday stays selectable all Saturday. The plan that already holds the flag keeps it as its own last day passes, so a household is never left with no current plan. See [Choosing the current plan](#choosing-the-current-plan).
 - **Reusable confirmation modal + plan deletion flow**: added a generic `ConfirmModal` component (accessible dialog semantics, Escape-to-close, and initial focus management) and wired plan deletion to run only after explicit modal confirmation, including warning copy that deleting a food plan also removes its grocery list.
 - **Plan deletion API**: admins can delete a plan by id; relational cascading removes associated plan-day and grocery records.
 - **Shared plan date utilities**: backend routes now reuse a common plan service for ISO day-key parsing, date range generation, transactional plan/day creation, and typed error mapping for stable HTTP responses.
@@ -203,8 +204,9 @@ python3 frontend/scripts/generate-icons.py
 ### Weekly Plans / Meals
 - Plan and meal endpoints under `/api/plans/...` handle week creation, day meal entries, breakfast/lunch rows, and dinner updates.
 - `POST /api/plans` — create a plan and all plan-day rows for a validated date range (admin only).
-- `GET /api/plans` — list plans ordered by newest `startDate` first (authenticated users).
-- `GET /api/plans/:planId` — fetch one plan with nested `planDays`, `dinnerDish`, `breakfastDishes`, and `lunchDishes` (authenticated users).
+- `GET /api/plans` — list plans ordered by newest `startDate` first, each with `hasEnded` saying whether its last day is already behind us (authenticated users).
+- `GET /api/plans/:planId` — fetch one plan with `hasEnded` and nested `planDays`, `dinnerDish`, `breakfastDishes`, and `lunchDishes` (authenticated users).
+- `POST /api/plans/:planId/set-current` — mark a plan as the current plan, clearing the flag from whichever plan held it. Returns `404` for an unknown plan, and `409` when the plan's last day has already passed and it is not the plan currently holding the flag (admin only). See [Choosing the current plan](#choosing-the-current-plan).
 - `PUT /api/plans/:planId` — update plan name and date range; the backend adds/removes `PlanDay` rows to keep data aligned with the new range (admin only).
 - `DELETE /api/plans/:planId` — delete a plan by id; returns `404` when the plan does not exist and cascades removal of related plan-day and grocery data (admin only).
 - `GET /api/plans/:planId/pantry-matches` — what this plan's dishes could take out of the cabinets. Each entry gives the ingredient, how much the plan needs, how much is on the shelf, whether that covers it, the soonest expiry date, and the meals asking for it. Ingredients a meal has already resolved — put on the grocery list, or already taken from the pantry — are left out (authenticated users). See [The Pantry](#the-pantry).
@@ -492,6 +494,17 @@ A family does not eat the same way at every meal. Dinner is cooked once and shar
 - The member name comes from the plan endpoints, which already return `familyMember: { id, name }` on every breakfast and lunch row through the shared `planDayMealsSelect` — no extra request, and no second lookup of the member list.
 - The list itself is one component, `frontend/components/plan/PlannedMealList.tsx`, shared by all of those views so the desktop matrix and the mobile cards cannot drift apart. It takes the meals to draw, whether that meal is individual, and the wording for both the unassigned and the nothing-planned cases; it holds no dictionary of its own, so it stays usable from any server component.
 - Meals keep the order they were written down in rather than being sorted by member, which is the order the day card shows them in and the order they were read back in before this change.
+
+## Choosing the current plan
+
+The current plan is the one the home page shows and the daily dinner reminder reads, so it means *the week the family is eating now* rather than *the week someone opened last*.
+
+- **A plan whose last day has passed cannot be set as the current plan.** The end date itself still counts as the plan running: a week ending on Saturday can be chosen all Saturday, and stops being selectable on Sunday.
+- **The plan already holding the flag is exempt.** It stays current as its own last day passes, so the household is never left with no current plan just because nobody has made next week's yet. Re-sending `set-current` for it stays a successful no-op.
+- A plan with no end date is never "ended", since it has no last day to be past.
+- `hasEnded` is computed by the backend and returned on both `GET /api/plans` and `GET /api/plans/:planId`. The button reads that flag rather than working the date out from the browser's clock, so what the screen offers and what the endpoint accepts cannot disagree about what day it is.
+- The date is compared as a `YYYY-MM-DD` key in the household's own zone (`APP_TIMEZONE`, falling back to `DINNER_REMINDER_TIMEZONE`, then `Europe/Copenhagen`). Plan dates are calendar days stored at UTC midnight, so comparing them as instants would make "has it ended?" depend on the container's clock offset.
+- The refusal is enforced at the endpoint, not only in the UI: `POST /api/plans/:planId/set-current` answers `409` for an ended plan. The disabled **Plan has ended** button is the courtesy; the `409` is the rule.
 
 ## Swapping Meals Between Days
 

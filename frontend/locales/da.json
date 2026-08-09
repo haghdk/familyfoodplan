@@ -30,6 +30,8 @@
     "setAsCurrent": "Vælg som aktuel",
     "settingAsCurrentShort": "Vælger ...",
     "settingAsCurrent": "Vælger som aktuel ...",
+    "planEnded": "Planen er slut",
+    "planEndedHint": "En plan, hvis sidste dag er passeret, kan ikke gøres til den aktuelle plan.",
     "setCurrentFailed": "Kunne ikke vælge denne som den aktuelle plan lige nu.",
     "days": {
       "one": "{count} dag",

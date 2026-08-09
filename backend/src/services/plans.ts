@@ -1,6 +1,28 @@
+import { appTimeZone, getLocalDayKey } from "../lib/localTime";
 import { prisma } from "../lib/prisma";
 
 const ISO_DAY_KEY_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+
+/**
+ * Whether a plan's last day is behind us — the day *after* `endDate` or later,
+ * in the household's own zone. The end date itself still counts as the plan
+ * running: a week that ends on Saturday is the current week all Saturday.
+ *
+ * Both sides are compared as `YYYY-MM-DD` keys. Plan dates are stored at UTC
+ * midnight and are calendar days rather than instants, so comparing them as
+ * dates would make the answer depend on the container's clock offset.
+ */
+export const hasPlanEnded = (
+  endDate: Date | null,
+  todayDayKey: string = getLocalDayKey(appTimeZone)
+): boolean => {
+  if (!endDate) {
+    // A plan with no end date has no last day to be past.
+    return false;
+  }
+
+  return todayDayKey > endDate.toISOString().slice(0, 10);
+};
 
 export class PlanValidationError extends Error {
   readonly code = "PLAN_VALIDATION_ERROR" as const;
