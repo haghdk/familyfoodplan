@@ -37,6 +37,12 @@ const normalizeQuantity = (quantity: unknown) => {
 
 const createShareToken = () => crypto.randomBytes(32).toString("hex");
 
+const isUniqueConstraintConflict = (error: unknown) =>
+  typeof error === "object" &&
+  error !== null &&
+  "code" in error &&
+  (error as { code?: string }).code === "P2002";
+
 const parseShareToken = (rawValue: string | undefined) => {
   if (!rawValue) {
     return null;
@@ -75,6 +81,18 @@ const resolvePlanScope = async (planOrPlanDayId: number) => {
 
   return null;
 };
+
+// The token is stored on a single day of the plan, but which day that is has to
+// be looked up rather than assumed: a plan extended backwards gets a new first
+// day, and pinning the lookup to that day would miss the token already sitting
+// on the old one and mint a second token for the same plan. Ordering by date
+// matches how broadcasts pick the token, so both agree on which one is live.
+const findPlanShareToken = async (planDayIds: number[]) =>
+  prisma.groceryShareToken.findFirst({
+    where: { planDayId: { in: planDayIds } },
+    orderBy: { planDay: { date: "asc" } },
+    select: { id: true, token: true }
+  });
 
 // A plan has a single share token, stored on its first day, while grocery items
 // live on the day of the meal they belong to. Resolving the token through the
@@ -233,22 +251,37 @@ groceryRouter.post("/api/plans/:id/share-link", requireAdminAuth, async (request
     return;
   }
 
-  const existingShareToken = await prisma.groceryShareToken.findUnique({
-    where: { planDayId: planScope.defaultPlanDayId },
-    select: { token: true }
-  });
+  const existingShareToken = await findPlanShareToken(planScope.planDayIds);
 
   if (existingShareToken) {
     response.status(200).json({ token: existingShareToken.token, existed: true });
     return;
   }
 
-  const groceryShareToken = await prisma.groceryShareToken.create({
-    data: { planDayId: planScope.defaultPlanDayId, token: createShareToken() },
-    select: { token: true }
-  });
+  // The grocery list screen asks for the share link as soon as it opens, so two
+  // requests for the same plan can pass the lookup above before either has
+  // written a row. Only one create can win the unique constraint on the day;
+  // the loser reads back what the winner stored instead of failing the request.
+  try {
+    const groceryShareToken = await prisma.groceryShareToken.create({
+      data: { planDayId: planScope.defaultPlanDayId, token: createShareToken() },
+      select: { token: true }
+    });
 
-  response.status(200).json({ token: groceryShareToken.token, existed: false });
+    response.status(200).json({ token: groceryShareToken.token, existed: false });
+  } catch (error) {
+    if (!isUniqueConstraintConflict(error)) {
+      throw error;
+    }
+
+    const concurrentShareToken = await findPlanShareToken(planScope.planDayIds);
+
+    if (!concurrentShareToken) {
+      throw error;
+    }
+
+    response.status(200).json({ token: concurrentShareToken.token, existed: true });
+  }
 });
 
 groceryRouter.post("/api/plans/:id/share-link/rotate", requireAdminAuth, async (request, response) => {
@@ -267,11 +300,24 @@ groceryRouter.post("/api/plans/:id/share-link/rotate", requireAdminAuth, async (
   }
 
   const nextToken = createShareToken();
+  const existingShareToken = await findPlanShareToken(planScope.planDayIds);
 
-  const groceryShareToken = await prisma.groceryShareToken.upsert({
-    where: { planDayId: planScope.defaultPlanDayId },
-    update: { token: nextToken },
-    create: { planDayId: planScope.defaultPlanDayId, token: nextToken },
+  // Rotating has to replace the row the plan is actually sharing, wherever it
+  // sits, otherwise the link the family already has keeps working next to the
+  // new one — which is the opposite of what rotating is for.
+  if (existingShareToken) {
+    const rotatedShareToken = await prisma.groceryShareToken.update({
+      where: { id: existingShareToken.id },
+      data: { token: nextToken },
+      select: { token: true }
+    });
+
+    response.status(200).json({ token: rotatedShareToken.token, rotated: true });
+    return;
+  }
+
+  const groceryShareToken = await prisma.groceryShareToken.create({
+    data: { planDayId: planScope.defaultPlanDayId, token: nextToken },
     select: { token: true }
   });
 
