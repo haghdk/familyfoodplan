@@ -13,10 +13,38 @@ export type MergedGroceryItem = {
   key: string;
   name: string;
   quantity: number;
+  // How much of the merged line is already in the basket, summed across the
+  // items behind it, so a line for three meals can report "2 of 5 picked up".
+  pickedUpQuantity: number;
   unit: string | null;
   category: GroceryCategory;
   sourceLabels: string[];
   itemIds: number[];
+};
+
+// Picked up amounts are added and subtracted a step at a time, and a Float that
+// drifted by a millionth would leave a line one invisible crumb short of done.
+// Everything that writes the column rounds through here first.
+export const roundPickedUpQuantity = (pickedUpQuantity: number) =>
+  Math.round(pickedUpQuantity * 1000) / 1000;
+
+export type GroceryPickupState = {
+  pickedUpQuantity: number;
+  isChecked: boolean;
+};
+
+// The single place that decides what "picked up" means for a line: never less
+// than nothing, never more than the line asks for, and ticked off exactly when
+// the whole amount has been found.
+export const resolveGroceryPickupState = (
+  requestedPickedUpQuantity: number,
+  quantity: number
+): GroceryPickupState => {
+  const pickedUpQuantity = roundPickedUpQuantity(
+    Math.min(Math.max(requestedPickedUpQuantity, 0), quantity)
+  );
+
+  return { pickedUpQuantity, isChecked: pickedUpQuantity >= quantity };
 };
 
 const normalizeKeyPart = (value: string | null | undefined) =>
@@ -63,6 +91,7 @@ export const getMergedGroceryItemsByPlanDays = async (
         key: mergeKey,
         name: groceryItem.name,
         quantity: groceryItem.quantity,
+        pickedUpQuantity: groceryItem.pickedUpQuantity,
         unit: groceryItem.unit,
         category: groceryItem.category,
         sourceLabels: [sourceLabel],
@@ -72,6 +101,9 @@ export const getMergedGroceryItemsByPlanDays = async (
     }
 
     currentMerged.quantity += groceryItem.quantity;
+    currentMerged.pickedUpQuantity = roundPickedUpQuantity(
+      currentMerged.pickedUpQuantity + groceryItem.pickedUpQuantity
+    );
     currentMerged.itemIds.push(groceryItem.id);
 
     if (!currentMerged.sourceLabels.includes(sourceLabel)) {

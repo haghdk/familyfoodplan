@@ -413,6 +413,7 @@
     "categoryGeneral": "General",
     "categoryIngredient": "Ingredient",
     "sourceGeneralItem": "General item",
+    "partialPickedUp": "{picked} of {total} picked up",
     "sourceMeal": "{meal} · {dish}",
     "mealOption": "{day} · {meal}: {dish}",
     "share": {
@@ -497,6 +498,14 @@
     "tickNotSaved": "Could not reach the grocery list. That tick was not saved.",
     "updateFailed": "Could not update item state.",
     "pickedUp": "{checked} of {total} picked up",
+    "partlyPicked": {
+      "one": "{count} partly picked up",
+      "other": "{count} partly picked up"
+    },
+    "partialPickedUp": "{picked} of {total} picked up",
+    "partialHint": "Got only some of an item? Use \u2212 and + to record how much you picked up, or tick the box to take the whole line at once.",
+    "pickUpMoreAriaLabel": "Picked up more {name}",
+    "pickUpLessAriaLabel": "Picked up less {name}",
     "progressAriaLabel": "Shopping progress",
     "emptyTitle": "Nothing to shop for yet",
     "emptyDescription": "When the plan owner adds items they will appear here instantly.",

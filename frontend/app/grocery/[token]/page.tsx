@@ -2,14 +2,22 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
-import { Check, ShoppingBasket } from "lucide-react";
+import { Check, Minus, Plus, ShoppingBasket } from "lucide-react";
 import { backendApiUrl } from "../../../lib/auth";
 import { cn } from "../../../lib/cn";
 import { createDateFormatter } from "../../../lib/dates";
 import { useTranslations } from "../../../lib/i18n/client";
 import type { AppTranslator } from "../../../lib/i18n/dictionaries";
 import { localeHeader } from "../../../lib/i18n/requestHeaders";
-import { sortItemsByIdOrder, sortPickedUpItemsLast } from "../../../lib/grocery";
+import {
+  decreasePickupAmount,
+  formatPickupAmount,
+  increasePickupAmount,
+  isPartiallyPickedUp,
+  pickupProgressPercentage,
+  sortItemsByIdOrder,
+  sortPickedUpItemsLast
+} from "../../../lib/grocery";
 import { useReorderAnimation } from "../../../lib/useReorderAnimation";
 import Alert from "../../../components/ui/Alert";
 import Card from "../../../components/ui/Card";
@@ -27,6 +35,7 @@ type GroceryItem = {
   unit: string | null;
   category: "GENERAL" | "INGREDIENT";
   isChecked: boolean;
+  pickedUpQuantity: number;
   dinnerDish: MealRef | null;
   breakfastDish: MealRef | null;
   lunchDish: MealRef | null;
@@ -91,7 +100,7 @@ export default function SharedGroceryPage() {
   const params = useParams<{ token: string }>();
   const token = params.token;
   const translator = useTranslations();
-  const { locale, t } = translator;
+  const { locale, plural, t } = translator;
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [isRealtimeConnected, setIsRealtimeConnected] = useState(false);
@@ -259,19 +268,28 @@ export default function SharedGroceryPage() {
     return () => clearInterval(pollInterval);
   }, [isRealtimeConnected, loadSharedList]);
 
-  const toggleItem = async (item: GroceryItem) => {
-    const setItemCheckedState = (isChecked: boolean) => {
+  // Records how much of a line is now in the basket. Everything the row can do —
+  // one more carton, one fewer, the whole line at once — is the same request
+  // with a different amount, so there is only one path to keep working offline.
+  const pickUpAmount = async (item: GroceryItem, pickedUpQuantity: number) => {
+    const setItemPickupState = (nextPickedUpQuantity: number) => {
       setItems((currentItems) =>
         currentItems.map((currentItem) =>
-          currentItem.id === item.id ? { ...currentItem, isChecked } : currentItem
+          currentItem.id === item.id
+            ? {
+                ...currentItem,
+                pickedUpQuantity: nextPickedUpQuantity,
+                isChecked: nextPickedUpQuantity >= currentItem.quantity
+              }
+            : currentItem
         )
       );
     };
 
-    // The tick lands immediately instead of after the round trip: shopping
+    // The change lands immediately instead of after the round trip: shopping
     // happens on a slow connection, and a row that only starts moving once the
     // server answers reads as the list jumping on its own.
-    setItemCheckedState(!item.isChecked);
+    setItemPickupState(pickedUpQuantity);
 
     let response: Response;
 
@@ -279,16 +297,16 @@ export default function SharedGroceryPage() {
       response = await fetch(`${backendApiUrl}/api/grocery/shared/${token}/items/${item.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", ...localeHeader(locale) },
-        body: JSON.stringify({ isChecked: !item.isChecked })
+        body: JSON.stringify({ pickedUpQuantity })
       });
     } catch (_error) {
-      setItemCheckedState(item.isChecked);
+      setItemPickupState(item.pickedUpQuantity);
       setErrorMessage(t("sharedGrocery.tickNotSaved"));
       return;
     }
 
     if (!response.ok) {
-      setItemCheckedState(item.isChecked);
+      setItemPickupState(item.pickedUpQuantity);
       setErrorMessage(t("sharedGrocery.updateFailed"));
       return;
     }
@@ -306,6 +324,12 @@ export default function SharedGroceryPage() {
     );
   };
 
+  // The tick box stays an all-or-nothing switch: one press for "I got the lot",
+  // another for "put it all back", with the stepper beside it for the times
+  // only some of it made it into the basket.
+  const toggleItem = (item: GroceryItem) =>
+    pickUpAmount(item, item.isChecked ? 0 : item.quantity);
+
   if (isLoading) {
     return (
       <div className="mx-auto max-w-2xl space-y-3">
@@ -317,8 +341,13 @@ export default function SharedGroceryPage() {
   }
 
   const checkedCount = items.filter((item) => item.isChecked).length;
-  const progressPercentage =
-    items.length === 0 ? 0 : Math.round((checkedCount / items.length) * 100);
+  const partiallyPickedCount = items.filter(isPartiallyPickedUp).length;
+  // The stepper only appears on lines asking for more than one, so the hint
+  // explaining it is pointless on a list of single items.
+  const hasSplittableItems = items.some((item) => item.quantity > 1);
+  // A half-filled line counts as half done, so the bar keeps moving while the
+  // shopper works through a line for six eggs instead of jumping at the end.
+  const progressPercentage = pickupProgressPercentage(items);
 
   return (
     <section className="mx-auto max-w-2xl space-y-5">
@@ -359,6 +388,11 @@ export default function SharedGroceryPage() {
                   checked: checkedCount,
                   total: items.length
                 })}
+                {partiallyPickedCount > 0 ? (
+                  <span className="ml-1.5 font-normal text-fg-subtle">
+                    · {plural("sharedGrocery.partlyPicked", partiallyPickedCount)}
+                  </span>
+                ) : null}
               </span>
               <span className="text-fg-subtle">{progressPercentage}%</span>
             </div>
@@ -375,6 +409,9 @@ export default function SharedGroceryPage() {
                 style={{ width: `${progressPercentage}%` }}
               />
             </div>
+            {hasSplittableItems ? (
+              <p className="mt-3 text-xs text-fg-subtle">{t("sharedGrocery.partialHint")}</p>
+            ) : null}
           </div>
         ) : null}
       </Card>
@@ -389,52 +426,127 @@ export default function SharedGroceryPage() {
         />
       ) : (
         <ul className="space-y-2" ref={containerRef}>
-          {visibleItems.map((item) => (
-            <li key={item.id} ref={registerRow(item.id)}>
-              <label
-                className={cn(
-                  "flex cursor-pointer items-center gap-3 rounded-2xl border bg-surface p-4 transition",
-                  item.isChecked
-                    ? "border-border bg-surface-muted/60"
-                    : "border-border hover:border-brand-border"
-                )}
-              >
-                <input
-                  checked={item.isChecked}
-                  className="peer sr-only"
-                  onChange={() => void toggleItem(item)}
-                  type="checkbox"
-                />
-                <span
-                  aria-hidden="true"
+          {visibleItems.map((item) => {
+            const isPartiallyPicked = isPartiallyPickedUp(item);
+            // A line for a single carton has nothing to split, so it keeps the
+            // plain tick box and no stepper it would never need.
+            const canPickUpPartially = item.quantity > 1;
+            const totalLabel = `${formatPickupAmount(item.quantity)}${item.unit ? ` ${item.unit}` : ""}`;
+            // Only the total carries the unit: "1 of 2 cartons picked up" reads
+            // like a sentence, "1 cartons of 2 cartons" does not.
+            const pickedLabel = formatPickupAmount(item.pickedUpQuantity);
+
+            return (
+              <li key={item.id} ref={registerRow(item.id)}>
+                <div
                   className={cn(
-                    "flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border-2 transition peer-focus-visible:ring-2 peer-focus-visible:ring-brand/45",
+                    "flex items-center gap-3 rounded-2xl border bg-surface p-4 transition",
                     item.isChecked
-                      ? "border-brand bg-brand text-brand-fg"
-                      : "border-border-strong bg-surface text-transparent"
+                      ? "border-border bg-surface-muted/60"
+                      : isPartiallyPicked
+                        ? "border-brand-border bg-brand-soft/40"
+                        : "border-border hover:border-brand-border"
                   )}
                 >
-                  <Check className="h-4 w-4" />
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span
-                    className={cn(
-                      "block font-medium",
-                      item.isChecked ? "text-fg-subtle line-through" : "text-fg"
-                    )}
-                  >
-                    {item.name}
-                  </span>
-                  <span className="mt-0.5 block text-xs text-fg-subtle">
-                    {item.quantity}
-                    {item.unit ? ` ${item.unit}` : ""}
-                    <span className="mx-1.5">•</span>
-                    {describeItemSource(item, translator)}
-                  </span>
-                </span>
-              </label>
-            </li>
-          ))}
+                  <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-3">
+                    <input
+                      checked={item.isChecked}
+                      className="peer sr-only"
+                      onChange={() => void toggleItem(item)}
+                      type="checkbox"
+                    />
+                    <span
+                      aria-hidden="true"
+                      className={cn(
+                        "flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border-2 transition peer-focus-visible:ring-2 peer-focus-visible:ring-brand/45",
+                        item.isChecked
+                          ? "border-brand bg-brand text-brand-fg"
+                          : isPartiallyPicked
+                            ? "border-brand bg-brand-soft text-brand"
+                            : "border-border-strong bg-surface text-transparent"
+                      )}
+                    >
+                      {/* A half-finished line is neither ticked nor blank, so it
+                          shows the same dash a browser draws for a checkbox that
+                          is partly on. */}
+                      {isPartiallyPicked ? (
+                        <Minus className="h-4 w-4" />
+                      ) : (
+                        <Check className="h-4 w-4" />
+                      )}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span
+                        className={cn(
+                          "block font-medium",
+                          item.isChecked ? "text-fg-subtle line-through" : "text-fg"
+                        )}
+                      >
+                        {item.name}
+                      </span>
+                      <span className="mt-0.5 block text-xs text-fg-subtle">
+                        {totalLabel}
+                        <span className="mx-1.5">•</span>
+                        {describeItemSource(item, translator)}
+                      </span>
+                      {isPartiallyPicked ? (
+                        // The same sentence is read out by the stepper's live
+                        // region below, so it is hidden from screen readers
+                        // here rather than said twice.
+                        <span
+                          aria-hidden="true"
+                          className="mt-1 block text-xs font-semibold text-brand"
+                        >
+                          {t("sharedGrocery.partialPickedUp", {
+                            picked: pickedLabel,
+                            total: totalLabel
+                          })}
+                        </span>
+                      ) : null}
+                    </span>
+                  </label>
+
+                  {canPickUpPartially ? (
+                    <div className="flex shrink-0 items-center gap-0.5 rounded-full border border-border bg-surface p-1">
+                      <button
+                        aria-label={t("sharedGrocery.pickUpLessAriaLabel", { name: item.name })}
+                        className="flex h-8 w-8 items-center justify-center rounded-full text-fg-muted transition hover:bg-surface-muted hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/45 disabled:opacity-40 disabled:hover:bg-transparent"
+                        disabled={item.pickedUpQuantity <= 0}
+                        onClick={() => void pickUpAmount(item, decreasePickupAmount(item))}
+                        type="button"
+                      >
+                        <Minus className="h-4 w-4" />
+                      </button>
+                      <span
+                        className="min-w-[3rem] px-1 text-center text-xs font-semibold tabular-nums text-fg"
+                        role="status"
+                      >
+                        <span aria-hidden="true">
+                          {formatPickupAmount(item.pickedUpQuantity)}/
+                          {formatPickupAmount(item.quantity)}
+                        </span>
+                        <span className="sr-only">
+                          {t("sharedGrocery.partialPickedUp", {
+                            picked: pickedLabel,
+                            total: totalLabel
+                          })}
+                        </span>
+                      </span>
+                      <button
+                        aria-label={t("sharedGrocery.pickUpMoreAriaLabel", { name: item.name })}
+                        className="flex h-8 w-8 items-center justify-center rounded-full text-fg-muted transition hover:bg-surface-muted hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/45 disabled:opacity-40 disabled:hover:bg-transparent"
+                        disabled={item.isChecked}
+                        onClick={() => void pickUpAmount(item, increasePickupAmount(item))}
+                        type="button"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
+              </li>
+            );
+          })}
         </ul>
       )}
     </section>

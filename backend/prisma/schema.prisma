@@ -316,7 +316,15 @@ model GroceryItem {
   quantity     Float           @default(1)
   unit         String?
   category     GroceryCategory @default(GENERAL)
+  /// True once every unit of the line is in the basket. Stored next to the
+  /// picked up amount rather than worked out on every read, so the questions
+  /// that only care whether a line is finished — the progress counter, the
+  /// sinking of done rows — stay a single cheap column.
   isChecked    Boolean         @default(false)
+  /// How much of `quantity` the shopper has actually picked up. A half-filled
+  /// line is the normal case in a shop: the list asked for two cartons of milk
+  /// and only one was on the shelf, which is neither untouched nor bought.
+  pickedUpQuantity Float       @default(0)
   /// Manual shopping order, maintained by drag-to-reorder on the grocery list.
   /// Numbered across the whole plan so items from different days share one order.
   sortOrder    Int             @default(0)

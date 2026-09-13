@@ -413,6 +413,7 @@
     "categoryGeneral": "Almindelig",
     "categoryIngredient": "Ingrediens",
     "sourceGeneralItem": "Almindelig vare",
+    "partialPickedUp": "{picked} af {total} taget",
     "sourceMeal": "{meal} · {dish}",
     "mealOption": "{day} · {meal}: {dish}",
     "share": {
@@ -497,6 +498,14 @@
     "tickNotSaved": "Kunne ikke nå indkøbslisten. Afkrydsningen blev ikke gemt.",
     "updateFailed": "Kunne ikke opdatere varens status.",
     "pickedUp": "{checked} af {total} taget",
+    "partlyPicked": {
+      "one": "{count} delvist taget",
+      "other": "{count} delvist taget"
+    },
+    "partialPickedUp": "{picked} af {total} taget",
+    "partialHint": "Fik du kun nogle af varen? Brug \u2212 og + til at gemme, hvor meget du tog, eller sæt fluebenet for at tage hele linjen på én gang.",
+    "pickUpMoreAriaLabel": "Tog mere {name}",
+    "pickUpLessAriaLabel": "Tog mindre {name}",
     "progressAriaLabel": "Indkøbsstatus",
     "emptyTitle": "Der er ikke noget at købe endnu",
     "emptyDescription": "Når planens ejer tilføjer varer, dukker de op her med det samme.",
