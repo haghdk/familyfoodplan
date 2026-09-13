@@ -8,7 +8,8 @@ import {
   getMergedGroceryItemsByPlanDays,
   getNextGrocerySortOrder,
   groceryItemOrderBy,
-  reorderGroceryItems
+  reorderGroceryItems,
+  resolveGroceryPickupState
 } from "../services/grocery";
 import { GroceryEventType, realtimeBus } from "../realtime/events";
 
@@ -169,6 +170,7 @@ const emitGroceryEvent = async (
       unit: string | null;
       category: GroceryCategory;
       isChecked: boolean;
+      pickedUpQuantity: number;
       dinnerDish: { id: number; name: string } | null;
       breakfastDish: { id: number; name: string } | null;
       lunchDish: { id: number; name: string } | null;
@@ -627,7 +629,7 @@ groceryRouter.put("/api/plans/:planId/grocery-items/:itemId", requireAdminAuth, 
 
   const existingItem = await prisma.groceryItem.findFirst({
     where: { id: itemId, planDayId: { in: planScope.planDayIds } },
-    select: { id: true, planDayId: true }
+    select: { id: true, planDayId: true, pickedUpQuantity: true }
   });
 
   if (!existingItem) {
@@ -648,12 +650,20 @@ groceryRouter.put("/api/plans/:planId/grocery-items/:itemId", requireAdminAuth, 
     return;
   }
 
+  // Editing the amount has to drag the picked up amount along with it: cutting
+  // a line from three cartons to one, after two were already found, otherwise
+  // leaves the list claiming more milk was bought than was ever asked for.
+  const normalizedQuantity = normalizeQuantity(quantity);
+  const pickupState = resolveGroceryPickupState(existingItem.pickedUpQuantity, normalizedQuantity);
+
   const groceryItem = await prisma.groceryItem.update({
     where: { id: itemId },
     data: {
       name: normalizedName,
-      quantity: normalizeQuantity(quantity),
-      unit: typeof unit === "string" ? unit.trim() || null : null
+      quantity: normalizedQuantity,
+      unit: typeof unit === "string" ? unit.trim() || null : null,
+      pickedUpQuantity: pickupState.pickedUpQuantity,
+      isChecked: pickupState.isChecked
     },
     include: {
       dinnerDish: { select: { id: true, name: true } },
@@ -759,10 +769,22 @@ groceryRouter.patch("/api/grocery/shared/:token/items/:itemId", async (request, 
     return;
   }
 
-  const { isChecked } = request.body as { isChecked?: boolean };
+  // Two ways to say the same thing: `pickedUpQuantity` for "I got one of the
+  // two", `isChecked` for "I got the lot". The second is what the tick box
+  // sends, and is kept for shared lists open in a tab from before partial pick
+  // ups existed.
+  const { isChecked, pickedUpQuantity } = request.body as {
+    isChecked?: boolean;
+    pickedUpQuantity?: number;
+  };
 
-  if (typeof isChecked !== "boolean") {
-    response.status(400).json({ message: "isChecked must be a boolean." });
+  const hasPickedUpQuantity =
+    typeof pickedUpQuantity === "number" && Number.isFinite(pickedUpQuantity);
+
+  if (!hasPickedUpQuantity && typeof isChecked !== "boolean") {
+    response
+      .status(400)
+      .json({ message: "Send either a numeric pickedUpQuantity or a boolean isChecked." });
     return;
   }
 
@@ -775,7 +797,7 @@ groceryRouter.patch("/api/grocery/shared/:token/items/:itemId", async (request, 
 
   const existingItem = await prisma.groceryItem.findFirst({
     where: { id: itemId, planDayId: { in: sharedScope.planDayIds } },
-    select: { id: true, planDayId: true }
+    select: { id: true, planDayId: true, quantity: true }
   });
 
   if (!existingItem) {
@@ -783,9 +805,22 @@ groceryRouter.patch("/api/grocery/shared/:token/items/:itemId", async (request, 
     return;
   }
 
+  // Ticking the box is simply the largest partial pick up there is, so both
+  // shapes of request end up as one amount and are clamped the same way.
+  const requestedPickedUpQuantity = hasPickedUpQuantity
+    ? pickedUpQuantity
+    : isChecked
+      ? existingItem.quantity
+      : 0;
+
+  const pickupState = resolveGroceryPickupState(
+    requestedPickedUpQuantity,
+    existingItem.quantity
+  );
+
   const groceryItem = await prisma.groceryItem.update({
     where: { id: itemId },
-    data: { isChecked },
+    data: { isChecked: pickupState.isChecked, pickedUpQuantity: pickupState.pickedUpQuantity },
     include: {
       dinnerDish: { select: { id: true, name: true } },
       breakfastDish: { select: { id: true, name: true } },

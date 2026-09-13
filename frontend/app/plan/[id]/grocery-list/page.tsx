@@ -25,7 +25,12 @@ import { createDateFormatter } from "../../../../lib/dates";
 import { useTranslations } from "../../../../lib/i18n/client";
 import type { AppTranslator } from "../../../../lib/i18n/dictionaries";
 import { localeHeader } from "../../../../lib/i18n/requestHeaders";
-import { sortItemsByIdOrder, sortPickedUpItemsLast } from "../../../../lib/grocery";
+import {
+  formatPickupAmount,
+  isPartiallyPickedUp,
+  sortItemsByIdOrder,
+  sortPickedUpItemsLast
+} from "../../../../lib/grocery";
 import { useReorderAnimation } from "../../../../lib/useReorderAnimation";
 import Alert from "../../../../components/ui/Alert";
 import Badge from "../../../../components/ui/Badge";
@@ -61,6 +66,7 @@ type GroceryItem = {
   unit: string | null;
   category: "GENERAL" | "INGREDIENT";
   isChecked: boolean;
+  pickedUpQuantity: number;
   dinnerDish: MealRef | null;
   breakfastDish: MealRef | null;
   lunchDish: MealRef | null;
@@ -70,6 +76,7 @@ type MergedGroceryItem = {
   key: string;
   name: string;
   quantity: number;
+  pickedUpQuantity: number;
   unit: string | null;
   category: "GENERAL" | "INGREDIENT";
   sourceLabels: string[];
@@ -103,7 +110,21 @@ type GroceryRealtimeEvent = {
 };
 
 const formatQuantity = (quantity: number, unit: string | null) =>
-  `${quantity}${unit ? ` ${unit}` : ""}`;
+  `${formatPickupAmount(quantity)}${unit ? ` ${unit}` : ""}`;
+
+// Says how far through a line the shoppers are, for the lines they have only
+// half finished. The shared link is where amounts are ticked off, so this side
+// of the app reports what came back rather than offering its own controls.
+const describePickupProgress = (
+  item: { quantity: number; pickedUpQuantity: number; unit: string | null },
+  { t }: AppTranslator
+) =>
+  t("grocery.partialPickedUp", {
+    // The unit is written once, on the total, so the badge reads
+    // "1 of 3 kg picked up" rather than repeating itself.
+    picked: formatPickupAmount(item.pickedUpQuantity),
+    total: formatQuantity(item.quantity, item.unit)
+  });
 
 const describeItemSource = (item: GroceryItem, { t }: AppTranslator) => {
   if (item.dinnerDish) {
@@ -889,26 +910,37 @@ export default function GroceryListPage() {
               getItemLabel={(item) => item.name}
               items={mergedItems}
               onReorder={reorderMergedItems}
-              renderItem={(item) => (
-                <div className="flex flex-wrap items-center justify-between gap-3 py-3 pr-4">
-                  <div className="min-w-0">
-                    <p className="font-medium text-fg">{item.name}</p>
-                    <p className="mt-0.5 truncate text-xs text-fg-subtle">
-                      {item.sourceLabels.join(" · ")}
-                    </p>
+              renderItem={(item) => {
+                const isPartiallyPicked = isPartiallyPickedUp({
+                  quantity: item.quantity,
+                  pickedUpQuantity: item.pickedUpQuantity,
+                  isChecked: item.pickedUpQuantity >= item.quantity
+                });
+
+                return (
+                  <div className="flex flex-wrap items-center justify-between gap-3 py-3 pr-4">
+                    <div className="min-w-0">
+                      <p className="font-medium text-fg">{item.name}</p>
+                      <p className="mt-0.5 truncate text-xs text-fg-subtle">
+                        {item.sourceLabels.join(" · ")}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {isPartiallyPicked ? (
+                        <Badge tone="warning">{describePickupProgress(item, translator)}</Badge>
+                      ) : null}
+                      <Badge tone={item.category === "GENERAL" ? "neutral" : "accent"}>
+                        {item.category === "GENERAL"
+                          ? t("grocery.categoryGeneral")
+                          : t("grocery.categoryIngredient")}
+                      </Badge>
+                      <span className="rounded-full bg-surface-muted px-3 py-1 text-sm font-semibold text-fg">
+                        {formatQuantity(item.quantity, item.unit)}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Badge tone={item.category === "GENERAL" ? "neutral" : "accent"}>
-                      {item.category === "GENERAL"
-                        ? t("grocery.categoryGeneral")
-                        : t("grocery.categoryIngredient")}
-                    </Badge>
-                    <span className="rounded-full bg-surface-muted px-3 py-1 text-sm font-semibold text-fg">
-                      {formatQuantity(item.quantity, item.unit)}
-                    </span>
-                  </div>
-                </div>
-              )}
+                );
+              }}
             />
           </>
         )}
@@ -968,6 +1000,9 @@ export default function GroceryListPage() {
                         <Badge icon={<Check className="h-3.5 w-3.5" />} tone="brand">
                           {t("grocery.items.bought")}
                         </Badge>
+                      ) : null}
+                      {isPartiallyPickedUp(item) ? (
+                        <Badge tone="warning">{describePickupProgress(item, translator)}</Badge>
                       ) : null}
                       <Button
                         aria-label={t("grocery.items.editAriaLabel", {

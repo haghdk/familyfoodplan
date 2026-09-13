@@ -15,6 +15,9 @@ export type GroceryEventPayload = {
     unit: string | null;
     category: "GENERAL" | "INGREDIENT";
     isChecked: boolean;
+    // How much of the line the shoppers have already picked up, so a listener
+    // can show a half-finished line rather than only ticked or untouched.
+    pickedUpQuantity: number;
     dinnerDish: { id: number; name: string } | null;
     breakfastDish: { id: number; name: string } | null;
     lunchDish: { id: number; name: string } | null;
