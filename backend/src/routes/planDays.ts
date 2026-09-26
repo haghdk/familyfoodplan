@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { prisma } from "../lib/prisma";
 import { requireAdminAuth } from "../middleware/auth";
+import { deleteUnpickedGroceryItemsForMeal } from "../services/grocery";
 import { isSwappableMealType, swapPlanDayMeals } from "../services/mealSwaps";
 import { parseIsoDayKey } from "../services/plans";
 
@@ -144,6 +145,11 @@ planDaysRouter.put("/api/plans/:planId/days/:dayKey/dinner", requireAdminAuth, a
     return;
   }
 
+  const existingDinnerDish = await prisma.dinnerDish.findUnique({
+    where: { planDayId: planDay.id },
+    select: { id: true, dishId: true }
+  });
+
   const dinnerDish = await prisma.dinnerDish.upsert({
     where: { planDayId: planDay.id },
     update: {
@@ -158,6 +164,14 @@ planDaysRouter.put("/api/plans/:planId/days/:dayKey/dinner", requireAdminAuth, a
       planDayId: planDay.id
     }
   });
+
+  // Swapping this dinner for a different saved dish (or clearing the link
+  // entirely) leaves the ingredients copied for the old one with nothing to
+  // stand for. Clearing them here is what stops the old dish from being
+  // copied onto the list a second time once it lands on another day.
+  if (existingDinnerDish && existingDinnerDish.dishId !== dishLink.dishId) {
+    await deleteUnpickedGroceryItemsForMeal({ dinnerDishId: existingDinnerDish.id });
+  }
 
   response.status(200).json({ dinnerDish });
 });
@@ -312,6 +326,12 @@ planDaysRouter.put("/api/plans/:planId/days/:dayKey/breakfasts/:breakfastId", re
       }
     });
 
+    // See the dinner route above: reassigning this row to a different saved
+    // dish leaves the old dish's copied ingredients with nothing to stand for.
+    if (existingBreakfast.dishId !== dishLink.dishId) {
+      await deleteUnpickedGroceryItemsForMeal({ breakfastDishId: breakfastId });
+    }
+
     response.status(200).json({ breakfastDish });
   }
 );
@@ -356,6 +376,10 @@ planDaysRouter.delete("/api/plans/:planId/days/:dayKey/breakfasts/:breakfastId",
       response.status(404).json({ message: "Breakfast dish not found for this day." });
       return;
     }
+
+    // Run before the row is gone: once it is deleted, the grocery items' link
+    // to it is cleared too, and they can no longer be found by it.
+    await deleteUnpickedGroceryItemsForMeal({ breakfastDishId: breakfastId });
 
     await prisma.breakfastDish.delete({ where: { id: breakfastId } });
 
@@ -512,6 +536,12 @@ planDaysRouter.put("/api/plans/:planId/days/:dayKey/lunches/:lunchId", requireAd
       }
     });
 
+    // See the dinner route above: reassigning this row to a different saved
+    // dish leaves the old dish's copied ingredients with nothing to stand for.
+    if (existingLunch.dishId !== dishLink.dishId) {
+      await deleteUnpickedGroceryItemsForMeal({ lunchDishId: lunchId });
+    }
+
     response.status(200).json({ lunchDish });
   }
 );
@@ -556,6 +586,10 @@ planDaysRouter.delete("/api/plans/:planId/days/:dayKey/lunches/:lunchId", requir
       response.status(404).json({ message: "Lunch dish not found for this day." });
       return;
     }
+
+    // Run before the row is gone: once it is deleted, the grocery items' link
+    // to it is cleared too, and they can no longer be found by it.
+    await deleteUnpickedGroceryItemsForMeal({ lunchDishId: lunchId });
 
     await prisma.lunchDish.delete({ where: { id: lunchId } });
 

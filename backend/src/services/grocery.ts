@@ -1,6 +1,8 @@
 import { GroceryCategory } from "../generated/prisma/enums";
 import { Prisma } from "../generated/prisma/client";
 import { prisma } from "../lib/prisma";
+import { realtimeBus } from "../realtime/events";
+import { mealLinkWhere, type MealLink } from "./pantry";
 
 // Grocery items are always read in the manual shopping order the user arranged
 // by dragging list rows, falling back to insertion order for equal positions.
@@ -189,4 +191,75 @@ export const reorderGroceryItems = async (
   );
 
   return { status: "reordered", orderedItemIds };
+};
+
+// A plan has a single share token, stored on its first day, while grocery items
+// live on the day of the meal they belong to. Resolving the token through the
+// plan means a deletion broadcast reaches shared list viewers regardless of
+// which day the item sat on.
+const getShareTokenByPlanDayId = async (planDayId: number) => {
+  const planDay = await prisma.planDay.findUnique({
+    where: { id: planDayId },
+    select: { planId: true }
+  });
+
+  if (!planDay) {
+    return null;
+  }
+
+  const shareToken = await prisma.groceryShareToken.findFirst({
+    where: { planDay: { planId: planDay.planId } },
+    orderBy: { planDay: { date: "asc" } },
+    select: { token: true }
+  });
+
+  return shareToken?.token ?? null;
+};
+
+const emitGroceryItemDeleted = async (planDayId: number, itemId: number) => {
+  const token = await getShareTokenByPlanDayId(planDayId);
+
+  realtimeBus.emit({
+    eventType: "grocery_item_deleted",
+    planId: planDayId,
+    token,
+    item: null,
+    deletedItemId: itemId,
+    orderedItemIds: null
+  });
+};
+
+/**
+ * Removes the grocery lines a meal added for a dish it no longer stands for —
+ * because the meal was reassigned to a different dish, or removed from the day
+ * entirely. Without this, the old lines linger as ordinary rows once their
+ * meal link is cleared, and the same dish can then be copied onto the list
+ * again for wherever it lands next, doubling every ingredient.
+ *
+ * A line the shopper has already started picking up is left alone, since it
+ * represents shopping that already happened rather than a stale plan.
+ */
+export const deleteUnpickedGroceryItemsForMeal = async (mealLink: MealLink) => {
+  const mealWhere = mealLinkWhere(mealLink);
+
+  if (Object.keys(mealWhere).length === 0) {
+    return;
+  }
+
+  const items = await prisma.groceryItem.findMany({
+    where: { ...mealWhere, pickedUpQuantity: 0 },
+    select: { id: true, planDayId: true }
+  });
+
+  if (items.length === 0) {
+    return;
+  }
+
+  await prisma.groceryItem.deleteMany({
+    where: { id: { in: items.map((item) => item.id) } }
+  });
+
+  for (const item of items) {
+    await emitGroceryItemDeleted(item.planDayId, item.id);
+  }
 };
